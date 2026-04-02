@@ -1,5 +1,6 @@
 name: setrise
-description: "SetRise - Social Delivery App"
+description: SetRise - Complete Social Media Platform (Android, iOS, Web)
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -8,62 +9,75 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  
   # State Management
   flutter_riverpod: ^2.4.0
-  riverpod: ^2.4.0
-
-  # Dependency Injection
-  get_it: ^7.6.0
-
-  # Functional Programming
-  fpdart: ^1.1.0
-
+  riverpod_annotation: ^2.3.0
+  
   # Networking
   dio: ^5.3.1
-
-  # SVG
-  flutter_svg: ^2.0.0
-
+  
   # Local Storage
+  hive: ^2.2.3
   hive_flutter: ^1.1.0
-  shared_preferences: ^2.2.0
-
-  # Image Caching
+  shared_preferences: ^2.2.2
+  
+  # Routing
+  go_router: ^11.0.0
+  
+  # Image & Media
   cached_network_image: ^3.3.0
-
-  # Utilities
+  video_player: ^2.7.0
+  image_picker: ^1.0.0
+  
+  # Functional
+  dartz: ^0.10.1
+  
+  # DI
+  get_it: ^7.6.0
+  
+  # Utils
   intl: ^0.19.0
-  go_router: ^10.1.0
+  uuid: ^4.0.0
+  timeago: ^3.6.0
+  
+  # Platform specific
+  universal_platform: ^1.0.0
+  window_size: ^0.3.0
+  url_launcher: ^6.2.0
+  path_provider: ^2.1.0
+  flutter_web_plugins:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  hive_generator: ^2.0.0
+  flutter_lints: ^3.0.0
+  riverpod_generator: ^2.3.0
   build_runner: ^2.4.0
+  hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
-
+  
   fonts:
-    - family: HarmonyOS
+    - family: Inter
       fonts:
-        - asset: assets/fonts/HarmonyOS_Sans_Regular.ttf
+        - asset: assets/fonts/Inter-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/Inter-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Inter-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Inter-Regular.ttf
           weight: 400
-        - asset: assets/fonts/HarmonyOS_Sans_Medium.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
           weight: 500
-        - asset: assets/fonts/HarmonyOS_Sans_Semibold.ttf
+        - asset: assets/fonts/Inter-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/HarmonyOS_Sans_Bold.ttf
+        - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
-        - asset: assets/fonts/HarmonyOS_Sans_Black.ttf
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Inter-Black.ttf
           weight: 900
-
-  assets:
-    - assets/fonts/
-    - assets/icons/
-    - assets/images/
-    - assets/animations/
-    - assets/logos/
-
