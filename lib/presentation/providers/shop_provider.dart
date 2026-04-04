@@ -94,7 +94,7 @@ class ShopNotifier extends StateNotifier<ShopState> {
     ));
   }
 
-  Future<void> loadProducts({String? category}) async {
+  Future<void> loadProducts(int page, {String? category}) async {
     state = state.copyWith(
       isLoading: true,
       error: null,

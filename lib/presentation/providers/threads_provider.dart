@@ -79,7 +79,7 @@ class ThreadsNotifier extends StateNotifier<ThreadsState> {
       isLiked: false,
       isReposted: false,
       replyTo: null,
-      threadReplies: [],
+      threadReplies: [], hasMoreReplies: false,
     ));
   }
 
