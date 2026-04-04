@@ -1,130 +1,52 @@
-// lib/presentation/screens/set/post_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatters.dart';
-import '../../../core/extensions/datetime_extensions.dart';
 import '../../../data/models/post_model.dart';
-import '../../widgets/post/post_actions_section.dart';
+import '../../widgets/post/comments_sheet.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final PostModel post;
-
-  const PostDetailScreen({
-    super.key,
-    required this.post,
-  });
+  const PostDetailScreen({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Post'),
-        centerTitle: true,
-        backgroundColor: AppColors.background,
-        elevation: 0.5,
-      ),
+      appBar: AppBar(backgroundColor: AppColors.background, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => Navigator.pop(context)),
+        title: Text('Post', style: AppTypography.h2), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Author Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: CachedNetworkImageProvider(post.authorAvatar),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.authorName,
-                        style: AppTypography.labelLarge,
-                      ),
-                      Text(
-                        post.authorUsername,
-                        style: AppTypography.caption,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_horiz),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Post Content
-            Text(
-              post.content,
-              style: AppTypography.bodyLarge,
-            ),
-            const SizedBox(height: 16),
-            // Media
-            if (post.mediaUrls.isNotEmpty)
-              Container(
-                height: 300,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: AppColors.surface,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl: post.mediaUrls[0],
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        const Center(child: CircularProgressIndicator()),
-                    errorWidget: (context, url, error) =>
-                        const Icon(Icons.error),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-            // Timestamp
-            Text(
-              post.createdAt.toRelativeTime(),
-              style: AppTypography.caption,
-            ),
-            const SizedBox(height: 16),
-            // Divider
-            Divider(color: AppColors.border),
-            const SizedBox(height: 16),
-            // Stats
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStat(Formatters.formatNumber(post.likes), 'Likes'),
-                _buildStat(Formatters.formatNumber(post.comments), 'Comments'),
-                _buildStat(Formatters.formatNumber(post.shares), 'Shares'),
-                _buildStat(Formatters.formatNumber(post.saves), 'Saves'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Divider(color: AppColors.border),
-            const SizedBox(height: 16),
-            // Actions
-            PostActionsSection(post: post),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            CachedNetworkImage(imageUrl: post.authorAvatar, imageBuilder: (_, img) => CircleAvatar(radius: 22, backgroundImage: img),
+              placeholder: (_, __) => const CircleAvatar(radius: 22, backgroundColor: AppColors.border),
+              errorWidget: (_, __, ___) => const CircleAvatar(radius: 22, backgroundColor: AppColors.border, child: Icon(Icons.person))),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(post.authorName, style: AppTypography.labelLarge),
+              Text(post.authorUsername, style: AppTypography.caption),
+            ]),
+          ]),
+          const SizedBox(height: 16),
+          Text(post.content, style: AppTypography.bodyLarge),
+          if (post.mediaUrls.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(imageUrl: post.mediaUrls[0], fit: BoxFit.cover,
+                placeholder: (_, __) => Container(height: 250, color: AppColors.border),
+                errorWidget: (_, __, ___) => Container(height: 250, color: AppColors.border, child: const Icon(Icons.image)))),
           ],
-        ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.border),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+              builder: (_) => CommentsSheet(post: post)),
+            child: Text('View all ${post.comments} comments', style: AppTypography.caption.copyWith(color: AppColors.primary))),
+        ]),
       ),
-    );
-  }
-
-  Widget _buildStat(String count, String label) {
-    return Column(
-      children: [
-        Text(count, style: AppTypography.labelLarge),
-        Text(label, style: AppTypography.caption),
-      ],
     );
   }
 }
