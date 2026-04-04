@@ -1,215 +1,210 @@
-// lib/presentation/providers/posts_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/di/service_locator.dart';
-import '../../domain/usecases/posts/get_posts_usecase.dart';
+import '../../core/di/injection.dart';
+import '../../domain/entities/post_entity.dart';
 import '../../domain/usecases/posts/create_post_usecase.dart';
+import '../../domain/usecases/posts/delete_post_usecase.dart';
+import '../../domain/usecases/posts/get_feed_usecase.dart';
 import '../../domain/usecases/posts/like_post_usecase.dart';
-import '../../domain/usecases/posts/unlike_post_usecase.dart';
-import '../../domain/usecases/posts/save_post_usecase.dart';
-import '../../domain/usecases/posts/get_saved_posts_usecase.dart';
-import '../../data/models/post_model.dart';
+import '../../core/usecases/usecase.dart';
 
-final postsProvider = StateNotifierProvider<PostsNotifier, PostsState>((ref) {
-  return PostsNotifier();
-});
-
+/// Posts state
 class PostsState {
-  final List<PostModel> posts;
-  final List<PostModel> savedPosts;
   final bool isLoading;
-  final bool isSavingPost;
+  final bool isLoadingMore;
+  final List<PostEntity> posts;
   final String? error;
+  final bool hasMore;
   final int currentPage;
-  final bool hasMorePosts;
 
-  PostsState({
-    required this.posts,
-    required this.savedPosts,
-    required this.isLoading,
-    required this.isSavingPost,
+  const PostsState({
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.posts = const [],
     this.error,
-    required this.currentPage,
-    required this.hasMorePosts,
+    this.hasMore = true,
+    this.currentPage = 1,
   });
 
   PostsState copyWith({
-    List<PostModel>? posts,
-    List<PostModel>? savedPosts,
     bool? isLoading,
-    bool? isSavingPost,
+    bool? isLoadingMore,
+    List<PostEntity>? posts,
     String? error,
+    bool? hasMore,
     int? currentPage,
-    bool? hasMorePosts,
   }) {
     return PostsState(
-      posts: posts ?? this.posts,
-      savedPosts: savedPosts ?? this.savedPosts,
       isLoading: isLoading ?? this.isLoading,
-      isSavingPost: isSavingPost ?? this.isSavingPost,
-      error: error ?? this.error,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      posts: posts ?? this.posts,
+      error: error,
+      hasMore: hasMore ?? this.hasMore,
       currentPage: currentPage ?? this.currentPage,
-      hasMorePosts: hasMorePosts ?? this.hasMorePosts,
     );
   }
 }
 
+/// Posts state notifier
 class PostsNotifier extends StateNotifier<PostsState> {
-  final _getPostsUsecase = getIt<GetPostsUsecase>();
-  final _createPostUsecase = getIt<CreatePostUsecase>();
-  final _likePostUsecase = getIt<LikePostUsecase>();
-  final _unlikePostUsecase = getIt<UnlikePostUsecase>();
-  final _savePostUsecase = getIt<SavePostUsecase>();
-  final _getSavedPostsUsecase = getIt<GetSavedPostsUsecase>();
+  final GetFeedUseCase _getFeedUseCase;
+  final CreatePostUseCase _createPostUseCase;
+  final LikePostUseCase _likePostUseCase;
+  final DeletePostUseCase _deletePostUseCase;
 
-  PostsNotifier()
-      : super(PostsState(
-          posts: _generateMockPosts(),
-          savedPosts: [],
-          isLoading: false,
-          isSavingPost: false,
-          currentPage: 0,
-          hasMorePosts: true,
-        ));
+  PostsNotifier(
+    this._getFeedUseCase,
+    this._createPostUseCase,
+    this._likePostUseCase,
+    this._deletePostUseCase,
+  ) : super(const PostsState());
 
-  static List<PostModel> _generateMockPosts() {
-    return List.generate(10, (i) => PostModel(
-      id: '$i',
-      authorId: 'user_$i',
-      authorName: 'User ${i + 1}',
-      authorUsername: '@user${i + 1}',
-      authorAvatar: 'https://i.pravatar.cc/150?img=$i',
-      content: 'This is an amazing post! Check out this incredible content. #setrise #viral #trending',
-      mediaUrls: ['https://via.placeholder.com/500x300?text=Post+${i + 1}'],
-      createdAt: DateTime.now().subtract(Duration(hours: i)),
-      likes: (i + 1) * 234,
-      comments: (i + 1) * 45,
-      shares: (i + 1) * 12,
-      saves: (i + 1) * 8,
-      isLiked: false,
-      isShared: false,
-      isSaved: false,
-      isFollowing: false,
-      mentionedUsers: [],
-      hashtags: ['setrise', 'viral', 'trending'],
-    ));
-  }
+  /// Get feed
+  Future<void> getFeed({bool refresh = false}) async {
+    if (refresh) {
+      state = const PostsState(isLoading: true);
+    } else if (state.isLoadingMore || !state.hasMore) {
+      return;
+    } else {
+      state = state.copyWith(isLoadingMore: true);
+    }
 
-  Future<void> loadPosts() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await _getPostsUsecase(state.currentPage);
+    final page = refresh ? 1 : state.currentPage + 1;
+
+    final result = await _getFeedUseCase(
+      PaginationParams(page: page, limit: 20),
+    );
+
     result.fold(
       (failure) {
         state = state.copyWith(
           isLoading: false,
+          isLoadingMore: false,
           error: failure.message,
         );
       },
-      (posts) {
+      (newPosts) {
+        final posts = refresh ? newPosts : [...state.posts, ...newPosts];
         state = state.copyWith(
-          posts: posts.cast<PostModel>(),
           isLoading: false,
-          hasMorePosts: posts.length >= 20,
+          isLoadingMore: false,
+          posts: posts,
+          hasMore: newPosts.length >= 20,
+          currentPage: page,
+          error: null,
         );
       },
     );
   }
 
-  Future<void> loadMorePosts() async {
-    if (!state.hasMorePosts || state.isLoading) return;
-    
-    final newPage = state.currentPage + 1;
-    final result = await _getPostsUsecase(newPage);
-    result.fold(
-      (failure) {
-        state = state.copyWith(error: failure.message);
-      },
-      (posts) {
-        state = state.copyWith(
-          posts: [...state.posts, ...posts.cast<PostModel>()],
-          currentPage: newPage,
-          hasMorePosts: posts.length >= 20,
-        );
-      },
-    );
-  }
+  /// Create post
+  Future<bool> createPost({
+    required String content,
+    List<String>? mediaUrls,
+  }) async {
+    state = state.copyWith(isLoading: true);
 
-  Future<void> createPost(String content, List<String> mediaUrls) async {
-    state = state.copyWith(isSavingPost: true);
-    final result = await _createPostUsecase(content, mediaUrls);
-    result.fold(
+    final result = await _createPostUseCase(
+      CreatePostParams(
+        content: content,
+        mediaUrls: mediaUrls,
+      ),
+    );
+
+    return result.fold(
       (failure) {
         state = state.copyWith(
-          isSavingPost: false,
+          isLoading: false,
           error: failure.message,
         );
+        return false;
       },
       (post) {
         state = state.copyWith(
-          posts: [post as PostModel, ...state.posts],
-          isSavingPost: false,
+          isLoading: false,
+          posts: [post, ...state.posts],
+          error: null,
         );
+        return true;
       },
     );
   }
 
-  void toggleLike(String postId) async {
-    final post = state.posts.firstWhere((p) => p.id == postId);
-    if (post.isLiked) {
-      final result = await _unlikePostUsecase(postId);
-      result.fold(
-        (failure) {},
-        (updatedPost) {
-          final index = state.posts.indexWhere((p) => p.id == postId);
-          final updatedPosts = [...state.posts];
-          updatedPosts[index] = updatedPost as PostModel;
-          state = state.copyWith(posts: updatedPosts);
-        },
-      );
-    } else {
-      final result = await _likePostUsecase(postId);
-      result.fold(
-        (failure) {},
-        (updatedPost) {
-          final index = state.posts.indexWhere((p) => p.id == postId);
-          final updatedPosts = [...state.posts];
-          updatedPosts[index] = updatedPost as PostModel;
-          state = state.copyWith(posts: updatedPosts);
-        },
-      );
-    }
-  }
+  /// Like post
+  Future<void> likePost(String postId) async {
+    // Optimistic update
+    final updatedPosts = state.posts.map((post) {
+      if (post.id == postId) {
+        return post.copyWith(
+          isLiked: !post.isLiked,
+          likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
+        );
+      }
+      return post;
+    }).toList();
 
-  void toggleSave(String postId) async {
-    final post = state.posts.firstWhere((p) => p.id == postId);
-    if (post.isSaved) {
-      // Unsave
-    } else {
-      final result = await _savePostUsecase(postId);
-      result.fold(
-        (failure) {},
-        (updatedPost) {
-          final index = state.posts.indexWhere((p) => p.id == postId);
-          final updatedPosts = [...state.posts];
-          updatedPosts[index] = updatedPost as PostModel;
-          state = state.copyWith(posts: updatedPosts);
-        },
-      );
-    }
-  }
+    state = state.copyWith(posts: updatedPosts);
 
-  Future<void> loadSavedPosts() async {
-    state = state.copyWith(isLoading: true);
-    final result = await _getSavedPostsUsecase();
+    final result = await _likePostUseCase(IdParams(postId));
+
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
+        // Revert on failure
+        final revertedPosts = state.posts.map((post) {
+          if (post.id == postId) {
+            return post.copyWith(
+              isLiked: !post.isLiked,
+              likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
+            );
+          }
+          return post;
+        }).toList();
+        state = state.copyWith(posts: revertedPosts);
       },
-      (posts) {
-        state = state.copyWith(
-          savedPosts: posts.cast<PostModel>(),
-          isLoading: false,
-        );
+      (_) {
+        // Success - already updated optimistically
       },
     );
   }
+
+  /// Delete post
+  Future<bool> deletePost(String postId) async {
+    final result = await _deletePostUseCase(IdParams(postId));
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(error: failure.message);
+        return false;
+      },
+      (_) {
+        final updatedPosts = state.posts.where((p) => p.id != postId).toList();
+        state = state.copyWith(posts: updatedPosts);
+        return true;
+      },
+    );
+  }
+
+  /// Refresh feed
+  Future<void> refresh() async {
+    await getFeed(refresh: true);
+  }
+
+  /// Load more
+  Future<void> loadMore() async {
+    await getFeed(refresh: false);
+  }
+
+  /// Clear error
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
 }
+
+/// Posts provider
+final postsProvider = StateNotifierProvider<PostsNotifier, PostsState>(
+  (ref) => PostsNotifier(
+    getIt<GetFeedUseCase>(),
+    getIt<CreatePostUseCase>(),
+    getIt<LikePostUseCase>(),
+    getIt<DeletePostUseCase>(),
+  ),
+);
