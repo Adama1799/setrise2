@@ -1,314 +1,107 @@
-// lib/presentation/screens/shop/product_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
+import '../../providers/shop_provider.dart';
 
-class ProductDetailScreen extends StatefulWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
-
-  const ProductDetailScreen({
-    super.key,
-    required this.productId,
-  });
-
+  const ProductDetailScreen({super.key, required this.productId});
   @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  ConsumerState<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _quantity = 1;
-  int _selectedImageIndex = 0;
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  int _qty = 1;
+  bool _inCart = false;
 
   @override
   Widget build(BuildContext context) {
-    // Mock product
-    final product = {
-      'id': widget.productId,
-      'name': 'Premium Wireless Headphones',
-      'price': 89.99,
-      'originalPrice': 149.99,
-      'rating': 4.8,
-      'reviews': 2543,
-      'stock': 45,
-      'images': [
-        'https://via.placeholder.com/500x500?text=Product+1',
-        'https://via.placeholder.com/500x500?text=Product+2',
-        'https://via.placeholder.com/500x500?text=Product+3',
-      ],
-      'description':
-          'Premium quality wireless headphones with active noise cancellation, 30-hour battery life, and premium sound quality.',
-      'features': [
-        'Active Noise Cancellation',
-        '30-hour battery',
-        'Bluetooth 5.0',
-        'Comfortable design',
-      ],
-    };
+    final shopState = ref.watch(shopProvider);
+    final product = shopState.products.where((p) => p.id == widget.productId).isNotEmpty
+        ? shopState.products.firstWhere((p) => p.id == widget.productId)
+        : shopState.products.isNotEmpty ? shopState.products.first : null;
+
+    if (product == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0.5,
-        title: const Text('Product Details'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Carousel
-            Column(
-              children: [
-                Container(
-                  height: 300,
-                  color: AppColors.surface,
-                  child: PageView.builder(
-                    onPageChanged: (index) {
-                      setState(() => _selectedImageIndex = index);
-                    },
-                    itemCount: product['images'].length,
-                    itemBuilder: (context, index) {
-                      return CachedNetworkImage(
-                        imageUrl: product['images'][index],
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Image Indicators
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    product['images'].length,
-                    (index) => Container(
-                      width: _selectedImageIndex == index ? 24 : 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: _selectedImageIndex == index
-                            ? AppColors.primary
-                            : AppColors.border,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Product Info
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name
-                  Text(
-                    product['name'],
-                    style: AppTypography.h3,
-                  ),
-                  const SizedBox(height: 12),
-                  // Rating
-                  Row(
-                    children: [
-                      Row(
-                        children: List.generate(
-                          5,
-                          (i) => Icon(
-                            Icons.star,
-                            color: i < 4 ? AppColors.primary : AppColors.border,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '${product['rating']} (${product['reviews']} reviews)',
-                        style: AppTypography.bodySmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Price
-                  Row(
-                    children: [
-                      Text(
-                        Formatters.formatPrice(product['price']),
-                        style: AppTypography.h2.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        Formatters.formatPrice(product['originalPrice']),
-                        style: AppTypography.bodyLarge.copyWith(
-                          decoration: TextDecoration.lineThrough,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.live.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Save 40%',
-                          style: TextStyle(
-                            color: AppColors.live,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Description
-                  Text(
-                    'Description',
-                    style: AppTypography.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    product['description'],
-                    style: AppTypography.bodySmall,
-                  ),
-                  const SizedBox(height: 20),
-                  // Features
-                  Text(
-                    'Features',
-                    style: AppTypography.labelLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  ...List.generate(
-                    product['features'].length,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle,
-                              color: AppColors.green, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            product['features'][i],
-                            style: AppTypography.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Quantity Selector
-                  Row(
-                    children: [
-                      Text(
-                        'Quantity',
-                        style: AppTypography.labelLarge,
-                      ),
-                      const Spacer(),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              onPressed: _quantity > 1
-                                  ? () => setState(() => _quantity--)
-                                  : null,
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                '$_quantity',
-                                style: AppTypography.labelLarge,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 18),
-                              onPressed: _quantity < product['stock']
-                                  ? () => setState(() => _quantity++)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Add to Cart Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Added $_quantity item(s) to cart',
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                      ),
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Buy Now Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
-                      ),
-                      child: const Text(
-                        'Buy Now',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
+      body: CustomScrollView(slivers: [
+        SliverAppBar(
+          expandedHeight: 320, pinned: true, backgroundColor: AppColors.background,
+          leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => Navigator.pop(context)),
+          actions: [
+            IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.shopping_cart_outlined), onPressed: () {}),
           ],
+          flexibleSpace: FlexibleSpaceBar(
+            background: product.images.isNotEmpty
+                ? CachedNetworkImage(imageUrl: product.images[0], fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(color: AppColors.border))
+                : Container(color: AppColors.border, child: const Icon(Icons.inventory_2_outlined, size: 80, color: AppColors.textTertiary)),
+          ),
         ),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (product.onSale) Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(6)),
+              child: Text('-${product.discount}% OFF', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: 'Inter'))),
+            const SizedBox(height: 8),
+            Text(product.name, style: AppTypography.headlineLarge),
+            const SizedBox(height: 8),
+            Row(children: [
+              ...List.generate(5, (i) => Icon(Icons.star, size: 16, color: i < product.rating.floor() ? Colors.amber : AppColors.border)),
+              const SizedBox(width: 8),
+              Text('${product.rating} (${Formatters.formatNumber(product.reviewsCount)} reviews)', style: AppTypography.caption),
+            ]),
+            const SizedBox(height: 12),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(Formatters.formatPrice(product.price), style: AppTypography.headlineLarge.copyWith(color: AppColors.primary)),
+              if (product.onSale) ...[const SizedBox(width: 10),
+                Text(Formatters.formatPrice(product.originalPrice), style: AppTypography.bodySmall.copyWith(decoration: TextDecoration.lineThrough))],
+            ]),
+            const SizedBox(height: 16),
+            Row(children: [
+              const Text('Qty:', style: TextStyle(fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              const SizedBox(width: 12),
+              GestureDetector(onTap: () { if (_qty > 1) setState(() => _qty--); },
+                child: Container(width: 32, height: 32, decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.remove, size: 16))),
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('$_qty', style: AppTypography.labelLarge)),
+              GestureDetector(onTap: () => setState(() => _qty++),
+                child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.add, color: AppColors.white, size: 16))),
+            ]),
+            const SizedBox(height: 20),
+            Text('Description', style: AppTypography.h3),
+            const SizedBox(height: 8),
+            Text(product.description.isNotEmpty ? product.description : 'High-quality product. ${product.stock} items in stock.',
+              style: AppTypography.bodySmall),
+            const SizedBox(height: 100),
+          ]),
+        )),
+      ]),
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12, left: 16, right: 16),
+        decoration: const BoxDecoration(color: AppColors.surface, border: Border(top: BorderSide(color: AppColors.border))),
+        child: Row(children: [
+          GestureDetector(
+            onTap: () { setState(() => _inCart = !_inCart); ref.read(shopProvider.notifier).toggleFavorite(product.id); },
+            child: Container(height: 52, width: 100,
+              decoration: BoxDecoration(border: Border.all(color: _inCart ? AppColors.primary : AppColors.border, width: 1.5), borderRadius: BorderRadius.circular(14)),
+              child: Center(child: Text(_inCart ? '✓ Cart' : 'Add Cart',
+                style: TextStyle(color: _inCart ? AppColors.primary : AppColors.textPrimary, fontWeight: FontWeight.bold, fontFamily: 'Inter'))))),
+          const SizedBox(width: 12),
+          Expanded(child: GestureDetector(
+            onTap: () {},
+            child: Container(height: 52,
+              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(14)),
+              child: Center(child: Text('Buy Now · ${Formatters.formatPrice(product.price * _qty)}',
+                style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontFamily: 'Inter')))))),
+        ]),
       ),
     );
   }
