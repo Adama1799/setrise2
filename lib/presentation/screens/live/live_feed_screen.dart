@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../providers/live_provider.dart';
 import '../../widgets/live/live_card.dart';
+import 'live_room_screen.dart';
 
 class LiveFeedScreen extends ConsumerStatefulWidget {
   const LiveFeedScreen({super.key});
