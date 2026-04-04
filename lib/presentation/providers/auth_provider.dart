@@ -1,61 +1,62 @@
-// lib/presentation/providers/auth_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/di/service_locator.dart';
+import '../../core/di/injection.dart';
+import '../../domain/entities/user_entity.dart';
 import '../../domain/usecases/auth/login_usecase.dart';
-import '../../domain/usecases/auth/register_usecase.dart';
 import '../../domain/usecases/auth/logout_usecase.dart';
-import '../../data/models/user_model.dart';
+import '../../domain/usecases/auth/register_usecase.dart';
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
-});
-
+/// Authentication state
 class AuthState {
-  final bool isAuthenticated;
   final bool isLoading;
-  final UserModel? user;
+  final bool isAuthenticated;
+  final UserEntity? user;
   final String? error;
-  final String? token;
 
-  AuthState({
-    required this.isAuthenticated,
-    required this.isLoading,
+  const AuthState({
+    this.isLoading = false,
+    this.isAuthenticated = false,
     this.user,
     this.error,
-    this.token,
   });
 
   AuthState copyWith({
-    bool? isAuthenticated,
     bool? isLoading,
-    UserModel? user,
+    bool? isAuthenticated,
+    UserEntity? user,
     String? error,
-    String? token,
   }) {
     return AuthState(
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isLoading: isLoading ?? this.isLoading,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       user: user ?? this.user,
-      error: error ?? this.error,
-      token: token ?? this.token,
+      error: error,
     );
   }
 }
 
+/// Authentication state notifier
 class AuthNotifier extends StateNotifier<AuthState> {
-  final _loginUsecase = getIt<LoginUsecase>();
-  final _registerUsecase = getIt<RegisterUsecase>();
-  final _logoutUsecase = getIt<LogoutUsecase>();
+  final LoginUseCase _loginUseCase;
+  final RegisterUseCase _registerUseCase;
+  final LogoutUseCase _logoutUseCase;
 
-  AuthNotifier()
-      : super(AuthState(
-          isAuthenticated: false,
-          isLoading: false,
-        ));
+  AuthNotifier(
+    this._loginUseCase,
+    this._registerUseCase,
+    this._logoutUseCase,
+  ) : super(const AuthState());
 
-  Future<void> login(String email, String password) async {
+  /// Login
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _loginUsecase(email, password);
+
+    final result = await _loginUseCase(
+      LoginParams(email: email, password: password),
+    );
+
     result.fold(
       (failure) {
         state = state.copyWith(
@@ -65,17 +66,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
       },
       (user) {
         state = state.copyWith(
-          isAuthenticated: true,
           isLoading: false,
-          user: user as UserModel,
+          isAuthenticated: true,
+          user: user,
+          error: null,
         );
       },
     );
   }
 
-  Future<void> register(String name, String email, String password, String username) async {
+  /// Register
+  Future<void> register({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _registerUsecase(name, email, password, username);
+
+    final result = await _registerUseCase(
+      RegisterParams(
+        username: username,
+        email: email,
+        password: password,
+      ),
+    );
+
     result.fold(
       (failure) {
         state = state.copyWith(
@@ -85,17 +100,57 @@ class AuthNotifier extends StateNotifier<AuthState> {
       },
       (user) {
         state = state.copyWith(
-          isAuthenticated: true,
           isLoading: false,
-          user: user as UserModel,
+          isAuthenticated: true,
+          user: user,
+          error: null,
         );
       },
     );
   }
 
+  /// Logout
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
-    await _logoutUsecase();
-    state = AuthState(isAuthenticated: false, isLoading: false);
+
+    final result = await _logoutUseCase(const NoParams());
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: failure.message,
+        );
+      },
+      (_) {
+        state = const AuthState(
+          isLoading: false,
+          isAuthenticated: false,
+          user: null,
+        );
+      },
+    );
+  }
+
+  /// Clear error
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+
+  /// Set user
+  void setUser(UserEntity user) {
+    state = state.copyWith(
+      isAuthenticated: true,
+      user: user,
+    );
   }
 }
+
+/// Auth provider
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
+  (ref) => AuthNotifier(
+    getIt<LoginUseCase>(),
+    getIt<RegisterUseCase>(),
+    getIt<LogoutUseCase>(),
+  ),
+);
