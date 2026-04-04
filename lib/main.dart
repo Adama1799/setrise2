@@ -1,7 +1,6 @@
 // lib/main.dart (Final - Cross-Platform)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'core/storage/storage_adapter.dart';
