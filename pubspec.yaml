@@ -1,5 +1,5 @@
 name: setrise
-description: SetRise - Complete Social Media Platform (Android, iOS, Web)
+description: SetRise - Complete Social Media Platform
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -16,6 +16,7 @@ dependencies:
   
   # Networking
   dio: ^5.3.1
+  connectivity_plus: ^5.0.2
   
   # Local Storage
   hive: ^2.2.3
@@ -23,12 +24,12 @@ dependencies:
   shared_preferences: ^2.2.2
   
   # Routing
-  go_router: ^11.0.0
+  go_router: ^12.0.0
   
   # Image & Media
   cached_network_image: ^3.3.0
-  video_player: ^2.7.0
-  image_picker: ^1.0.0
+  video_player: ^2.8.0
+  image_picker: ^1.0.4
   
   # Functional
   dartz: ^0.10.1
@@ -38,15 +39,12 @@ dependencies:
   
   # Utils
   intl: ^0.19.0
-  uuid: ^4.0.0
+  uuid: ^4.2.1
   timeago: ^3.6.0
   
   # Platform specific
-  universal_platform: ^1.0.0
-  url_launcher: ^6.2.0
-  path_provider: ^2.1.0
-  flutter_web_plugins:
-    sdk: flutter
+  url_launcher: ^6.2.1
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:
