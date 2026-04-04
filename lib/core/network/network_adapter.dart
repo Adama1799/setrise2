@@ -1,6 +1,9 @@
 // lib/core/network/network_adapter.dart
+// BUG FIX: Was importing UniversalPlatform from '../utils/universal_platform.dart'
+//           which resolves to lib/core/utils/universal_platform.dart (DOESN'T EXIST)
+//           Correct path is lib/presentation/utils/universal_platform.dart
 import 'package:dio/dio.dart';
-import '../utils/universal_platform.dart';
+import '../../presentation/utils/universal_platform.dart'; // ✅ FIXED import path
 
 class NetworkAdapter {
   static Dio setupDio() {
@@ -10,19 +13,26 @@ class NetworkAdapter {
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         contentType: 'application/json',
-        // Add certificates for iOS/Android
         headers: {
           'User-Agent': _getUserAgent(),
+          'Accept': 'application/json',
         },
       ),
     );
 
-    // Add interceptors
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
           print('📤 REQUEST: ${options.method} ${options.path}');
           return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          print('📥 RESPONSE: ${response.statusCode}');
+          return handler.next(response);
+        },
+        onError: (error, handler) {
+          print('❌ ERROR: ${error.message}');
+          return handler.next(error);
         },
       ),
     );
@@ -31,14 +41,9 @@ class NetworkAdapter {
   }
 
   static String _getUserAgent() {
-    if (UniversalPlatform.isWeb) {
-      return 'SetRise/Web';
-    } else if (UniversalPlatform.isAndroid) {
-      return 'SetRise/Android';
-    } else if (UniversalPlatform.isIOS) {
-      return 'SetRise/iOS';
-    } else {
-      return 'SetRise/Desktop';
-    }
+    if (UniversalPlatform.isWeb) return 'SetRise/Web';
+    if (UniversalPlatform.isAndroid) return 'SetRise/Android';
+    if (UniversalPlatform.isIOS) return 'SetRise/iOS';
+    return 'SetRise/Desktop';
   }
 }
