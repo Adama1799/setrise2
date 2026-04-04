@@ -1,209 +1,78 @@
-// lib/presentation/screens/profile/user_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatters.dart';
-import '../../providers/users_provider.dart';
-import '../../providers/posts_provider.dart';
-import '../../widgets/post/post_card.dart';
 
-class UserProfileScreen extends ConsumerStatefulWidget {
+class UserProfileScreen extends ConsumerWidget {
   final String userId;
-
-  const UserProfileScreen({
-    super.key,
-    required this.userId,
-  });
+  const UserProfileScreen({super.key, required this.userId});
 
   @override
-  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
-}
-
-class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(usersProvider.notifier).getUser(widget.userId);
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final usersState = ref.watch(usersProvider);
-    final user = usersState.currentUser;
-
-    if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isMe = userId == 'me';
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            backgroundColor: AppColors.background,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Column(
-                children: [
-                  // Cover Image
-                  Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      image: user.coverImage.isNotEmpty
-                          ? DecorationImage(
-                              image: CachedNetworkImageProvider(user.coverImage),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                  ),
-                  // Avatar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Transform.translate(
-                      offset: const Offset(0, -30),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColors.surface,
-                        backgroundImage:
-                            CachedNetworkImageProvider(user.avatar),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // User Info
-                  Text(user.name, style: AppTypography.h3),
-                  Text(user.username, style: AppTypography.caption),
-                  const SizedBox(height: 8),
-                  Text(
-                    user.bio,
-                    style: AppTypography.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  // Follow Button
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(usersProvider.notifier).toggleFollow(user.id);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: user.isFollowing
-                          ? AppColors.surface
-                          : AppColors.textPrimary,
-                    ),
-                    child: Text(
-                      user.isFollowing ? 'Following' : 'Follow',
-                      style: TextStyle(
-                        color: user.isFollowing
-                            ? AppColors.textPrimary
-                            : AppColors.background,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        body: Column(
-          children: [
-            // Stats
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.border),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatColumn(
-                    Formatters.formatNumber(user.followers),
-                    'Followers',
-                  ),
-                  _buildStatColumn(
-                    Formatters.formatNumber(user.following),
-                    'Following',
-                  ),
-                  _buildStatColumn(
-                    Formatters.formatNumber(user.postsCount),
-                    'Posts',
-                  ),
-                ],
-              ),
-            ),
-            // Tabs
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Posts'),
-                Tab(text: 'Replies'),
-              ],
-              labelColor: AppColors.textPrimary,
-              unselectedLabelColor: AppColors.textTertiary,
-              indicatorColor: AppColors.textPrimary,
-            ),
-            // Tab Content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Posts Tab
-                  ListView.builder(
-                    itemCount: 5,
-                    itemBuilder: (context, index) {
-                      return PostCard(
-                        post: null,
-                        onLike: () {},
-                        onComment: () {},
-                        onShare: () {},
-                        onSave: () {},
-                        onFollow: () {},
-                      );
-                    },
-                  ),
-                  // Replies Tab
-                  Center(
-                    child: Text(
-                      'No replies yet',
-                      style: AppTypography.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      body: CustomScrollView(slivers: [
+        SliverAppBar(
+          backgroundColor: AppColors.background, pinned: true, elevation: 0,
+          leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => Navigator.pop(context)),
+          actions: [IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {})],
         ),
-      ),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              CircleAvatar(radius: 40, backgroundColor: AppColors.primary.withOpacity(0.1),
+                child: const Icon(Icons.person, size: 44, color: AppColors.primary)),
+              const SizedBox(width: 20),
+              Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                _stat('Posts', '42'),
+                _stat('Followers', '12.4K'),
+                _stat('Following', '380'),
+              ])),
+            ]),
+            const SizedBox(height: 12),
+            Text(isMe ? 'My Profile' : 'User $userId', style: AppTypography.headlineMedium),
+            Text(isMe ? '@me' : '@user$userId', style: AppTypography.caption),
+            const SizedBox(height: 8),
+            Text('Building something amazing 🚀 | SetRise Creator', style: AppTypography.bodySmall),
+            const SizedBox(height: 16),
+            if (!isMe) Row(children: [
+              Expanded(child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: () {},
+                child: const Text('Follow', style: TextStyle(color: AppColors.white, fontFamily: 'Inter')))),
+              const SizedBox(width: 10),
+              Expanded(child: OutlinedButton(
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: () {},
+                child: const Text('Message', style: TextStyle(fontFamily: 'Inter')))),
+            ]),
+            if (isMe) SizedBox(width: double.infinity,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: () {},
+                child: const Text('Edit Profile', style: TextStyle(fontFamily: 'Inter')))),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.border),
+          ]),
+        )),
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 2, mainAxisSpacing: 2),
+          delegate: SliverChildBuilderDelegate(
+            (_, i) => Container(color: AppColors.border.withOpacity(0.3),
+              child: Center(child: Icon(Icons.image_outlined, color: AppColors.textTertiary))),
+            childCount: 12,
+          ),
+        ),
+      ]),
     );
   }
 
-  Widget _buildStatColumn(String count, String label) {
-    return Column(
-      children: [
-        Text(count, style: AppTypography.labelLarge),
-        const SizedBox(height: 4),
-        Text(label, style: AppTypography.caption),
-      ],
-    );
+  Widget _stat(String label, String value) {
+    return Column(children: [
+      Text(value, style: AppTypography.headlineMedium),
+      Text(label, style: AppTypography.caption),
+    ]);
   }
 }
