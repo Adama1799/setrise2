@@ -1,5 +1,6 @@
-Enterpackage com.setrise.app
+package com.setrise.app
 
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity: FlutterActivity()
+class MainActivity: FlutterActivity() {
+}
