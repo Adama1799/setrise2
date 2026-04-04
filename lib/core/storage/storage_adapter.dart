@@ -1,30 +1,26 @@
 // lib/core/storage/storage_adapter.dart
-import 'package:path_provider/path_provider.dart';
-import 'package:hive/hive.dart';
-import '../utils/universal_platform.dart';
-import 'dart:io';
+// BUG FIX: Was importing 'dart:io' which crashes on Web platform
+//           Also Hive.init() on web needs to use hive_flutter's initFlutter()
+import 'package:hive_flutter/hive_flutter.dart'; // ✅ handles web + mobile
+import '../utils/logger.dart';
 
 class StorageAdapter {
   static Future<void> initStorage() async {
-    if (UniversalPlatform.isWeb) {
-      // Web uses IndexedDB
-      Hive.init('setrise_db');
-    } else {
-      // Mobile and Desktop
-      final appDocDir = await getApplicationDocumentsDirectory();
-      Hive.init(appDocDir.path);
-    }
-  }
-
-  static Future<String> getStoragePath() async {
-    if (UniversalPlatform.isWeb) {
-      return 'setrise_db';
-    }
-    final dir = await getApplicationDocumentsDirectory();
-    return dir.path;
+    // ✅ hive_flutter's initFlutter() handles both web (IndexedDB) and mobile (filesystem)
+    await Hive.initFlutter();
+    Logger.log('✅ Storage initialized');
   }
 
   static Future<void> clearStorage() async {
-    await Hive.deleteFromDisk();
+    try {
+      await Hive.deleteFromDisk();
+    } catch (e) {
+      Logger.error('Failed to clear storage: $e');
+    }
+  }
+
+  static Future<Box<T>> openBox<T>(String name) async {
+    if (Hive.isBoxOpen(name)) return Hive.box<T>(name);
+    return await Hive.openBox<T>(name);
   }
 }
