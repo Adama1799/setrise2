@@ -34,7 +34,7 @@ class _DatingDiscoverScreenState extends ConsumerState<DatingDiscoverScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('🔥 Discover', style: AppTypography.h2),
+        title: Text('🔥 Discover', style: AppTypography.h2),
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite_border, color: AppColors.dateColor),

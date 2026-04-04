@@ -1,141 +1,53 @@
-// lib/presentation/screens/dating/matches_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../providers/dating_provider.dart';
 
-class MatchesScreen extends ConsumerStatefulWidget {
+class MatchesScreen extends ConsumerWidget {
   const MatchesScreen({super.key});
-
   @override
-  ConsumerState<MatchesScreen> createState() => _MatchesScreenState();
-}
-
-class _MatchesScreenState extends ConsumerState<MatchesScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(datingProvider.notifier).loadMatches();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final datingState = ref.watch(datingProvider);
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matches = ref.watch(datingProvider).matches;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text('❤️ Matches', style: AppTypography.h2),
+        backgroundColor: AppColors.background, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => Navigator.pop(context)),
+        title: Text('Matches 💛', style: AppTypography.h2),
+        centerTitle: true,
       ),
-      body: datingState.matches.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.favorite_outline,
-                    size: 80,
-                    color: AppColors.textTertiary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text('No matches yet', style: AppTypography.h3),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Start liking profiles to make matches',
-                    style: AppTypography.caption,
-                  ),
-                ],
-              ),
-            )
+      body: matches.isEmpty
+          ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Text('💛', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              Text('No matches yet', style: AppTypography.h3),
+              const SizedBox(height: 8),
+              Text('Keep swiping!', style: AppTypography.caption),
+            ]))
           : GridView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.85,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: datingState.matches.length,
-              itemBuilder: (context, index) {
-                final match = datingState.matches[index];
-                return GestureDetector(
-                  onTap: () {
-                    // Navigate to chat
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: CachedNetworkImage(
-                            imageUrl: match.photos[0],
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                AppColors.black.withOpacity(0.7),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          right: 12,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                match.name,
-                                style: AppTypography.labelLarge.copyWith(
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.favorite,
-                                    color: AppColors.dateColor,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Matched',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.dateColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.75),
+              itemCount: matches.length,
+              itemBuilder: (_, i) {
+                final m = matches[i];
+                return Container(
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: AppColors.surface,
+                    boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.08), blurRadius: 10)]),
+                  child: Column(children: [
+                    Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: Image.network(m.photos.isNotEmpty ? m.photos[0] : '', fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(color: AppColors.border, child: const Icon(Icons.person, size: 60, color: AppColors.textTertiary))))),
+                    Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${m.name}, ${m.age}', style: AppTypography.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(m.location, style: AppTypography.caption),
+                      const SizedBox(height: 6),
+                      SizedBox(width: double.infinity, height: 32,
+                        child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: AppColors.dateColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                          onPressed: () {}, child: const Text('Message', style: TextStyle(color: AppColors.white, fontSize: 12, fontFamily: 'Inter')))),
+                    ])),
+                  ]),
                 );
               },
             ),
