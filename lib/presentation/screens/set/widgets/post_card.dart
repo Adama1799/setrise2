@@ -1,4 +1,4 @@
-hereimport 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
@@ -166,7 +166,7 @@ class _PostCardState extends State<PostCard>
                 ),
               ),
 
-              // Interested Label
+              // INTERESTED Label
               if (isRight)
                 Positioned(
                   top: 100,
@@ -194,7 +194,7 @@ class _PostCardState extends State<PostCard>
                   ),
                 ),
 
-              // Skip Label
+              // SKIP Label
               if (isLeft)
                 Positioned(
                   top: 100,
@@ -222,24 +222,23 @@ class _PostCardState extends State<PostCard>
                   ),
                 ),
 
-              // Double Tap Heart
+              // Double Tap Heart Animation
               if (_showHeart)
                 Center(
                   child: ScaleTransition(
                     scale: _heartAnimation,
-                    child: const Icon(
-                      Icons.favorite,
-                      color: AppColors.like,
+                    child: _FourPointStar(
                       size: 120,
+                      color: AppColors.neonYellow,
                     ),
                   ),
                 ),
 
-              // Right Actions
+              // Right Actions Bar
               Positioned(
                 right: 10,
                 bottom: 75,
-                child: _buildActions(),
+                child: _buildActionsBar(),
               ),
 
               // Bottom Info
@@ -256,45 +255,85 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  Widget _buildActions() {
+  // ===== ACTIONS BAR =====
+  Widget _buildActionsBar() {
     return Column(
       children: [
+        // ✦ Like (Four-point star)
         _actionButton(
-          icon: widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
+          child: _FourPointStar(
+            size: 30,
+            color: widget.post.isLiked ? AppColors.neonYellow : AppColors.white,
+          ),
           label: Formatters.formatCount(widget.post.likesCount),
-          color: widget.post.isLiked ? AppColors.like : AppColors.white,
           onTap: _toggleLike,
         ),
+        
+        // 💬 Comment
         _actionButton(
-          icon: Icons.comment_outlined,
+          child: Icon(
+            Icons.chat_bubble_outline,
+            color: AppColors.white,
+            size: 30,
+          ),
           label: Formatters.formatCount(widget.post.commentsCount),
-          color: AppColors.white,
           onTap: () {
             // TODO: Open comments
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Comments - Coming soon!')),
+            );
           },
         ),
+        
+        // △ Recommend (Triangle)
         _actionButton(
-          icon: Icons.change_history,
+          child: Transform.rotate(
+            angle: 0,
+            child: const Icon(
+              Icons.change_history,
+              color: AppColors.neonGreen,
+              size: 30,
+            ),
+          ),
           label: 'Boost',
-          color: AppColors.recommend,
           onTap: () {
             // TODO: Recommend
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Recommend - Coming soon!')),
+            );
           },
         ),
+        
+        // ↗️ Share
         _actionButton(
-          icon: Icons.send_outlined,
-          label: Formatters.formatCount(widget.post.sendsCount),
-          color: AppColors.white,
+          child: const Icon(
+            Icons.share_outlined,
+            color: AppColors.white,
+            size: 30,
+          ),
+          label: Formatters.formatCount(widget.post.sharesCount),
           onTap: () {
-            // TODO: Send
+            // TODO: Share
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Share - Coming soon!')),
+            );
           },
         ),
-        const SizedBox(height: 6),
-        _buildMusicDisk(),
-        const SizedBox(height: 6),
+
+        const SizedBox(height: 8),
+        
+        // 🎵 Music Disk (Rotating)
+        _MusicDisk(),
+        
+        const SizedBox(height: 8),
+        
+        // ⬆️ Info
         GestureDetector(
           onTap: () {
-            // TODO: Show info
+            // TODO: Show info sheet
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Info - Coming soon!')),
+            );
           },
           child: Column(
             children: [
@@ -317,9 +356,8 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _actionButton({
-    required IconData icon,
+    required Widget child,
     required String label,
-    required Color color,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -328,7 +366,7 @@ class _PostCardState extends State<PostCard>
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 30),
+            child,
             const SizedBox(height: 3),
             Text(
               label,
@@ -343,29 +381,14 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  Widget _buildMusicDisk() {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.white, width: 2),
-        color: AppColors.grey,
-      ),
-      child: const Icon(
-        Icons.music_note,
-        color: AppColors.white,
-        size: 20,
-      ),
-    );
-  }
-
+  // ===== BOTTOM INFO =====
   Widget _buildBottomInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
+            // Avatar
             CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.grey,
@@ -376,6 +399,8 @@ class _PostCardState extends State<PostCard>
               ),
             ),
             const SizedBox(width: 8),
+            
+            // Username
             Expanded(
               child: Text(
                 widget.post.username,
@@ -384,6 +409,8 @@ class _PostCardState extends State<PostCard>
                 ),
               ),
             ),
+            
+            // Follow Button
             if (!widget.post.isFollowing)
               GestureDetector(
                 onTap: _toggleFollow,
@@ -408,6 +435,8 @@ class _PostCardState extends State<PostCard>
           ],
         ),
         const SizedBox(height: 8),
+        
+        // Title
         Text(
           widget.post.title,
           style: AppTextStyles.postTitle.copyWith(
@@ -417,6 +446,121 @@ class _PostCardState extends State<PostCard>
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+}
+
+// ===== CUSTOM WIDGETS =====
+
+// ✦ Four-Point Star (نجمة رباعية)
+class _FourPointStar extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _FourPointStar({
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _FourPointStarPainter(color: color),
+    );
+  }
+}
+
+class _FourPointStarPainter extends CustomPainter {
+  final Color color;
+
+  _FourPointStarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final outerRadius = size.width / 2;
+    final innerRadius = size.width / 4;
+
+    // Create 4-point star
+    for (int i = 0; i < 4; i++) {
+      final outerAngle = (i * 90 - 90) * (3.14159 / 180);
+      final innerAngle = ((i * 90 - 90) + 45) * (3.14159 / 180);
+
+      final outerX = centerX + outerRadius * cos(outerAngle);
+      final outerY = centerY + outerRadius * sin(outerAngle);
+
+      final innerX = centerX + innerRadius * cos(innerAngle);
+      final innerY = centerY + innerRadius * sin(innerAngle);
+
+      if (i == 0) {
+        path.moveTo(outerX, outerY);
+      } else {
+        path.lineTo(outerX, outerY);
+      }
+      path.lineTo(innerX, innerY);
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Import for cos/sin
+import 'dart:math' show cos, sin;
+
+// 🎵 Music Disk (Rotating)
+class _MusicDisk extends StatefulWidget {
+  @override
+  State<_MusicDisk> createState() => _MusicDiskState();
+}
+
+class _MusicDiskState extends State<_MusicDisk>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.white, width: 2),
+          color: AppColors.grey,
+        ),
+        child: const Icon(
+          Icons.music_note,
+          color: AppColors.white,
+          size: 20,
+        ),
+      ),
     );
   }
 }
