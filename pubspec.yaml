@@ -1,5 +1,5 @@
 name: setrise
-description: SetRise - Complete Social Media Platform
+description: Setrise - Next-Gen Social Media Platform
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,54 +9,54 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # State Management
-  flutter_riverpod: ^2.4.0
-  riverpod_annotation: ^2.3.0
-  
-  # Networking
-  dio: ^5.3.1
-  connectivity_plus: ^5.0.2
-  
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Routing
+  go_router: ^14.2.7
+
+  # Network
+  dio: ^5.7.0
+  connectivity_plus: ^6.0.5
+
   # Local Storage
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  shared_preferences: ^2.2.2
-  
-  # Routing
-  go_router: ^12.0.0
-  
-  # Image & Media
-  cached_network_image: ^3.3.0
-  video_player: ^2.8.0
-  image_picker: ^1.0.4
-  
-  # Functional
-  dartz: ^0.10.1
-  
+  shared_preferences: ^2.3.2
+
   # DI
-  get_it: ^7.6.0
-  
+  get_it: ^8.0.0
+
   # Utils
   intl: ^0.19.0
-  uuid: ^4.2.1
-  timeago: ^3.6.0
-  
-  # Platform specific
-  url_launcher: ^6.2.1
-  path_provider: ^2.1.1
+  uuid: ^4.5.1
+  timeago: ^3.7.0
+  dartz: ^0.10.1
+
+  # Media
+  cached_network_image: ^3.4.1
+  video_player: ^2.9.1
+  image_picker: ^1.1.2
+
+  # UI
+  flutter_svg: ^2.0.10+1
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-  riverpod_generator: ^2.3.0
-  build_runner: ^2.4.0
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.3
+  build_runner: ^2.4.13
   hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
-  
+
+  # ✅ Inter Font - 9 weights
   fonts:
     - family: Inter
       fonts:
@@ -78,3 +78,9 @@ flutter:
           weight: 800
         - asset: assets/fonts/Inter-Black.ttf
           weight: 900
+
+  # Assets
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/lottie/
