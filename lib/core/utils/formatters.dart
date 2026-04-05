@@ -1,23 +1,43 @@
-// lib/core/utils/formatters.dart
-// BUG FIX: formatDate() called .toRelativeTime() without importing the extension
-//           This caused a compile error: method not found on DateTime
-import '../extensions/datetime_extensions.dart'; // ✅ ADDED
-
+/// Utility formatters
 class Formatters {
-  static String formatNumber(int number) {
-    if (number >= 1000000) return '${(number / 1000000).toStringAsFixed(1)}M';
-    if (number >= 1000) return '${(number / 1000).toStringAsFixed(1)}K';
-    return number.toString();
+  Formatters._();
+
+  /// Format numbers (1234 → 1.2K)
+  static String formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return count.toString();
   }
 
-  static String formatPrice(double price) => '\$${price.toStringAsFixed(2)}';
+  /// Format time ago (2 minutes ago)
+  static String timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-  static String formatDate(DateTime date) =>
-      date.toRelativeTime(); // ✅ Now works with the import above
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds}s';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d';
+    } else if (difference.inDays < 30) {
+      return '${(difference.inDays / 7).floor()}w';
+    } else if (difference.inDays < 365) {
+      return '${(difference.inDays / 30).floor()}mo';
+    } else {
+      return '${(difference.inDays / 365).floor()}y';
+    }
+  }
 
+  /// Format duration (125 → 2:05)
   static String formatDuration(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 }
