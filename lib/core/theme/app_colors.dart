@@ -1,41 +1,93 @@
-// lib/core/theme/app_colors.dart (Updated with Web colors)
 import 'package:flutter/material.dart';
 
+/// Brand Colors - Neon Theme
 class AppColors {
-  // Primary
-  static const Color primary = Color(0xFFEE1D52);
-  static const Color secondary = Color(0xFF000000);
-  static const Color accent = Color(0xFFFFFFFF);
+  AppColors._();
+
+  // ===== PRIMARY COLORS =====
+  static const Color electricBlue = Color(0xFF0066FF);  // ⚡ Primary
+  static const Color neonPink = Color(0xFFFF00CC);      // 💗 Accent
+  static const Color neonYellow = Color(0xFFFFB300);    // 🟡 Amber
+  static const Color neonRed = Color(0xFFFF2200);       // 🔴 Alert
+  static const Color cyan = Color(0xFF00FFEE);          // 🧊 Ice Blue
+  static const Color neonGreen = Color(0xFF39FF14);     // 🟢 Success
+
+  // ===== BASE COLORS =====
+  static const Color background = Color(0xFF010101);    // #010101
   static const Color white = Color(0xFFFFFFFF);
-  static const Color black = Color(0xFF000000);
-  static const Color green = Color(0xFF4CAF50);
-  
-  // Backgrounds
-  static const Color background = Color(0xFFFAFAFA);
-  static const Color backgroundDark = Color(0xFF000000);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF1A1A1A);
-  
-  // Text
-  static const Color textPrimary = Color(0xFF000000);
-  static const Color textSecondary = Color(0xFF65676B);
-  static const Color textTertiary = Color(0xFF8A8D91);
-  
-  // Borders
-  static const Color border = Color(0xFFE5E5E5);
-  static const Color borderDark = Color(0xFF333333);
-  
-  // Feature Colors
-  static const Color setColor = Color(0xFF1A1A1A);
-  static const Color rizeColor = Color(0xFF000000);
-  static const Color shopColor = Color(0xFF00C853);
-  static const Color dateColor = Color(0xFFFF1493);
-  static const Color liveColor = Color(0xFFFF4444);
-  static const Color musicColor = Color(0xFF9C27B0);
-  
-  // Actions
-  static const Color like = Color(0xFFE0245E);
-  static const Color reply = Color(0xFF0A66C2);
-  static const Color repost = Color(0xFF06A34D);
-  static const Color share = Color(0xFF1B7AC0);
+  static const Color black = Color(0xFF0A0A0A);
+  static const Color grey = Color(0xFF2C2C2C);
+  static const Color grey2 = Color(0xFF8E8E8E);
+  static const Color greyLight = Color(0xFFE0E0E0);
+
+  // ===== FEATURE COLORS =====
+  static const Color live = Color(0xFFFF4444);
+  static const Color music = cyan;
+  static const Color dating = neonYellow;
+  static const Color shop = neonGreen;
+
+  // ===== STATUS COLORS =====
+  static const Color success = neonGreen;
+  static const Color error = neonRed;
+  static const Color warning = neonYellow;
+  static const Color info = cyan;
+
+  // ===== SOCIAL COLORS =====
+  static const Color like = neonRed;
+  static const Color comment = white;
+  static const Color share = cyan;
+  static const Color send = neonGreen;
+  static const Color save = neonYellow;
+  static const Color recommend = neonGreen;
+
+  // ===== STORY COLORS =====
+  static const Color storyUnseen = neonYellow;      // 🟡 لم تُفتح
+  static const Color storySeen = grey2;             // ⚪ مشاهدة
+  static const Color storyLive = neonRed;           // 🔴 لايف
+  static const Color storyCloseFriend = Color(0xFFFF6B35); // 🟠 صديق مقرب
+  static const Color storyOwn = neonGreen;          // 🟢 قصتك
+
+  // ===== GRADIENTS =====
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [electricBlue, cyan],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient liveGradient = LinearGradient(
+    colors: [neonRed, neonPink],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient musicGradient = LinearGradient(
+    colors: [cyan, Color(0xFF00D4FF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient datingGradient = LinearGradient(
+    colors: [neonYellow, Color(0xFFFFD740)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient shopGradient = LinearGradient(
+    colors: [neonGreen, Color(0xFF7FFF00)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // ===== SHADOWS =====
+  static BoxShadow get neonGlow => BoxShadow(
+    color: electricBlue.withOpacity(0.3),
+    blurRadius: 20,
+    spreadRadius: 2,
+  );
+
+  static BoxShadow get pinkGlow => BoxShadow(
+    color: neonPink.withOpacity(0.3),
+    blurRadius: 20,
+    spreadRadius: 2,
+  );
 }
