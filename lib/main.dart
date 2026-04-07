@@ -33,7 +33,6 @@ class SetRiseApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        fontFamily: 'Inter',
         scaffoldBackgroundColor: const Color(0xFF010101),
         primaryColor: const Color(0xFF0066FF),
       ),
