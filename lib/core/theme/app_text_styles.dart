@@ -130,6 +130,14 @@ class AppTextStyles {
     color: AppColors.grey2,
   );
 
+  // Overline
+  static const TextStyle overline = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1.5,
+    height: 1.6,
+  );
+
   // Button styles
   static const TextStyle button = TextStyle(
     fontSize: 14,
