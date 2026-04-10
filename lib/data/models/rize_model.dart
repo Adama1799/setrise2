@@ -1,4 +1,4 @@
-hereclass RizePostModel {
+class RizePostModel {
   final String id;
   final String userId;
   final String username;
