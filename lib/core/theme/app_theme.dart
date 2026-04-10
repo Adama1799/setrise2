@@ -10,7 +10,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'HarmonyOS',
+      fontFamily: 'Inter',
       
       // Colors
       scaffoldBackgroundColor: AppColors.background,
@@ -37,7 +37,7 @@ class AppTheme {
         titleTextStyle: AppTextStyles.h5,
       ),
 
-      // Text Theme - تم التحديث حسب Material 3
+      // Text Theme
       textTheme: const TextTheme(
         displayLarge: AppTextStyles.displayLarge,
         displayMedium: AppTextStyles.displayMedium,
@@ -47,15 +47,13 @@ class AppTheme {
         headlineSmall: AppTextStyles.h3,
         titleLarge: AppTextStyles.h4,
         titleMedium: AppTextStyles.h5,
-        titleSmall: AppTextStyles.h6,        bodyLarge: AppTextStyles.bodyLarge,
+        titleSmall: AppTextStyles.h6,
+        bodyLarge: AppTextStyles.bodyLarge,
         bodyMedium: AppTextStyles.bodyMedium,
         bodySmall: AppTextStyles.bodySmall,
         labelLarge: AppTextStyles.labelLarge,
         labelMedium: AppTextStyles.labelMedium,
         labelSmall: AppTextStyles.labelSmall,
-      ).apply(
-        bodyColor: AppColors.white,
-        displayColor: AppColors.white,
       ),
 
       // Buttons
@@ -96,7 +94,8 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.grey,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(          borderRadius: BorderRadius.circular(12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
@@ -145,4 +144,5 @@ class AppTheme {
         size: 24,
       ),
     );
-  }}
+  }
+}
