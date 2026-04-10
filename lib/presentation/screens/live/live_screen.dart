@@ -42,13 +42,13 @@ class _LiveScreenState extends State<LiveScreen> {
               child: Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(10)),
                 child: const Icon(Icons.arrow_back_ios_new, color: AppColors.white, size: 16))),
             const Spacer(),
-            const Text('Live', style: TextStyle(color: AppColors.white, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'HarmonyOS')),
+            const Text('Live', style: TextStyle(color: AppColors.white, fontSize: 18, fontWeight: FontWeight.w900, )),
             const Spacer(),
             Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(20)),
               child: const Row(children: [
                 Icon(Icons.videocam, color: AppColors.white, size: 16), SizedBox(width: 6),
-                Text('Go Live', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
+                Text('Go Live', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold, )),
               ])),
           ]),
         ),
@@ -70,7 +70,7 @@ class _LiveScreenState extends State<LiveScreen> {
                   decoration: BoxDecoration(
                     color: isSelected ? AppColors.live : AppColors.grey.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(20)),
-                  child: Text(cat, style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, fontFamily: 'HarmonyOS')),
+                  child: Text(cat, style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, )),
                 ),
               );
             },
@@ -97,7 +97,7 @@ class _LiveScreenState extends State<LiveScreen> {
                       Container(width: 60, height: 60, decoration: BoxDecoration(color: AppColors.live.withOpacity(0.3), shape: BoxShape.circle),
                         child: const Icon(Icons.mic, color: AppColors.white, size: 32)),
                       const SizedBox(height: 8),
-                      const Text('Voice Room', style: TextStyle(color: AppColors.white, fontSize: 12, fontFamily: 'HarmonyOS')),
+                      const Text('Voice Room', style: TextStyle(color: AppColors.white, fontSize: 12, )),
                     ]))
                   else
                     Center(child: Icon(Icons.live_tv, color: AppColors.white.withOpacity(0.15), size: 60)),
@@ -127,9 +127,9 @@ class _LiveScreenState extends State<LiveScreen> {
                         colors: [Colors.transparent, Colors.black.withOpacity(0.85)]),
                       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16))),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(room['title'], style: const TextStyle(color: AppColors.white, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS'), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(room['title'], style: const TextStyle(color: AppColors.white, fontSize: 11, fontWeight: FontWeight.bold, ), maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 3),
-                      Text('@${room['host']} · ${room['duration']}', style: const TextStyle(color: AppColors.grey2, fontSize: 10, fontFamily: 'HarmonyOS')),
+                      Text('@${room['host']} · ${room['duration']}', style: const TextStyle(color: AppColors.grey2, fontSize: 10, )),
                     ]),
                   )),
                 ]),
@@ -156,7 +156,7 @@ class _LiveScreenState extends State<LiveScreen> {
     return GestureDetector(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, color: AppColors.grey2, size: 26),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(color: AppColors.grey2, fontSize: 10, fontFamily: 'HarmonyOS')),
+      Text(label, style: const TextStyle(color: AppColors.grey2, fontSize: 10, )),
     ]));
   }
 }
@@ -207,7 +207,7 @@ class _LiveRoomScreenState extends State<_LiveRoomScreen> {
                 decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(6)),
                 child: const Row(children: [const Icon(Icons.circle, color: AppColors.white, size: 6), const SizedBox(width: 4), const Text('LIVE', style: TextStyle(color: AppColors.white, fontSize: 10, fontWeight: FontWeight.bold))])),
               const SizedBox(width: 8),
-              Row(children: [const Icon(Icons.person, color: AppColors.white, size: 14), const SizedBox(width: 4), Text(Formatters.formatCount(room['viewers'] as int), style: const TextStyle(color: AppColors.white, fontSize: 12, fontFamily: 'HarmonyOS'))]),
+              Row(children: [const Icon(Icons.person, color: AppColors.white, size: 14), const SizedBox(width: 4), Text(Formatters.formatCount(room['viewers'] as int), style: const TextStyle(color: AppColors.white, fontSize: 12, ))]),
               const Spacer(),
               GestureDetector(onTap: () => Navigator.pop(context),
                 child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), shape: BoxShape.circle),
@@ -219,13 +219,13 @@ class _LiveRoomScreenState extends State<_LiveRoomScreen> {
               CircleAvatar(radius: 20, backgroundColor: AppColors.grey, child: const Icon(Icons.person, color: AppColors.white, size: 22)),
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('@${room['host']}', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'HarmonyOS')),
-                Text(room['title'], style: const TextStyle(color: AppColors.grey2, fontSize: 11, fontFamily: 'HarmonyOS')),
+                Text('@${room['host']}', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 14, )),
+                Text(room['title'], style: const TextStyle(color: AppColors.grey2, fontSize: 11, )),
               ]),
               const Spacer(),
               Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(border: Border.all(color: AppColors.white, width: 1.5), borderRadius: BorderRadius.circular(20)),
-                child: const Text('Follow', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS'))),
+                child: const Text('Follow', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold, ))),
             ])),
           const Spacer(),
           // Chat
@@ -237,8 +237,8 @@ class _LiveRoomScreenState extends State<_LiveRoomScreen> {
                 final msg = _chat[i];
                 return Padding(padding: const EdgeInsets.only(bottom: 6),
                   child: Row(children: [
-                    Text('@${msg['user']} ', style: TextStyle(color: msg['color'] as Color, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
-                    Flexible(child: Text(msg['msg'], style: const TextStyle(color: AppColors.white, fontSize: 12, fontFamily: 'HarmonyOS'))),
+                    Text('@${msg['user']} ', style: TextStyle(color: msg['color'] as Color, fontSize: 12, fontWeight: FontWeight.bold, )),
+                    Flexible(child: Text(msg['msg'], style: const TextStyle(color: AppColors.white, fontSize: 12, ))),
                   ]));
               },
             )),
@@ -249,15 +249,15 @@ class _LiveRoomScreenState extends State<_LiveRoomScreen> {
                 height: 42,
                 decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), borderRadius: BorderRadius.circular(21), border: Border.all(color: AppColors.grey.withOpacity(0.4))),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(controller: _chatCtrl, style: const TextStyle(color: AppColors.white, fontFamily: 'HarmonyOS'),
-                  decoration: const InputDecoration(hintText: 'Say something...', hintStyle: TextStyle(color: AppColors.grey2, fontFamily: 'HarmonyOS'), border: InputBorder.none)),
+                child: TextField(controller: _chatCtrl, style: const TextStyle(color: AppColors.white, ),
+                  decoration: const InputDecoration(hintText: 'Say something...', hintStyle: TextStyle(color: AppColors.grey2, ), border: InputBorder.none)),
               )),
               const SizedBox(width: 10),
               GestureDetector(
                 onTap: () => setState(() { _isLiked = !_isLiked; _likes += _isLiked ? 1 : -1; }),
                 child: Column(children: [
                   Icon(Icons.favorite, color: _isLiked ? AppColors.neonRed : AppColors.white, size: 28),
-                  Text(Formatters.formatCount(_likes), style: const TextStyle(color: AppColors.white, fontSize: 10, fontFamily: 'HarmonyOS')),
+                  Text(Formatters.formatCount(_likes), style: const TextStyle(color: AppColors.white, fontSize: 10, )),
                 ])),
               const SizedBox(width: 10),
               GestureDetector(onTap: _sendMsg,
