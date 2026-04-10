@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/constants/storage_keys.dart';
 import '../../../core/di/injection.dart';
 import '../../../data/datasources/local/local_storage.dart';
