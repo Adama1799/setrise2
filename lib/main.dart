@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'presentation/screens/main/main_screen.dart';
+import 'core/colors.dart';
+import 'screens/feed/feed_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF010101),
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
   runApp(const SetRiseApp());
 }
 
@@ -28,15 +19,22 @@ class SetRiseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Setrise',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF010101),
-        primaryColor: const Color(0xFF0066FF),
+      title: 'SetRise',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: kBg,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: kBg,
+          elevation: 0,
+          iconTheme: IconThemeData(color: kWhite),
+          titleTextStyle: TextStyle(
+            color: kWhite, fontSize: 18,
+            fontWeight: FontWeight.w900, fontFamily: 'HarmonyOS',
+          ),
+        ),
+        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'HarmonyOS'),
       ),
-      home: const MainScreen(),
+      home: const FeedScreen(),
     );
   }
 }
