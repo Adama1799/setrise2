@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../data/models/rize_post_model.dart';
+import '../../../data/models/rize_model.dart';
 import 'widgets/rize_post_card.dart';
 
 class RizeScreen extends StatefulWidget {
