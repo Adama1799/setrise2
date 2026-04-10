@@ -3,7 +3,7 @@ import 'dart:math' show cos, sin;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../data/models/rize_post_model.dart';
+import '../../../../data/models/rize_model.dart';
 
 class RizePostCard extends StatefulWidget {
   final RizePostModel post;
