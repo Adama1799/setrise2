@@ -212,4 +212,8 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     color: AppColors.grey2,
   );
+
+  // Convenience aliases
+  static const TextStyle body1 = bodyLarge;
+  static const TextStyle body2 = bodyMedium;
 }
