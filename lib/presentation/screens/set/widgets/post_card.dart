@@ -139,6 +139,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
             baseColor: widget.post.backgroundColor,
             accentColor: _accent,
           ),
+
           if (!widget.post.isPlaying)
             Center(
               child: Container(
@@ -157,6 +158,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 ),
               ),
             ),
+
           Positioned(
             bottom: 0,
             left: 0,
@@ -177,6 +179,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               ),
             ),
           ),
+
           if (_showHeart)
             Center(
               child: ScaleTransition(
@@ -184,9 +187,10 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 child: _StarBurst(color: _accent, size: 120),
               ),
             ),
+
           Positioned(
-            right: 12,
-            bottom: bottomSafe + 18,
+            right: 10,
+            bottom: bottomSafe + 6,
             child: _ActionBar(
               post: widget.post,
               accent: _accent,
@@ -198,8 +202,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               onInfo: () => _showInfoSheet(context),
             ),
           ),
+
           Positioned(
-            bottom: bottomSafe + 8,
+            bottom: bottomSafe + 2,
             left: 14,
             right: 80,
             child: _BottomInfo(
@@ -302,7 +307,7 @@ class _ActionBar extends StatelessWidget {
           glow: post.isLiked ? accent : Colors.transparent,
           onTap: onLike,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         _ActionBtn(
           icon: Icons.chat_bubble_outline_rounded,
           label: Formatters.formatCount(post.commentsCount),
@@ -310,7 +315,15 @@ class _ActionBar extends StatelessWidget {
           glow: Colors.transparent,
           onTap: onComment,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
+        _ActionBtn(
+          icon: Icons.change_history_rounded,
+          label: 'Boost',
+          color: AppColors.neonGreen,
+          glow: Colors.transparent,
+          onTap: () {},
+        ),
+        const SizedBox(height: 6),
         _ActionBtn(
           icon: Icons.send_rounded,
           label: Formatters.formatCount(post.sharesCount),
@@ -318,11 +331,11 @@ class _ActionBar extends StatelessWidget {
           glow: Colors.transparent,
           onTap: onShare,
         ),
-        const SizedBox(height: 14),
-        _MusicDisk(accent: accent),
         const SizedBox(height: 10),
+        _MusicDisk(accent: accent),
+        const SizedBox(height: 8),
         _ActionBtn(
-          icon: Icons.info_outline_rounded,
+          icon: Icons.keyboard_arrow_up_rounded,
           label: 'Info',
           color: Colors.white,
           glow: Colors.transparent,
@@ -355,7 +368,7 @@ class _ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           children: [
             Container(
@@ -367,7 +380,7 @@ class _ActionBtn extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 30),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               label,
               style: AppTextStyles.labelSmall.copyWith(
@@ -496,27 +509,16 @@ class _BottomInfo extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Text(
           post.title,
           style: AppTextStyles.postTitle.copyWith(
             color: Colors.white,
-            height: 1.35,
+            height: 1.2,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 8),
-        if (post.hashtags != null)
-          Text(
-            post.hashtags!,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: accent,
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
       ],
     );
   }
@@ -538,7 +540,8 @@ class _InfoSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contentType = post.isPlaying ? 'Video / Media' : 'Image / Post';
-    final fullBio = 'Bio كامل لصاحب المحتوى: هذا الحساب ينشر محتوى قصير، تفاعلي، ويهتم بالمشاركة السريعة والردود المباشرة.';
+    final fullBio =
+        'Bio كامل لصاحب المحتوى: هذا الحساب ينشر محتوى قصير، تفاعلي، ويهتم بالمشاركة السريعة والردود المباشرة.';
 
     return DraggableScrollableSheet(
       initialChildSize: 0.72,
@@ -974,7 +977,7 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.w800,
