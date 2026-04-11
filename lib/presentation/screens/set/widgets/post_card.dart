@@ -74,9 +74,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     widget.onUpdate(
       widget.post.copyWith(
         isLiked: !widget.post.isLiked,
-        likesCount: widget.post.isLiked
-            ? widget.post.likesCount - 1
-            : widget.post.likesCount + 1,
+        likesCount: widget.post.isLiked ? widget.post.likesCount - 1 : widget.post.likesCount + 1,
       ),
     );
   }
@@ -112,7 +110,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
             baseColor: widget.post.backgroundColor,
             accentColor: _accent,
           ),
-
           if (!widget.post.isPlaying)
             Center(
               child: Container(
@@ -131,7 +128,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 ),
               ),
             ),
-
           Positioned(
             bottom: 0,
             left: 0,
@@ -152,7 +148,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               ),
             ),
           ),
-
           if (_showHeart)
             Center(
               child: ScaleTransition(
@@ -160,7 +155,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 child: _StarBurst(color: _accent, size: 120),
               ),
             ),
-
           Positioned(
             right: 12,
             bottom: bottomSafe + 18,
@@ -174,7 +168,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               ),
             ),
           ),
-
           Positioned(
             bottom: bottomSafe + 8,
             left: 14,
@@ -206,7 +199,6 @@ class _DynamicBackground extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         ColoredBox(color: baseColor),
-
         Positioned(
           top: -60,
           left: -60,
@@ -224,7 +216,6 @@ class _DynamicBackground extends StatelessWidget {
             ),
           ),
         ),
-
         Positioned(
           bottom: -40,
           right: -40,
@@ -242,7 +233,6 @@ class _DynamicBackground extends StatelessWidget {
             ),
           ),
         ),
-
         Positioned.fill(
           child: Opacity(
             opacity: 0.06,
@@ -274,9 +264,7 @@ class _ActionBar extends StatelessWidget {
     return Column(
       children: [
         _ActionBtn(
-          icon: post.isLiked
-              ? Icons.favorite_rounded
-              : Icons.favorite_border_rounded,
+          icon: post.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
           label: Formatters.formatCount(post.likesCount),
           color: post.isLiked ? accent : Colors.white,
           glow: post.isLiked ? accent : Colors.transparent,
@@ -363,8 +351,7 @@ class _MusicDisk extends StatefulWidget {
   State<_MusicDisk> createState() => _MusicDiskState();
 }
 
-class _MusicDiskState extends State<_MusicDisk>
-    with SingleTickerProviderStateMixin {
+class _MusicDiskState extends State<_MusicDisk> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
 
   @override
@@ -431,9 +418,7 @@ class _BottomInfo extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: accent, width: 2),
-                boxShadow: [
-                  BoxShadow(color: accent.withOpacity(0.4), blurRadius: 10),
-                ],
+                boxShadow: [BoxShadow(color: accent.withOpacity(0.4), blurRadius: 10)],
                 color: Colors.black38,
               ),
               child: const Icon(Icons.person_rounded, color: Colors.white, size: 20),
@@ -563,11 +548,8 @@ class _NoisePainter extends CustomPainter {
     final rng = DateTime.now().millisecondsSinceEpoch;
 
     for (int i = 0; i < 800; i++) {
-      final x = (((rng * (i + 1) * 6364136223846793005 + 1442695040888963407) & 0xFFFF) /
-              0xFFFF) *
-          size.width;
-      final y = (((rng * (i + 2) * 2862933555777941757 + 3037000499) & 0xFFFF) / 0xFFFF) *
-          size.height;
+      final x = (((rng * (i + 1) * 6364136223846793005 + 1442695040888963407) & 0xFFFF) / 0xFFFF) * size.width;
+      final y = (((rng * (i + 2) * 2862933555777941757 + 3037000499) & 0xFFFF) / 0xFFFF) * size.height;
       canvas.drawCircle(Offset(x, y), 0.6, paint);
     }
   }
@@ -657,15 +639,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.grey,
-                          border: Border.all(
-                            color: widget.accent.withOpacity(0.4),
-                          ),
+                          border: Border.all(color: widget.accent.withOpacity(0.4)),
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                        child: const Icon(Icons.person, color: Colors.white, size: 20),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -720,9 +696,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     decoration: BoxDecoration(
                       color: AppColors.grey,
                       borderRadius: BorderRadius.circular(21),
-                      border: Border.all(
-                        color: widget.accent.withOpacity(0.3),
-                      ),
+                      border: Border.all(color: widget.accent.withOpacity(0.3)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TextField(
@@ -730,9 +704,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       style: AppTextStyles.body2.copyWith(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Add a comment...',
-                        hintStyle: AppTextStyles.body2.copyWith(
-                          color: AppColors.grey2,
-                        ),
+                        hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey2),
                         border: InputBorder.none,
                       ),
                     ),
@@ -754,11 +726,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
                   ),
                 ),
               ],
