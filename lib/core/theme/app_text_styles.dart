@@ -216,9 +216,4 @@ class AppTextStyles {
   // Convenience aliases
   static const TextStyle body1 = bodyLarge;
   static const TextStyle body2 = bodyMedium;
-
-  // Material3 display aliases
-  static const TextStyle displayLarge  = display1;
-  static const TextStyle displayMedium = display2;
-  static const TextStyle displaySmall  = display3;
 }
