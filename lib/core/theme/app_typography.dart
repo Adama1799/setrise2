@@ -1,113 +1,105 @@
-// lib/core/theme/app_typography.dart
 import 'package:flutter/material.dart';
+import 'package:setrise/core/theme/app_colors.dart';
 
 class AppTypography {
-  // Display
-  static const TextStyle displayLarge = TextStyle(
-    fontFamily: 'Inter',
+  // Headings
+  static const TextStyle h1 = TextStyle(
     fontSize: 32,
-    fontWeight: FontWeight.w900,
-    color: Color(0xFF000000),
-    height: 1.2,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  static const TextStyle displayMedium = TextStyle(
-    fontFamily: 'Inter',
+  
+  static const TextStyle h2 = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w800,
-    color: Color(0xFF000000),
-    height: 1.2,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  static const TextStyle displaySmall = TextStyle(
-    fontFamily: 'Inter',
+  
+  static const TextStyle h3 = TextStyle(
     fontSize: 24,
-    fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
-    height: 1.3,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  // Headline
-  static const TextStyle headlineLarge = TextStyle(
-    fontFamily: 'Inter',
+  
+  static const TextStyle h4 = TextStyle(
     fontSize: 20,
-    fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
-    height: 1.4,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  static const TextStyle headlineMedium = TextStyle(
-    fontFamily: 'Inter',
+  
+  static const TextStyle h5 = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: Color(0xFF000000),
-    height: 1.4,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  static const TextStyle headlineSmall = TextStyle(
-    fontFamily: 'Inter',
+  
+  static const TextStyle h6 = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: Color(0xFF000000),
-    height: 1.5,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  // Body
+  
+  // Body Text
   static const TextStyle bodyLarge = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
-    height: 1.5,
+    fontSize: 16,    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
+  
   static const TextStyle bodyMedium = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
-    height: 1.5,
-  );
-
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: 'Inter',
     fontSize: 14,
-    fontWeight: FontWeight.w400,
-    color: Color(0xFF65676B),
-    height: 1.5,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
-  // Label
+  
+  static const TextStyle bodySmall = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondary,
+    fontFamily: 'Poppins',
+  );
+  
+  // Labels
   static const TextStyle labelLarge = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF000000),
-    height: 1.4,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+    fontFamily: 'Poppins',
   );
-
+  
   static const TextStyle labelMedium = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF000000),
-    height: 1.4,
-  );
-
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    color: Color(0xFF65676B),
-    height: 1.4,
+    color: AppColors.textSecondary,
+    fontFamily: 'Poppins',
   );
-
+  
+  static const TextStyle labelSmall = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textTertiary,
+    fontFamily: 'Poppins',
+  );
+  
   // Caption
   static const TextStyle caption = TextStyle(
-    fontFamily: 'Inter',
     fontSize: 12,
-    fontWeight: FontWeight.w400,
-    color: Color(0xFF8A8D91),
-    height: 1.3,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondary,
+    fontFamily: 'Poppins',
+  );
+  
+  // Button Text  static const TextStyle button = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+    fontFamily: 'Poppins',
   );
 }
