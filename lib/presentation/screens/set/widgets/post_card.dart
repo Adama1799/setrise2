@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' show cos, sin, pi;
 import 'dart:ui';
 
@@ -9,16 +10,22 @@ import '../../../../data/models/post_model.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
-  final Function(PostModel) onUpdate;
+  final ValueChanged<PostModel> onUpdate;
   final VoidCallback onSwipeNext;
-  final ValueChanged<bool> onHorizontalDragStateChanged;
+  final VoidCallback? onSwipeRight;
+  final VoidCallback? onSwipeLeft;
+  final VoidCallback? onSwipeStart;
+  final VoidCallback? onSwipeEnd;
 
   const PostCard({
     super.key,
     required this.post,
     required this.onUpdate,
     required this.onSwipeNext,
-    required this.onHorizontalDragStateChanged,
+    this.onSwipeRight,
+    this.onSwipeLeft,
+    this.onSwipeStart,
+    this.onSwipeEnd,
   });
 
   @override
@@ -29,9 +36,10 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
   late AnimationController _heartController;
   late Animation<double> _heartAnimation;
   bool _showHeart = false;
-  double _dragX = 0;
-  double _dragY = 0;
-  bool _isHorizontalGesture = false;
+
+  double _dragX = 0.0;
+  bool _isDraggingHorizontal = false;
+  bool _isDismissing = false;
 
   Color get _accent => _deriveAccent(widget.post.backgroundColor);
   Color get _accentGlow => _accent.withOpacity(0.35);
@@ -66,6 +74,68 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
   void dispose() {
     _heartController.dispose();
     super.dispose();
+  }
+
+  void _finishSwipe({bool notifyEnd = true}) {
+    if (!mounted) return;
+    setState(() {
+      _dragX = 0;
+      _isDraggingHorizontal = false;
+      _isDismissing = false;
+    });
+    if (notifyEnd) {
+      widget.onSwipeEnd?.call();
+    }
+  }
+
+  void _handleHorizontalDragStart(DragStartDetails details) {
+    if (_isDismissing) return;
+    _isDraggingHorizontal = true;
+    widget.onSwipeStart?.call();
+  }
+
+  void _handleHorizontalDragUpdate(DragUpdateDetails details) {
+    if (_isDismissing) return;
+    final width = MediaQuery.of(context).size.width;
+    setState(() {
+      _dragX = (_dragX + details.delta.dx).clamp(-width * 1.15, width * 1.15).toDouble();
+      _isDraggingHorizontal = true;
+    });
+  }
+
+  void _handleHorizontalDragEnd(DragEndDetails details) {
+    if (_isDismissing) return;
+
+    final width = MediaQuery.of(context).size.width;
+    final velocity = details.primaryVelocity ?? 0;
+    final passedThreshold = _dragX.abs() > width * 0.22 || velocity.abs() > 850;
+
+    if (passedThreshold) {
+      final swipeRight = _dragX >= 0 || velocity > 0;
+      final targetX = swipeRight ? width * 1.2 : -width * 1.2;
+
+      HapticFeedback.mediumImpact();
+
+      setState(() {
+        _dragX = targetX;
+        _isDismissing = true;
+      });
+
+      if (swipeRight) {
+        widget.onSwipeRight?.call();
+      } else {
+        widget.onSwipeLeft?.call();
+      }
+
+      Future.delayed(const Duration(milliseconds: 170), () {
+        if (!mounted) return;
+        widget.onSwipeNext();
+        _finishSwipe();
+      });
+    } else {
+      HapticFeedback.selectionClick();
+      _finishSwipe();
+    }
   }
 
   void _triggerHeart() {
@@ -130,201 +200,170 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     );
   }
 
-  void _resetSwipeState() {
-    if (_isHorizontalGesture) {
-      widget.onHorizontalDragStateChanged(false);
-    }
-    _dragX = 0;
-    _dragY = 0;
-    _isHorizontalGesture = false;
-  }
-
-  void _handlePanUpdate(DragUpdateDetails details) {
-    _dragX += details.delta.dx;
-    _dragY += details.delta.dy;
-
-    final horizontalDominant = _dragX.abs() > _dragY.abs();
-    if (horizontalDominant && !_isHorizontalGesture && _dragX.abs() > 8) {
-      _isHorizontalGesture = true;
-      widget.onHorizontalDragStateChanged(true);
-    }
-
-    if (_isHorizontalGesture && mounted) {
-      setState(() {});
-    }
-  }
-
-  void _handlePanEnd(DragEndDetails details) {
-    if (_isHorizontalGesture) {
-      if (_dragX > 110) {
-        widget.onSwipeNext();
-      } else if (_dragX < -110) {
-        widget.onSwipeNext();
-      }
-    }
-    _resetSwipeState();
-    if (mounted) setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     final bottomSafe = MediaQuery.of(context).padding.bottom;
+    final width = MediaQuery.of(context).size.width;
+    final showInterested = _dragX > 44;
+    final showSkip = _dragX < -44;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _togglePlay,
       onDoubleTap: _triggerHeart,
-      onPanUpdate: _handlePanUpdate,
-      onPanEnd: _handlePanEnd,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (_isHorizontalGesture)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color: _dragX >= 0
-                      ? Colors.green.withOpacity((_dragX.abs() / 360).clamp(0.0, 0.22))
-                      : Colors.red.withOpacity((_dragX.abs() / 360).clamp(0.0, 0.22)),
+      onHorizontalDragStart: _handleHorizontalDragStart,
+      onHorizontalDragUpdate: _handleHorizontalDragUpdate,
+      onHorizontalDragEnd: _handleHorizontalDragEnd,
+      onHorizontalDragCancel: () {
+        if (!_isDismissing) {
+          _finishSwipe();
+        }
+      },
+      child: Transform.translate(
+        offset: Offset(_dragX, 0),
+        child: Transform.rotate(
+          angle: width == 0 ? 0.0 : ((_dragX / width) * 0.08).clamp(-0.08, 0.08).toDouble(),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _DynamicBackground(
+                baseColor: widget.post.backgroundColor,
+                accentColor: _accent,
+              ),
+
+              if (!widget.post.isPlaying)
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.45),
+                      border: Border.all(color: _accent, width: 2),
+                      boxShadow: [BoxShadow(color: _accentGlow, blurRadius: 24)],
+                    ),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      color: _accent,
+                      size: 42,
+                    ),
+                  ),
+                ),
+
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 360,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        widget.post.backgroundColor.withOpacity(0.45),
+                        Colors.black.withOpacity(0.94),
+                      ],
+                      stops: const [0.0, 0.52, 1.0],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          if (_isHorizontalGesture && _dragX > 70)
-            const Positioned(
-              top: 110,
-              left: 18,
-              child: _SwipeLabel(
-                text: 'INTERESTED',
-                color: Colors.green,
-              ),
-            ),
-          if (_isHorizontalGesture && _dragX < -70)
-            const Positioned(
-              top: 110,
-              right: 18,
-              child: _SwipeLabel(
-                text: 'SKIP',
-                color: Colors.red,
-              ),
-            ),
-          _DynamicBackground(
-            baseColor: widget.post.backgroundColor,
-            accentColor: _accent,
-          ),
 
-          if (!widget.post.isPlaying)
-            Center(
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withOpacity(0.45),
-                  border: Border.all(color: _accent, width: 2),
-                  boxShadow: [BoxShadow(color: _accentGlow, blurRadius: 24)],
+              if (showInterested)
+                Positioned(
+                  top: 110,
+                  left: 18,
+                  child: Transform.rotate(
+                    angle: -0.18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.greenAccent, width: 2),
+                      ),
+                      child: const Text(
+                        'INTERESTED',
+                        style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.play_arrow_rounded,
-                  color: _accent,
-                  size: 42,
+
+              if (showSkip)
+                Positioned(
+                  top: 110,
+                  right: 18,
+                  child: Transform.rotate(
+                    angle: 0.18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.redAccent, width: 2),
+                      ),
+                      child: const Text(
+                        'SKIP',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              if (_showHeart)
+                Center(
+                  child: ScaleTransition(
+                    scale: _heartAnimation,
+                    child: _StarBurst(color: _accent, size: 120),
+                  ),
+                ),
+
+              Positioned(
+                right: 10,
+                bottom: bottomSafe + 6,
+                child: _ActionBar(
+                  post: widget.post,
+                  accent: _accent,
+                  onLike: _toggleLike,
+                  onComment: () => _showComments(context),
+                  onShare: () => widget.onUpdate(
+                    widget.post.copyWith(isShared: !widget.post.isShared),
+                  ),
+                  onInfo: () => _showInfoSheet(context),
                 ),
               ),
-            ),
 
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 360,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    widget.post.backgroundColor.withOpacity(0.45),
-                    Colors.black.withOpacity(0.94),
-                  ],
-                  stops: const [0.0, 0.52, 1.0],
+              Positioned(
+                bottom: bottomSafe + 2,
+                left: 14,
+                right: 80,
+                child: _BottomInfo(
+                  post: widget.post,
+                  accent: _accent,
+                  onFollow: _toggleFollow,
                 ),
               ),
-            ),
+            ],
           ),
-
-          if (_showHeart)
-            Center(
-              child: ScaleTransition(
-                scale: _heartAnimation,
-                child: _StarBurst(color: _accent, size: 120),
-              ),
-            ),
-
-          Positioned(
-            right: 10,
-            bottom: bottomSafe + 6,
-            child: _ActionBar(
-              post: widget.post,
-              accent: _accent,
-              onLike: _toggleLike,
-              onComment: () => _showComments(context),
-              onShare: () => widget.onUpdate(
-                widget.post.copyWith(isShared: !widget.post.isShared),
-              ),
-              onInfo: () => _showInfoSheet(context),
-            ),
-          ),
-
-          Positioned(
-            bottom: bottomSafe + 2,
-            left: 14,
-            right: 80,
-            child: _BottomInfo(
-              post: widget.post,
-              accent: _accent,
-              onFollow: _toggleFollow,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-
-class _SwipeLabel extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _SwipeLabel({
-    required this.text,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: text == 'INTERESTED' ? -0.14 : 0.14,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color, width: 3),
-          color: color.withOpacity(0.12),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.1,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _DynamicBackground extends StatelessWidget {
   final Color baseColor;
