@@ -1,135 +1,118 @@
-import 'package:flutter/material.dart';
+import 'package:equatable/equatable.dart';
 
-class PostModel {
+class PostModel extends Equatable {
   final String id;
-  final String userId;
-  final String username;
-  final String? userAvatar;
-  final String title;
-  final String? hashtags;
-  final String? mediaUrl;
-  final bool isVideo;
-  final int likesCount;
-  final int commentsCount;
-  final int sharesCount;
-  final int sendsCount;
-  final int savesCount;
-  final int viewsCount;
-  final bool isLiked;
-  final bool isCommented;
-  final bool isShared;
-  final bool isSent;
-  final bool isSaved;
-  final bool isFollowing;
-  final bool isPlaying;
+  final String authorId;
+  final String authorName;
+  final String authorUsername;
+  final String authorAvatar;
+  final String content;
+  final List<String> mediaUrls;
   final DateTime createdAt;
-  final Color backgroundColor;
+  final int likes;
+  final int comments;
+  final int shares;
+  final bool isLiked;
+  final bool isBookmarked;
+  final String location;
+  final List<String> tags;
 
-  PostModel({
+  const PostModel({
     required this.id,
-    required this.userId,
-    required this.username,
-    this.userAvatar,
-    required this.title,
-    this.hashtags,
-    this.mediaUrl,
-    this.isVideo = true,
-    required this.likesCount,
-    required this.commentsCount,
-    required this.sharesCount,
-    required this.sendsCount,
-    required this.savesCount,
-    required this.viewsCount,
-    this.isLiked = false,
-    this.isCommented = false,
-    this.isShared = false,
-    this.isSent = false,
-    this.isSaved = false,
-    this.isFollowing = false,
-    this.isPlaying = true,
+    required this.authorId,
+    required this.authorName,
+    required this.authorUsername,
+    required this.authorAvatar,
+    required this.content,
+    required this.mediaUrls,
     required this.createdAt,
-    required this.backgroundColor,
+    this.likes = 0,
+    this.comments = 0,
+    this.shares = 0,
+    this.isLiked = false,
+    this.isBookmarked = false,
+    this.location = '',
+    this.tags = const [],
   });
+
+  factory PostModel.fromJson(Map<String, dynamic> json) {
+    return PostModel(
+      id: json['id'] ?? '',
+      authorId: json['author_id'] ?? '',
+      authorName: json['author_name'] ?? '',
+      authorUsername: json['author_username'] ?? '',
+      authorAvatar: json['author_avatar'] ?? '',
+      content: json['content'] ?? '',
+      mediaUrls: List<String>.from(json['media_urls'] ?? []),
+      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toString()),
+      likes: json['likes']?.toInt() ?? 0,
+      comments: json['comments']?.toInt() ?? 0,
+      shares: json['shares']?.toInt() ?? 0,      isLiked: json['is_liked'] ?? false,
+      isBookmarked: json['is_bookmarked'] ?? false,
+      location: json['location'] ?? '',
+      tags: List<String>.from(json['tags'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'author_id': authorId,
+      'author_name': authorName,
+      'author_username': authorUsername,
+      'author_avatar': authorAvatar,
+      'content': content,
+      'media_urls': mediaUrls,
+      'created_at': createdAt.toIso8601String(),
+      'likes': likes,
+      'comments': comments,
+      'shares': shares,
+      'is_liked': isLiked,
+      'is_bookmarked': isBookmarked,
+      'location': location,
+      'tags': tags,
+    };
+  }
 
   PostModel copyWith({
     String? id,
-    String? userId,
-    String? username,
-    String? userAvatar,
-    String? title,
-    String? hashtags,
-    String? mediaUrl,
-    bool? isVideo,
-    int? likesCount,
-    int? commentsCount,
-    int? sharesCount,
-    int? sendsCount,
-    int? savesCount,
-    int? viewsCount,
-    bool? isLiked,
-    bool? isCommented,
-    bool? isShared,
-    bool? isSent,
-    bool? isSaved,
-    bool? isFollowing,
-    bool? isPlaying,
+    String? authorId,
+    String? authorName,
+    String? authorUsername,
+    String? authorAvatar,
+    String? content,
+    List<String>? mediaUrls,
     DateTime? createdAt,
-    Color? backgroundColor,
+    int? likes,
+    int? comments,
+    int? shares,
+    bool? isLiked,
+    bool? isBookmarked,
+    String? location,
+    List<String>? tags,
   }) {
     return PostModel(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
-      username: username ?? this.username,
-      userAvatar: userAvatar ?? this.userAvatar,
-      title: title ?? this.title,
-      hashtags: hashtags ?? this.hashtags,
-      mediaUrl: mediaUrl ?? this.mediaUrl,
-      isVideo: isVideo ?? this.isVideo,
-      likesCount: likesCount ?? this.likesCount,
-      commentsCount: commentsCount ?? this.commentsCount,
-      sharesCount: sharesCount ?? this.sharesCount,
-      sendsCount: sendsCount ?? this.sendsCount,
-      savesCount: savesCount ?? this.savesCount,
-      viewsCount: viewsCount ?? this.viewsCount,
-      isLiked: isLiked ?? this.isLiked,
-      isCommented: isCommented ?? this.isCommented,
-      isShared: isShared ?? this.isShared,
-      isSent: isSent ?? this.isSent,
-      isSaved: isSaved ?? this.isSaved,
-      isFollowing: isFollowing ?? this.isFollowing,
-      isPlaying: isPlaying ?? this.isPlaying,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorUsername: authorUsername ?? this.authorUsername,
+      authorAvatar: authorAvatar ?? this.authorAvatar,      content: content ?? this.content,
+      mediaUrls: mediaUrls ?? this.mediaUrls,
       createdAt: createdAt ?? this.createdAt,
-      backgroundColor: backgroundColor ?? this.backgroundColor,
+      likes: likes ?? this.likes,
+      comments: comments ?? this.comments,
+      shares: shares ?? this.shares,
+      isLiked: isLiked ?? this.isLiked,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
+      location: location ?? this.location,
+      tags: tags ?? this.tags,
     );
   }
 
-  // Mock Data Generator
-  static List<PostModel> getMockPosts() {
-    final colors = [
-      const Color(0xFF1A0A2E),
-      const Color(0xFF0A1628),
-      const Color(0xFF1A0A0A),
-      const Color(0xFF0A1A0A),
-      const Color(0xFF1A1A0A),
-    ];
-
-    return List.generate(
-      20,
-      (i) => PostModel(
-        id: 'post_$i',
-        userId: 'user_$i',
-        username: '@user_$i',
-        title: 'Amazing content title that grabs attention right away #$i',
-        hashtags: '#trending #explore #setrise #viral',
-        likesCount: (i + 1) * 1200,
-        commentsCount: (i + 1) * 340,
-        sharesCount: (i + 1) * 210,
-        sendsCount: (i + 1) * 100,
-        savesCount: (i + 1) * 510,
-        viewsCount: (i + 1) * 5000,
-        createdAt: DateTime.now().subtract(Duration(hours: i)),
-        backgroundColor: colors[i % colors.length],
-      ),
-    );
-  }
+  @override
+  List<Object?> get props => [
+    id, authorId, authorName, authorUsername, authorAvatar, 
+    content, mediaUrls, createdAt, likes, comments, 
+    shares, isLiked, isBookmarked, location, tags
+  ];
 }
