@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' show cos, sin, pi;
+import 'dart:ui';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -74,7 +75,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     widget.onUpdate(
       widget.post.copyWith(
         isLiked: !widget.post.isLiked,
-        likesCount: widget.post.isLiked ? widget.post.likesCount - 1 : widget.post.likesCount + 1,
+        likesCount: widget.post.isLiked
+            ? widget.post.likesCount - 1
+            : widget.post.likesCount + 1,
       ),
     );
   }
@@ -93,6 +96,32 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _CommentsSheet(accent: _accent),
+    );
+  }
+
+  void _showInfoSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _InfoSheet(
+        post: widget.post,
+        accent: _accent,
+        onFollow: _toggleFollow,
+        onMessage: () => _showMessageSheet(context),
+      ),
+    );
+  }
+
+  void _showMessageSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MessageSheet(
+        post: widget.post,
+        accent: _accent,
+      ),
     );
   }
 
@@ -166,6 +195,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               onShare: () => widget.onUpdate(
                 widget.post.copyWith(isShared: !widget.post.isShared),
               ),
+              onInfo: () => _showInfoSheet(context),
             ),
           ),
           Positioned(
@@ -250,6 +280,7 @@ class _ActionBar extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
+  final VoidCallback onInfo;
 
   const _ActionBar({
     required this.post,
@@ -257,6 +288,7 @@ class _ActionBar extends StatelessWidget {
     required this.onLike,
     required this.onComment,
     required this.onShare,
+    required this.onInfo,
   });
 
   @override
@@ -288,6 +320,14 @@ class _ActionBar extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         _MusicDisk(accent: accent),
+        const SizedBox(height: 10),
+        _ActionBtn(
+          icon: Icons.info_outline_rounded,
+          label: 'Info',
+          color: Colors.white,
+          glow: Colors.transparent,
+          onTap: onInfo,
+        ),
       ],
     );
   }
@@ -477,6 +517,505 @@ class _BottomInfo extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+      ],
+    );
+  }
+}
+
+class _InfoSheet extends StatelessWidget {
+  final PostModel post;
+  final Color accent;
+  final VoidCallback onFollow;
+  final VoidCallback onMessage;
+
+  const _InfoSheet({
+    required this.post,
+    required this.accent,
+    required this.onFollow,
+    required this.onMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final contentType = post.isPlaying ? 'Video / Media' : 'Image / Post';
+    final fullBio = 'Bio كامل لصاحب المحتوى: هذا الحساب ينشر محتوى قصير، تفاعلي، ويهتم بالمشاركة السريعة والردود المباشرة.';
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.48,
+      maxChildSize: 0.94,
+      builder: (_, controller) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D0D0D).withOpacity(0.88),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(color: accent.withOpacity(0.35), width: 1.4),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accent, width: 2),
+                            color: Colors.black38,
+                          ),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                post.username,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Creator profile • connected to the current post',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.65),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: onFollow,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: post.isFollowing ? Colors.white : accent.withOpacity(0.14),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: post.isFollowing ? Colors.white : accent.withOpacity(0.55),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Text(
+                              post.isFollowing ? 'Following' : 'Follow',
+                              style: TextStyle(
+                                color: post.isFollowing ? Colors.black : accent,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      controller: controller,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        _SectionTitle(title: 'Bio'),
+                        const SizedBox(height: 8),
+                        _DarkCard(
+                          child: Text(
+                            fullBio,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              height: 1.55,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _SectionTitle(title: 'Content'),
+                        const SizedBox(height: 8),
+                        _DarkCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _InfoRow(label: 'Type', value: contentType, accent: accent),
+                              const SizedBox(height: 12),
+                              _InfoRow(label: 'Title', value: post.title, accent: accent),
+                              const SizedBox(height: 12),
+                              _InfoRow(
+                                label: 'Audio',
+                                value: 'Original audio',
+                                accent: accent,
+                              ),
+                              const SizedBox(height: 12),
+                              _InfoRow(
+                                label: 'Views',
+                                value: Formatters.formatCount(post.viewsCount),
+                                accent: accent,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _SectionTitle(title: 'Post description'),
+                        const SizedBox(height: 8),
+                        _DarkCard(
+                          child: Text(
+                            post.title,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              height: 1.55,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        if (post.hashtags != null) ...[
+                          _SectionTitle(title: 'Hashtags'),
+                          const SizedBox(height: 8),
+                          _DarkCard(
+                            child: Text(
+                              post.hashtags!,
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+                        _SectionTitle(title: 'Quick stats'),
+                        const SizedBox(height: 8),
+                        _DarkCard(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _MiniStat(label: 'Likes', value: post.likesCount.toString()),
+                              _MiniStat(label: 'Comments', value: post.commentsCount.toString()),
+                              _MiniStat(label: 'Shares', value: post.sharesCount.toString()),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: onMessage,
+                                child: Container(
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white10,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Message',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: onFollow,
+                                child: Container(
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: accent,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Follow',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MessageSheet extends StatefulWidget {
+  final PostModel post;
+  final Color accent;
+
+  const _MessageSheet({
+    required this.post,
+    required this.accent,
+  });
+
+  @override
+  State<_MessageSheet> createState() => _MessageSheetState();
+}
+
+class _MessageSheetState extends State<_MessageSheet> {
+  final TextEditingController _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _send() {
+    if (_ctrl.text.trim().isEmpty) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message prepared')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.42,
+      minChildSize: 0.32,
+      maxChildSize: 0.68,
+      builder: (_, controller) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              color: const Color(0xFF0C0C0C).withOpacity(0.9),
+              child: ListView(
+                controller: controller,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.white10,
+                        child: const Icon(Icons.person_rounded, color: Colors.white),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Message ${widget.post.username}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _ctrl,
+                    maxLines: 5,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Write your message...',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.45)),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: _send,
+                    child: Container(
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: widget.accent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Send',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+}
+
+class _DarkCard extends StatelessWidget {
+  final Widget child;
+
+  const _DarkCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color accent;
+
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 84,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Icon(Icons.circle, color: accent, size: 8),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MiniStat({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 11,
+          ),
+        ),
       ],
     );
   }
