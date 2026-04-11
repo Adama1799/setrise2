@@ -149,7 +149,7 @@ class _PostCardState extends State<PostCard>
         // ── 5. RIGHT ACTION BAR ───────────────────────────────────────────
         Positioned(
           right: 12,
-          bottom: 90,
+          bottom: 130, // تم تعديل القيمة لرفع الأيقونات للأعلى ومطابقة التصميم المطلوب
           child: _ActionBar(
             post: widget.post,
             accent: _accent,
@@ -162,13 +162,17 @@ class _PostCardState extends State<PostCard>
 
         // ── 6. BOTTOM INFO ────────────────────────────────────────────────
         Positioned(
-          bottom: 72,
+          bottom: 0, // يبدأ من الأسفل
           left: 14,
           right: 80,
-          child: _BottomInfo(
-            post: widget.post,
-            accent: _accent,
-            onFollow: _toggleFollow,
+          child: Padding(
+            // مسافة سفلية ديناميكية لتفادي تداخل الشريط السفلي
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 70),
+            child: _BottomInfo(
+              post: widget.post,
+              accent: _accent,
+              onFollow: _toggleFollow,
+            ),
           ),
         ),
       ]),
