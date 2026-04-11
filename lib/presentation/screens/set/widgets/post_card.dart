@@ -11,12 +11,14 @@ class PostCard extends StatefulWidget {
   final PostModel post;
   final Function(PostModel) onUpdate;
   final VoidCallback onSwipeNext;
+  final ValueChanged<bool> onHorizontalDragStateChanged;
 
   const PostCard({
     super.key,
     required this.post,
     required this.onUpdate,
     required this.onSwipeNext,
+    required this.onHorizontalDragStateChanged,
   });
 
   @override
@@ -27,6 +29,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
   late AnimationController _heartController;
   late Animation<double> _heartAnimation;
   bool _showHeart = false;
+  double _dragX = 0;
+  double _dragY = 0;
+  bool _isHorizontalGesture = false;
 
   Color get _accent => _deriveAccent(widget.post.backgroundColor);
   Color get _accentGlow => _accent.withOpacity(0.35);
@@ -125,16 +130,83 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     );
   }
 
+  void _resetSwipeState() {
+    if (_isHorizontalGesture) {
+      widget.onHorizontalDragStateChanged(false);
+    }
+    _dragX = 0;
+    _dragY = 0;
+    _isHorizontalGesture = false;
+  }
+
+  void _handlePanUpdate(DragUpdateDetails details) {
+    _dragX += details.delta.dx;
+    _dragY += details.delta.dy;
+
+    final horizontalDominant = _dragX.abs() > _dragY.abs();
+    if (horizontalDominant && !_isHorizontalGesture && _dragX.abs() > 8) {
+      _isHorizontalGesture = true;
+      widget.onHorizontalDragStateChanged(true);
+    }
+
+    if (_isHorizontalGesture && mounted) {
+      setState(() {});
+    }
+  }
+
+  void _handlePanEnd(DragEndDetails details) {
+    if (_isHorizontalGesture) {
+      if (_dragX > 110) {
+        widget.onSwipeNext();
+      } else if (_dragX < -110) {
+        widget.onSwipeNext();
+      }
+    }
+    _resetSwipeState();
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomSafe = MediaQuery.of(context).padding.bottom;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _togglePlay,
       onDoubleTap: _triggerHeart,
+      onPanUpdate: _handlePanUpdate,
+      onPanEnd: _handlePanEnd,
       child: Stack(
         fit: StackFit.expand,
         children: [
+          if (_isHorizontalGesture)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  color: _dragX >= 0
+                      ? Colors.green.withOpacity((_dragX.abs() / 360).clamp(0.0, 0.22))
+                      : Colors.red.withOpacity((_dragX.abs() / 360).clamp(0.0, 0.22)),
+                ),
+              ),
+            ),
+          if (_isHorizontalGesture && _dragX > 70)
+            const Positioned(
+              top: 110,
+              left: 18,
+              child: _SwipeLabel(
+                text: 'INTERESTED',
+                color: Colors.green,
+              ),
+            ),
+          if (_isHorizontalGesture && _dragX < -70)
+            const Positioned(
+              top: 110,
+              right: 18,
+              child: _SwipeLabel(
+                text: 'SKIP',
+                color: Colors.red,
+              ),
+            ),
           _DynamicBackground(
             baseColor: widget.post.backgroundColor,
             accentColor: _accent,
@@ -214,6 +286,41 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+class _SwipeLabel extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _SwipeLabel({
+    required this.text,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: text == 'INTERESTED' ? -0.14 : 0.14,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: 3),
+          color: color.withOpacity(0.12),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.1,
+          ),
+        ),
       ),
     );
   }
