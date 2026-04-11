@@ -1,171 +1,117 @@
 import 'package:flutter/material.dart';
-
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../data/models/story_model.dart';
 
 class StoriesBar extends StatelessWidget {
   final List<StoryModel> stories;
-  final ValueChanged<int> onStoryTap;
 
   const StoriesBar({
     super.key,
     required this.stories,
-    required this.onStoryTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 138,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+      height: 100,
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         itemCount: stories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
           final story = stories[index];
-          return _StoryCard(
-            story: story,
-            onTap: () => onStoryTap(index),
-          );
+          return _StoryItem(story: story);
         },
       ),
     );
   }
 }
 
-class _StoryCard extends StatelessWidget {
+class _StoryItem extends StatelessWidget {
   final StoryModel story;
-  final VoidCallback onTap;
 
-  const _StoryCard({
-    required this.story,
-    required this.onTap,
-  });
+  const _StoryItem({required this.story});
 
   @override
   Widget build(BuildContext context) {
-    final isLive = story.isLive || story.status == StoryStatus.live;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+    return GestureDetector(
+      onTap: () {
+        // TODO: Open story viewer
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Opening ${story.username}\'s story')),
+        );
+      },
       child: Container(
-        width: 72,
-        padding: const EdgeInsets.all(2),
+        width: 70,
+        margin: const EdgeInsets.only(right: 12),
         child: Column(
           children: [
-            Container(
-              width: 70,
-              height: 116,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isLive ? AppColors.storyLive : story.borderColor,
-                  width: isLive ? 2.4 : 2,
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isLive
-                      ? [const Color(0xFFFF2D2D), const Color(0xFF5A0000)]
-                      : [
-                          Colors.white10,
-                          Colors.white10,
-                        ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: story.borderColor.withOpacity(0.22),
-                    blurRadius: 12,
-                    spreadRadius: 1,
+            Stack(
+              children: [
+                // Story Circle
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: story.borderColor,
+                      width: 3,
+                    ),
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [
-                              story.borderColor.withOpacity(0.35),
-                              const Color(0xFF111111),
-                            ],
-                            center: Alignment.topCenter,
-                            radius: 0.95,
-                          ),
+                  child: ClipOval(
+                    child: Container(
+                      color: AppColors.grey,
+                      child: const Icon(
+                        Icons.person,
+                        color: AppColors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+                // Live Badge
+                if (story.isLive)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.live,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppColors.background,
+                          width: 2,
+                        ),
+                      ),
+                      child: Text(
+                        'LIVE',
+                        style: AppTextStyles.overline.copyWith(
+                          color: AppColors.white,
+                          fontSize: 8,
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      right: 10,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.95),
-                            ),
-                            child: const Icon(Icons.person_rounded, size: 12, color: Colors.black),
-                          ),
-                          const Spacer(),
-                          if (isLive)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: const Text(
-                                'LIVE',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            story.username,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isLive ? 'Open' : 'Story',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: Colors.white70,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              story.status == StoryStatus.own
+                  ? 'Your Story'
+                  : story.username,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.white,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),

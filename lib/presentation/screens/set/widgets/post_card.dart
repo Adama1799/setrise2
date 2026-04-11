@@ -1,24 +1,20 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-
+import 'dart:math' show cos, sin;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/post_model.dart';
-import '../post_detail_screen.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
-  final ValueChanged<PostModel> onUpdate;
-  final VoidCallback onLikeTap;
-  final VoidCallback onOpenDetails;
+  final Function(PostModel) onUpdate;
+  final VoidCallback onSwipeNext;
 
   const PostCard({
     super.key,
     required this.post,
     required this.onUpdate,
-    required this.onLikeTap,
-    required this.onOpenDetails,
+    required this.onSwipeNext,
   });
 
   @override
@@ -26,20 +22,310 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
+  double _dragX = 0;
   bool _showHeart = false;
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
+  late AnimationController _heartController;
+  late Animation<double> _heartAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _heartController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 800),
     );
-    _scale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _heartAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _heartController, curve: Curves.elasticOut),
     );
+    _heartController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() => _showHeart = false);
+            _heartController.reset();
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _heartController.dispose();
+    super.dispose();
+  }
+
+  void _triggerHeart() {
+    setState(() => _showHeart = true);
+    _heartController.forward();
+    if (!widget.post.isLiked) _toggleLike();
+  }
+
+  void _toggleLike() {
+    widget.onUpdate(widget.post.copyWith(
+      isLiked: !widget.post.isLiked,
+      likesCount: widget.post.isLiked ? widget.post.likesCount - 1 : widget.post.likesCount + 1,
+    ));
+  }
+
+  void _togglePlay() {
+    widget.onUpdate(widget.post.copyWith(isPlaying: !widget.post.isPlaying));
+  }
+
+  void _toggleFollow() {
+    widget.onUpdate(widget.post.copyWith(isFollowing: !widget.post.isFollowing));
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    setState(() => _dragX += details.delta.dx);
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (_dragX > 80 || _dragX < -80) widget.onSwipeNext();
+    setState(() => _dragX = 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isRight = _dragX > 40;
+    final isLeft = _dragX < -40;
+
+    Color bgTint = Colors.transparent;
+    if (_dragX > 0) {
+      bgTint = AppColors.neonGreen.withOpacity((_dragX / 300).clamp(0, 0.3));
+    } else if (_dragX < 0) {
+      bgTint = AppColors.neonRed.withOpacity((-_dragX / 300).clamp(0, 0.3));
+    }
+
+    return GestureDetector(
+      onHorizontalDragUpdate: _onDragUpdate,
+      onHorizontalDragEnd: _onDragEnd,
+      onTap: _togglePlay,
+      onDoubleTap: _triggerHeart,
+      child: Transform.translate(
+        offset: Offset(_dragX * 0.2, 0),
+        child: Transform.rotate(
+          angle: _dragX / 1200,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(color: widget.post.backgroundColor),
+              AnimatedContainer(duration: const Duration(milliseconds: 50), color: bgTint),
+              if (!widget.post.isPlaying)
+                Center(
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.play_arrow, color: AppColors.white, size: 44),
+                  ),
+                ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 320,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.95)],
+                    ),
+                  ),
+                ),
+              ),
+              if (isRight)
+                Positioned(
+                  top: 100,
+                  left: 20,
+                  child: Transform.rotate(
+                    angle: -0.3,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.neonGreen, width: 3),
+                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.neonGreen.withOpacity(0.1),
+                      ),
+                      child: Text('INTERESTED', style: AppTextStyles.h5.copyWith(color: AppColors.neonGreen, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+              if (isLeft)
+                Positioned(
+                  top: 100,
+                  right: 20,
+                  child: Transform.rotate(
+                    angle: 0.3,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.neonRed, width: 3),
+                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.neonRed.withOpacity(0.1),
+                      ),
+                      child: Text('SKIP', style: AppTextStyles.h5.copyWith(color: AppColors.neonRed, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+              if (_showHeart)
+                Center(child: ScaleTransition(scale: _heartAnimation, child: _FourPointStar(size: 120, color: AppColors.neonYellow))),
+              Positioned(right: 10, bottom: 75, child: _buildActionsBar()),
+              Positioned(bottom: 70, left: 12, right: 80, child: _buildBottomInfo()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionsBar() {
+    return Column(
+      children: [
+        _actionButton(
+          child: _FourPointStar(size: 30, color: widget.post.isLiked ? AppColors.neonYellow : AppColors.white),
+          label: Formatters.formatCount(widget.post.likesCount),
+          onTap: _toggleLike,
+        ),
+        _actionButton(
+          child: const Icon(Icons.chat_bubble_outline, color: AppColors.white, size: 30),
+          label: Formatters.formatCount(widget.post.commentsCount),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Comments - Coming soon!'))),
+        ),
+        _actionButton(
+          child: const Icon(Icons.change_history, color: AppColors.neonGreen, size: 30),
+          label: 'Boost',
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recommend - Coming soon!'))),
+        ),
+        _actionButton(
+          child: const Icon(Icons.share_outlined, color: AppColors.white, size: 30),
+          label: Formatters.formatCount(widget.post.sharesCount),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share - Coming soon!'))),
+        ),
+        const SizedBox(height: 8),
+        _MusicDisk(),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Info - Coming soon!'))),
+          child: Column(
+            children: [
+              const Icon(Icons.keyboard_arrow_up, color: AppColors.white, size: 28),
+              Text('Info', style: AppTextStyles.labelSmall.copyWith(color: AppColors.white)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actionButton({required Widget child, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          children: [
+            child,
+            const SizedBox(height: 3),
+            Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(radius: 16, backgroundColor: AppColors.grey, child: const Icon(Icons.person, color: AppColors.white, size: 18)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(widget.post.username, style: AppTextStyles.username.copyWith(color: AppColors.white))),
+            if (!widget.post.isFollowing)
+              GestureDetector(
+                onTap: _toggleFollow,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(border: Border.all(color: AppColors.white, width: 1.5), borderRadius: BorderRadius.circular(6)),
+                  child: Text('Follow', style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w500)),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(widget.post.title, style: AppTextStyles.postTitle.copyWith(color: AppColors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
+      ],
+    );
+  }
+}
+
+class _FourPointStar extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _FourPointStar({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(size: Size(size, size), painter: _FourPointStarPainter(color: color));
+  }
+}
+
+class _FourPointStarPainter extends CustomPainter {
+  final Color color;
+
+  _FourPointStarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color..style = PaintingStyle.fill;
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final outerRadius = size.width / 2;
+    final innerRadius = size.width / 4;
+
+    for (int i = 0; i < 4; i++) {
+      final outerAngle = (i * 90 - 90) * (3.14159 / 180);
+      final innerAngle = ((i * 90 - 90) + 45) * (3.14159 / 180);
+      final outerX = centerX + outerRadius * cos(outerAngle);
+      final outerY = centerY + outerRadius * sin(outerAngle);
+      final innerX = centerX + innerRadius * cos(innerAngle);
+      final innerY = centerY + innerRadius * sin(innerAngle);
+
+      if (i == 0) {
+        path.moveTo(outerX, outerY);
+      } else {
+        path.lineTo(outerX, outerY);
+      }
+      path.lineTo(innerX, innerY);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _MusicDisk extends StatefulWidget {
+  @override
+  State<_MusicDisk> createState() => _MusicDiskState();
+}
+
+class _MusicDiskState extends State<_MusicDisk> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat();
   }
 
   @override
@@ -48,464 +334,16 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
-  void _triggerLike() {
-    widget.onLikeTap();
-    setState(() => _showHeart = true);
-    _controller.forward(from: 0);
-
-    Timer(const Duration(milliseconds: 650), () {
-      if (!mounted) return;
-      setState(() => _showHeart = false);
-    });
-  }
-
-  void _togglePlay() {
-    widget.onUpdate(widget.post.copyWith(isPlaying: !widget.post.isPlaying));
-  }
-
-  void _toggleSave() {
-    widget.onUpdate(
-      widget.post.copyWith(
-        isSaved: !widget.post.isSaved,
-        savesCount: widget.post.isSaved
-            ? widget.post.savesCount - 1
-            : widget.post.savesCount + 1,
-      ),
-    );
-  }
-
-  void _openInfoSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _PostInfoSheet(post: widget.post),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final post = widget.post;
-
-    return GestureDetector(
-      onTap: widget.onOpenDetails,
-      onDoubleTap: _triggerLike,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 128, 12, 84),
-        child: AspectRatio(
-          aspectRatio: 0.65,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white12),
-              boxShadow: [
-                BoxShadow(
-                  color: post.backgroundColor.withOpacity(0.35),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            post.backgroundColor,
-                            const Color(0xFF090909),
-                            Colors.black,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Opacity(
-                      opacity: 0.08,
-                      child: CustomPaint(painter: _GridPainter()),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white24),
-                                  color: Colors.white10,
-                                ),
-                                child: const Icon(
-                                  Icons.person_rounded,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      post.username,
-                                      style: AppTextStyles.labelLarge.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '3m ago • 1.2K views',
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        color: Colors.white70,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              InkWell(
-                                onTap: _openInfoSheet,
-                                borderRadius: BorderRadius.circular(999),
-                                child: Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white10,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: Colors.white12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.info_outline_rounded,
-                                    color: Colors.white,
-                                    size: 19,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Expanded(
-                            child: Center(
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: double.infinity,
-                                    margin: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(24),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Colors.white.withOpacity(0.14),
-                                          Colors.white.withOpacity(0.04),
-                                        ],
-                                      ),
-                                      border: Border.all(color: Colors.white12),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(24),
-                                      child: Stack(
-                                        children: [
-                                          Positioned.fill(
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                gradient: RadialGradient(
-                                                  colors: [
-                                                    AppColors.cyan.withOpacity(0.22),
-                                                    Colors.transparent,
-                                                  ],
-                                                  radius: 0.9,
-                                                  center: Alignment.topLeft,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Center(
-                                            child: Container(
-                                              width: 90,
-                                              height: 90,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.black.withOpacity(0.34),
-                                                border: Border.all(
-                                                  color: Colors.white24,
-                                                  width: 1.2,
-                                                ),
-                                              ),
-                                              child: Icon(
-                                                post.isPlaying
-                                                    ? Icons.pause_rounded
-                                                    : Icons.play_arrow_rounded,
-                                                color: Colors.white,
-                                                size: 42,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  if (_showHeart)
-                                    ScaleTransition(
-                                      scale: _scale,
-                                      child: Container(
-                                        width: 110,
-                                        height: 110,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.black.withOpacity(0.28),
-                                        ),
-                                        child: const Icon(
-                                          Icons.favorite_rounded,
-                                          color: Colors.redAccent,
-                                          size: 68,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            post.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.postTitle.copyWith(
-                              color: Colors.white,
-                              height: 1.25,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (post.hashtags != null)
-                            Text(
-                              post.hashtags!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.cyan,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              _MetaPill(
-                                icon: post.isLiked
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                text: _formatCount(post.likesCount),
-                                selected: post.isLiked,
-                                onTap: _triggerLike,
-                              ),
-                              const SizedBox(width: 8),
-                              _MetaPill(
-                                icon: Icons.mode_comment_rounded,
-                                text: _formatCount(post.commentsCount),
-                                selected: false,
-                                onTap: widget.onOpenDetails,
-                              ),
-                              const SizedBox(width: 8),
-                              _MetaPill(
-                                icon: post.isSaved
-                                    ? Icons.bookmark_rounded
-                                    : Icons.bookmark_border_rounded,
-                                text: _formatCount(post.savesCount),
-                                selected: post.isSaved,
-                                onTap: _toggleSave,
-                              ),
-                              const Spacer(),
-                              InkWell(
-                                onTap: _togglePlay,
-                                borderRadius: BorderRadius.circular(999),
-                                child: Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white10,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: Colors.white12),
-                                  ),
-                                  child: Icon(
-                                    post.isPlaying
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatCount(int value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
-    return value.toString();
-  }
-}
-
-class _MetaPill extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _MetaPill({
-    required this.icon,
-    required this.text,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = selected ? Colors.white : Colors.white10;
-    final fg = selected ? Colors.black : Colors.white;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+    return RotationTransition(
+      turns: _controller,
       child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: fg, size: 18),
-            const SizedBox(width: 6),
-            Text(
-              text,
-              style: TextStyle(
-                color: fg,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.white, width: 2), color: AppColors.grey),
+        child: const Icon(Icons.music_note, color: AppColors.white, size: 20),
       ),
     );
   }
-}
-
-class _PostInfoSheet extends StatelessWidget {
-  final PostModel post;
-
-  const _PostInfoSheet({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.46,
-      padding: EdgeInsets.fromLTRB(
-        16,
-        14,
-        16,
-        16 + MediaQuery.of(context).padding.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D0D0D),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Info',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 12),
-          _RowInfo(icon: Icons.visibility_rounded, text: '${post.viewsCount} views'),
-          _RowInfo(icon: Icons.favorite_rounded, text: '${post.likesCount} likes'),
-          _RowInfo(icon: Icons.mode_comment_rounded, text: '${post.commentsCount} comments'),
-          _RowInfo(icon: Icons.send_rounded, text: '${post.sharesCount} shares'),
-          const SizedBox(height: 8),
-          Text(
-            post.title,
-            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RowInfo extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _RowInfo({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 10),
-          Text(text, style: const TextStyle(color: Colors.white70)),
-        ],
-      ),
-    );
-  }
-}
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-    for (var y = 0.0; y < size.height; y += 28) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint..strokeWidth = 0.4);
-    }
-    for (var x = 0.0; x < size.width; x += 28) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint..strokeWidth = 0.4);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
