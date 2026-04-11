@@ -1,121 +1,132 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/rize_model.dart';
+import 'rize_post_detail_screen.dart';
 import 'widgets/rize_post_card.dart';
 
 class RizeScreen extends StatefulWidget {
   const RizeScreen({super.key});
+
   @override
   State<RizeScreen> createState() => _RizeScreenState();
 }
 
-class _RizeScreenState extends State<RizeScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
-  final List<RizePostModel> _posts = RizePostModel.getMockPosts();
-  bool _barsVisible = true;
-  final ScrollController _scrollCtrl = ScrollController();
-  double _lastOffset = 0;
+class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late final List<RizePostModel> _posts;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-    _scrollCtrl.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    final delta = _scrollCtrl.offset - _lastOffset;
-    _lastOffset = _scrollCtrl.offset;
-    if (delta > 6 && _barsVisible) setState(() => _barsVisible = false);
-    if (delta < -6 && !_barsVisible) setState(() => _barsVisible = true);
+    _tabController = TabController(length: 2, vsync: this);
+    _posts = RizePostModel.getMockPosts().asMap().entries.map((entry) {
+      if (entry.key % 3 == 0) {
+        return entry.value.copyWith(isFollowing: true);
+      }
+      return entry.value;
+    }).toList();
   }
 
   @override
   void dispose() {
-    _tabCtrl.dispose();
-    _scrollCtrl.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
-  void _updatePost(int index, RizePostModel updatedPost) =>
-      setState(() => _posts[index] = updatedPost);
+  void _openPost(RizePostModel post) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RizePostDetailScreen(post: post),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final forYou = _posts;
+    final following = _posts.where((p) => p.isFollowing).toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(children: [
-        // Feed
-        ListView.separated(
-          controller: _scrollCtrl,
-          padding: EdgeInsets.only(
-              top: _barsVisible ? 100 : 0, bottom: 20),
-          itemCount: _posts.length,
-          separatorBuilder: (_, __) =>
-              Divider(color: AppColors.grey.withOpacity(0.4), height: 1),
-          itemBuilder: (_, i) => RizePostCard(
-            post: _posts[i],
-            onUpdate: (p) => _updatePost(i, p),
-          ),
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.white,
+        elevation: 0,
+        title: const Text(
+          'Rize',
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
-
-        // Top bar (hide on scroll)
-        AnimatedSlide(
-          offset: _barsVisible ? Offset.zero : const Offset(0, -1),
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          child: Container(
-            color: AppColors.background,
-            child: SafeArea(
-              bottom: false,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  child: Row(children: [
-                    const Spacer(),
-                    Text('Rize',
-                        style: AppTextStyles.h4
-                            .copyWith(color: AppColors.white)),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.tune,
-                          color: AppColors.white, size: 22),
-                      onPressed: () {},
-                    ),
-                  ]),
-                ),
-                TabBar(
-                  controller: _tabCtrl,
-                  indicatorColor: AppColors.electricBlue,
-                  indicatorWeight: 2.5,
-                  labelColor: AppColors.white,
-                  unselectedLabelColor: AppColors.grey2,
-                  labelStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Inter'),
-                  unselectedLabelStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Inter'),
-                  tabs: const [
-                    Tab(text: 'For You'),
-                    Tab(text: 'Following'),
-                  ],
-                ),
-              ]),
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded),
+            onPressed: () {},
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white54,
+          labelStyle: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w900),
+          tabs: const [
+            Tab(text: 'لك'),
+            Tab(text: 'تتابعه'),
+          ],
         ),
-      ]),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.electricBlue,
-        onPressed: () {},
-        child: const Icon(Icons.add, color: Colors.white),
       ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _RizeFeed(
+            posts: forYou,
+            onTapPost: _openPost,
+          ),
+          _RizeFeed(
+            posts: following.isEmpty ? forYou.take(6).toList() : following,
+            onTapPost: _openPost,
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.white,
+        foregroundColor: Colors.black,
+        onPressed: () {},
+        child: const Icon(Icons.add_rounded),
+      ),
+    );
+  }
+}
+
+class _RizeFeed extends StatelessWidget {
+  final List<RizePostModel> posts;
+  final ValueChanged<RizePostModel> onTapPost;
+
+  const _RizeFeed({
+    required this.posts,
+    required this.onTapPost,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
+      itemCount: posts.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return RizePostCard(
+          post: post,
+          onOpenDetails: () => onTapPost(post),
+          onUpdate: (_) {},
+        );
+      },
     );
   }
 }
