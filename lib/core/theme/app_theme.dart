@@ -10,7 +10,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'HarmonyOS',
+      fontFamily: 'Inter',
       
       // Colors
       scaffoldBackgroundColor: AppColors.background,
