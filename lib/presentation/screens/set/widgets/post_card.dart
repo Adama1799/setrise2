@@ -24,15 +24,15 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
-  late AnimationController _heartController;
-  late Animation<double> _heartAnimation;
+  late final AnimationController _heartController;
+  late final Animation<double> _heartAnimation;
   bool _showHeart = false;
 
   Color get _accent => _deriveAccent(widget.post.backgroundColor);
   Color get _accentGlow => _accent.withOpacity(0.35);
 
   Color _deriveAccent(Color base) {
-    final HSLColor hsl = HSLColor.fromColor(base);
+    final hsl = HSLColor.fromColor(base);
     return hsl.withSaturation(1.0).withLightness(0.62).toColor();
   }
 
@@ -43,11 +43,13 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
+
     _heartAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _heartController, curve: Curves.elasticOut),
     );
-    _heartController.addStatusListener((s) {
-      if (s == AnimationStatus.completed) {
+
+    _heartController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 350), () {
           if (!mounted) return;
           setState(() => _showHeart = false);
@@ -139,6 +141,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
             baseColor: widget.post.backgroundColor,
             accentColor: _accent,
           ),
+
           if (!widget.post.isPlaying)
             Center(
               child: Container(
@@ -157,6 +160,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 ),
               ),
             ),
+
           Positioned(
             bottom: 0,
             left: 0,
@@ -177,6 +181,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               ),
             ),
           ),
+
           if (_showHeart)
             Center(
               child: ScaleTransition(
@@ -184,6 +189,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 child: _StarBurst(color: _accent, size: 120),
               ),
             ),
+
           Positioned(
             right: 12,
             bottom: bottomSafe + 18,
@@ -198,6 +204,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               onInfo: () => _showInfoSheet(context),
             ),
           ),
+
           Positioned(
             bottom: bottomSafe + 8,
             left: 14,
@@ -206,6 +213,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
               post: widget.post,
               accent: _accent,
               onFollow: _toggleFollow,
+              onMessage: () => _showMessageSheet(context),
             ),
           ),
         ],
@@ -304,19 +312,19 @@ class _ActionBar extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _ActionBtn(
+          icon: Icons.change_history_rounded,
+          label: 'Boost',
+          color: AppColors.neonGreen,
+          glow: Colors.transparent,
+          onTap: onShare,
+        ),
+        const SizedBox(height: 8),
+        _ActionBtn(
           icon: Icons.chat_bubble_outline_rounded,
           label: Formatters.formatCount(post.commentsCount),
           color: Colors.white,
           glow: Colors.transparent,
           onTap: onComment,
-        ),
-        const SizedBox(height: 8),
-        _ActionBtn(
-          icon: Icons.send_rounded,
-          label: Formatters.formatCount(post.sharesCount),
-          color: Colors.white,
-          glow: Colors.transparent,
-          onTap: onShare,
         ),
         const SizedBox(height: 14),
         _MusicDisk(accent: accent),
@@ -391,8 +399,9 @@ class _MusicDisk extends StatefulWidget {
   State<_MusicDisk> createState() => _MusicDiskState();
 }
 
-class _MusicDiskState extends State<_MusicDisk> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
+class _MusicDiskState extends State<_MusicDisk>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
 
   @override
   void initState() {
@@ -438,11 +447,13 @@ class _BottomInfo extends StatelessWidget {
   final PostModel post;
   final Color accent;
   final VoidCallback onFollow;
+  final VoidCallback onMessage;
 
   const _BottomInfo({
     required this.post,
     required this.accent,
     required this.onFollow,
+    required this.onMessage,
   });
 
   @override
@@ -458,7 +469,9 @@ class _BottomInfo extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: accent, width: 2),
-                boxShadow: [BoxShadow(color: accent.withOpacity(0.4), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(color: accent.withOpacity(0.4), blurRadius: 10),
+                ],
                 color: Colors.black38,
               ),
               child: const Icon(Icons.person_rounded, color: Colors.white, size: 20),
@@ -475,805 +488,33 @@ class _BottomInfo extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (!post.isFollowing)
-              GestureDetector(
-                onTap: onFollow,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: accent, width: 1.5),
-                    borderRadius: BorderRadius.circular(20),
-                    color: accent.withOpacity(0.12),
+            GestureDetector(
+              onTap: onFollow,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: post.isFollowing ? Colors.white : accent.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: post.isFollowing ? Colors.white : accent.withOpacity(0.55),
+                    width: 1.2,
                   ),
-                  child: Text(
-                    'Follow',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                child: Text(
+                  post.isFollowing ? 'Following' : 'Follow',
+                  style: TextStyle(
+                    color: post.isFollowing ? Colors.black : accent,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
                   ),
                 ),
               ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          post.title,
-          style: AppTextStyles.postTitle.copyWith(
-            color: Colors.white,
-            height: 1.35,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 8),
-        if (post.hashtags != null)
-          Text(
-            post.hashtags!,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: accent,
-              fontWeight: FontWeight.w600,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-      ],
-    );
-  }
-}
-
-class _InfoSheet extends StatelessWidget {
-  final PostModel post;
-  final Color accent;
-  final VoidCallback onFollow;
-  final VoidCallback onMessage;
-
-  const _InfoSheet({
-    required this.post,
-    required this.accent,
-    required this.onFollow,
-    required this.onMessage,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final contentType = post.isPlaying ? 'Video / Media' : 'Image / Post';
-    final fullBio = 'Bio كامل لصاحب المحتوى: هذا الحساب ينشر محتوى قصير، تفاعلي، ويهتم بالمشاركة السريعة والردود المباشرة.';
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.72,
-      minChildSize: 0.48,
-      maxChildSize: 0.94,
-      builder: (_, controller) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D0D0D).withOpacity(0.88),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border(
-                  top: BorderSide(color: accent.withOpacity(0.35), width: 1.4),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accent, width: 2),
-                            color: Colors.black38,
-                          ),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                post.username,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Creator profile • connected to the current post',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.65),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: onFollow,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: post.isFollowing ? Colors.white : accent.withOpacity(0.14),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: post.isFollowing ? Colors.white : accent.withOpacity(0.55),
-                                width: 1.2,
-                              ),
-                            ),
-                            child: Text(
-                              post.isFollowing ? 'Following' : 'Follow',
-                              style: TextStyle(
-                                color: post.isFollowing ? Colors.black : accent,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView(
-                      controller: controller,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      children: [
-                        _SectionTitle(title: 'Bio'),
-                        const SizedBox(height: 8),
-                        _DarkCard(
-                          child: Text(
-                            fullBio,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              height: 1.55,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionTitle(title: 'Content'),
-                        const SizedBox(height: 8),
-                        _DarkCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _InfoRow(label: 'Type', value: contentType, accent: accent),
-                              const SizedBox(height: 12),
-                              _InfoRow(label: 'Title', value: post.title, accent: accent),
-                              const SizedBox(height: 12),
-                              _InfoRow(
-                                label: 'Audio',
-                                value: 'Original audio',
-                                accent: accent,
-                              ),
-                              const SizedBox(height: 12),
-                              _InfoRow(
-                                label: 'Views',
-                                value: Formatters.formatCount(post.viewsCount),
-                                accent: accent,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionTitle(title: 'Post description'),
-                        const SizedBox(height: 8),
-                        _DarkCard(
-                          child: Text(
-                            post.title,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              height: 1.55,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        if (post.hashtags != null) ...[
-                          _SectionTitle(title: 'Hashtags'),
-                          const SizedBox(height: 8),
-                          _DarkCard(
-                            child: Text(
-                              post.hashtags!,
-                              style: TextStyle(
-                                color: accent,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                        ],
-                        _SectionTitle(title: 'Quick stats'),
-                        const SizedBox(height: 8),
-                        _DarkCard(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _MiniStat(label: 'Likes', value: post.likesCount.toString()),
-                              _MiniStat(label: 'Comments', value: post.commentsCount.toString()),
-                              _MiniStat(label: 'Shares', value: post.sharesCount.toString()),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: onMessage,
-                                child: Container(
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white10,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white12),
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      'Message',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: onFollow,
-                                child: Container(
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    color: accent,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      'Follow',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _MessageSheet extends StatefulWidget {
-  final PostModel post;
-  final Color accent;
-
-  const _MessageSheet({
-    required this.post,
-    required this.accent,
-  });
-
-  @override
-  State<_MessageSheet> createState() => _MessageSheetState();
-}
-
-class _MessageSheetState extends State<_MessageSheet> {
-  final TextEditingController _ctrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _send() {
-    if (_ctrl.text.trim().isEmpty) return;
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message prepared')),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.42,
-      minChildSize: 0.32,
-      maxChildSize: 0.68,
-      builder: (_, controller) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              color: const Color(0xFF0C0C0C).withOpacity(0.9),
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.white10,
-                        child: const Icon(Icons.person_rounded, color: Colors.white),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Message ${widget.post.username}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _ctrl,
-                    maxLines: 5,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Write your message...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.45)),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  GestureDetector(
-                    onTap: _send,
-                    child: Container(
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: widget.accent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Send',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-        fontWeight: FontWeight.w900,
-      ),
-    );
-  }
-}
-
-class _DarkCard extends StatelessWidget {
-  final Widget child;
-
-  const _DarkCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color accent;
-
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 84,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        Icon(Icons.circle, color: accent, size: 8),
-      ],
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MiniStat({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StarBurst extends StatelessWidget {
-  final Color color;
-  final double size;
-
-  const _StarBurst({
-    required this.color,
-    required this.size,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _StarBurstPainter(color: color),
-    );
-  }
-}
-
-class _StarBurstPainter extends CustomPainter {
-  final Color color;
-
-  const _StarBurstPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..style = PaintingStyle.fill;
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final outer = size.width / 2;
-    final inner = size.width / 4.5;
-    const points = 8;
-    final path = Path();
-
-    for (int i = 0; i < points * 2; i++) {
-      final angle = (i * pi / points) - pi / 2;
-      final r = i.isEven ? outer : inner;
-      final x = cx + r * cos(angle);
-      final y = cy + r * sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-
-    path.close();
-
-    final glowPaint = Paint()
-      ..color = color.withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _StarBurstPainter oldDelegate) => false;
-}
-
-class _NoisePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-    final rng = DateTime.now().millisecondsSinceEpoch;
-
-    for (int i = 0; i < 800; i++) {
-      final x = (((rng * (i + 1) * 6364136223846793005 + 1442695040888963407) & 0xFFFF) / 0xFFFF) * size.width;
-      final y = (((rng * (i + 2) * 2862933555777941757 + 3037000499) & 0xFFFF) / 0xFFFF) * size.height;
-      canvas.drawCircle(Offset(x, y), 0.6, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _NoisePainter oldDelegate) => false;
-}
-
-class _CommentsSheet extends StatefulWidget {
-  final Color accent;
-
-  const _CommentsSheet({required this.accent});
-
-  @override
-  State<_CommentsSheet> createState() => _CommentsSheetState();
-}
-
-class _CommentsSheetState extends State<_CommentsSheet> {
-  final _ctrl = TextEditingController();
-  final List<Map<String, dynamic>> _comments = [
-    {'user': 'ahmed_99', 'text': 'This is 🔥🔥', 'time': '2m', 'likes': 24},
-    {'user': 'sara_x', 'text': 'Love this content ❤️', 'time': '5m', 'likes': 18},
-    {'user': 'nora_m', 'text': 'Amazing shot!', 'time': '12m', 'likes': 9},
-  ];
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _send() {
-    if (_ctrl.text.trim().isEmpty) return;
-    setState(() {
-      _comments.insert(0, {
-        'user': 'You',
-        'text': _ctrl.text.trim(),
-        'time': 'now',
-        'likes': 0,
-      });
-      _ctrl.clear();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D0D0D),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: widget.accent.withOpacity(0.3), width: 1.5),
-        ),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: widget.accent.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Comments',
-            style: AppTextStyles.h5.copyWith(color: Colors.white),
-          ),
-          Divider(color: widget.accent.withOpacity(0.15), height: 20),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _comments.length,
-              itemBuilder: (_, i) {
-                final c = _comments[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.grey,
-                          border: Border.all(color: widget.accent.withOpacity(0.4)),
-                        ),
-                        child: const Icon(Icons.person, color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  c['user'],
-                                  style: AppTextStyles.labelLarge.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  c['time'],
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.grey2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              c['text'],
-                              style: AppTextStyles.body2.copyWith(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF111111),
-              border: Border(
-                top: BorderSide(color: widget.accent.withOpacity(0.15)),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppColors.grey,
-                      borderRadius: BorderRadius.circular(21),
-                      border: Border.all(color: widget.accent.withOpacity(0.3)),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: _ctrl,
-                      style: AppTextStyles.body2.copyWith(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Add a comment...',
-                        hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey2),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _send,
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: widget.accent,
-                      boxShadow: [
-                        BoxShadow(
-                          color: widget.accent.withOpacity(0.4),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
-        ],
-      ),
-    );
-  }
-}
+            GestureDetector(
+              onTap: onMessage,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(20
