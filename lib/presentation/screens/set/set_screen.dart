@@ -36,22 +36,8 @@ class _SetScreenState extends State<SetScreen> {
     setState(() => _showStoriesPanel = !_showStoriesPanel);
   }
 
-  void _openInfoSheet(PostModel post) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _InfoSheet(post: post),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentPost = _posts.isEmpty ? null : _posts[_currentPage.clamp(0, _posts.length - 1)];
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -105,8 +91,6 @@ class _SetScreenState extends State<SetScreen> {
             child: _TopBar(
               isPanelOpen: _showStoriesPanel,
               onSetRizeTap: _toggleStoriesPanel,
-              onSearchTap: () {},
-              onInfoTap: currentPost == null ? null : () => _openInfoSheet(currentPost),
             ),
           ),
         ],
@@ -118,14 +102,10 @@ class _SetScreenState extends State<SetScreen> {
 class _TopBar extends StatelessWidget {
   final bool isPanelOpen;
   final VoidCallback onSetRizeTap;
-  final VoidCallback onSearchTap;
-  final VoidCallback? onInfoTap;
 
   const _TopBar({
     required this.isPanelOpen,
     required this.onSetRizeTap,
-    required this.onSearchTap,
-    required this.onInfoTap,
   });
 
   @override
@@ -135,7 +115,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: onSearchTap,
+            onTap: () {},
             child: Container(
               width: 36,
               height: 36,
@@ -173,158 +153,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: onInfoTap,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoSheet extends StatelessWidget {
-  final PostModel post;
-
-  const _InfoSheet({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaType = post.isPlaying ? 'Video / Media' : 'Image / Post';
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        24 + MediaQuery.of(context).padding.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 42,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white12,
-                child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Profile info and content details',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _InfoRow(icon: Icons.description_outlined, label: 'Bio', value: 'Your bio here'),
-          _InfoRow(icon: Icons.play_circle_outline_rounded, label: 'Type', value: mediaType),
-          _InfoRow(icon: Icons.music_note_rounded, label: 'Audio', value: 'Original audio'),
-          _InfoRow(icon: Icons.location_on_outlined, label: 'Location', value: 'Algeria'),
-          _InfoRow(icon: Icons.bar_chart_rounded, label: 'Views', value: '${post.viewsCount}'),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              post.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                height: 1.4,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (post.hashtags != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                post.hashtags!,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const SizedBox(width: 36, height: 36),
         ],
       ),
     );
