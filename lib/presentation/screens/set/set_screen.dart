@@ -17,6 +17,7 @@ class _SetScreenState extends State<SetScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showStoriesPanel = false;
+  bool _isHorizontalDrag = false;
 
   final List<PostModel> _posts = PostModel.getMockPosts();
   final List<StoryModel> _stories = StoryModel.getMockStories();
@@ -46,7 +47,7 @@ class _SetScreenState extends State<SetScreen> {
             controller: _pageController,
             scrollDirection: Axis.vertical,
             itemCount: _posts.length,
-            physics: _showStoriesPanel
+            physics: (_showStoriesPanel || _isHorizontalDrag)
                 ? const NeverScrollableScrollPhysics()
                 : const BouncingScrollPhysics(),
             onPageChanged: (i) => setState(() => _currentPage = i),
@@ -59,6 +60,11 @@ class _SetScreenState extends State<SetScreen> {
                     duration: const Duration(milliseconds: 350),
                     curve: Curves.easeOutCubic,
                   );
+                }
+              },
+              onHorizontalDragStateChanged: (dragging) {
+                if (_isHorizontalDrag != dragging) {
+                  setState(() => _isHorizontalDrag = dragging);
                 }
               },
             ),
