@@ -17,7 +17,7 @@ class _SetScreenState extends State<SetScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showStoriesPanel = false;
-  bool _isHorizontalDrag = false;
+  bool _isDraggingHorizontal = false;
 
   final List<PostModel> _posts = PostModel.getMockPosts();
   final List<StoryModel> _stories = StoryModel.getMockStories();
@@ -37,6 +37,15 @@ class _SetScreenState extends State<SetScreen> {
     setState(() => _showStoriesPanel = !_showStoriesPanel);
   }
 
+  void _goNextPage() {
+    if (_currentPage < _posts.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,24 +56,24 @@ class _SetScreenState extends State<SetScreen> {
             controller: _pageController,
             scrollDirection: Axis.vertical,
             itemCount: _posts.length,
-            physics: (_showStoriesPanel || _isHorizontalDrag)
+            physics: (_showStoriesPanel || _isDraggingHorizontal)
                 ? const NeverScrollableScrollPhysics()
                 : const BouncingScrollPhysics(),
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (ctx, i) => PostCard(
               post: _posts[i],
               onUpdate: (p) => _updatePost(i, p),
-              onSwipeNext: () {
-                if (_currentPage < _posts.length - 1) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.easeOutCubic,
-                  );
+              onSwipeNext: _goNextPage,
+              onSwipeRight: () => HapticFeedback.mediumImpact(),
+              onSwipeLeft: () => HapticFeedback.lightImpact(),
+              onSwipeStart: () {
+                if (!_isDraggingHorizontal) {
+                  setState(() => _isDraggingHorizontal = true);
                 }
               },
-              onHorizontalDragStateChanged: (dragging) {
-                if (_isHorizontalDrag != dragging) {
-                  setState(() => _isHorizontalDrag = dragging);
+              onSwipeEnd: () {
+                if (_isDraggingHorizontal) {
+                  setState(() => _isDraggingHorizontal = false);
                 }
               },
             ),
@@ -673,3 +682,4 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
     return colors[i % colors.length];
   }
 }
+
