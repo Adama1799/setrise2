@@ -18,7 +18,6 @@ class _SetScreenState extends State<SetScreen> {
   int _currentPage = 0;
   bool _showStoriesPanel = false;
   bool _isDraggingHorizontal = false;
-  int _navIndex = 0;
 
   final List<PostModel> _posts = PostModel.getMockPosts();
   final List<StoryModel> _stories = StoryModel.getMockStories();
@@ -51,10 +50,6 @@ class _SetScreenState extends State<SetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      bottomNavigationBar: _BottomNav(
-        selectedIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
-      ),
       body: Stack(
         children: [
           PageView.builder(
@@ -688,99 +683,3 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
   }
 }
 
-
-// ═══════════════════════════════════════════════════════════════════
-//  BOTTOM NAV — Home | Messages | + | Alerts | Search
-// ═══════════════════════════════════════════════════════════════════
-class _BottomNav extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onTap;
-
-  const _BottomNav({required this.selectedIndex, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          top: BorderSide(color: AppColors.grey.withOpacity(0.3), width: 0.8),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _btn(Icons.home_rounded, Icons.home_outlined, 'Home', 0),
-              _btn(Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, 'Messages', 1, badge: 2),
-              // زر + وسط
-              GestureDetector(
-                onTap: () => onTap(2),
-                child: Container(
-                  width: 48, height: 34,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.add_rounded, color: Colors.black, size: 26),
-                ),
-              ),
-              _btn(Icons.notifications_rounded, Icons.notifications_outlined, 'Alerts', 3, badge: 3),
-              _btn(Icons.search_rounded, Icons.search_rounded, 'Search', 4),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _btn(IconData activeIcon, IconData inactiveIcon, String label, int index, {int? badge}) {
-    final isActive = selectedIndex == index;
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(clipBehavior: Clip.none, children: [
-              Icon(
-                isActive ? activeIcon : inactiveIcon,
-                color: isActive ? Colors.white : AppColors.grey2,
-                size: 26,
-              ),
-              if (badge != null && badge > 0)
-                Positioned(
-                  top: -4, right: -6,
-                  child: Container(
-                    width: 16, height: 16,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text('$badge',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 9,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ),
-            ]),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                  color: isActive ? Colors.white : AppColors.grey2,
-                  fontSize: 9,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
