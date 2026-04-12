@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/post/create_post_bottom_sheet.dart';
-import 'set/set_feed_screen.dart';
+
+import '../../core/theme/app_colors.dart';
+import 'set/set_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -10,95 +11,155 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentPageIndex = 0;
+  int _selectedIndex = 0;
 
-  List<Widget> get _pages => const [
-        SetFeedScreen(),
-        _PlaceholderScreen(
-          title: 'Notifications',
-          subtitle: 'Your alerts will appear here.',
-          icon: Icons.notifications_none_rounded,
-        ),
-        _PlaceholderScreen(
-          title: 'Messages',
-          subtitle: 'Your chats will appear here.',
-          icon: Icons.chat_bubble_outline_rounded,
-        ),
-        _PlaceholderScreen(
-          title: 'Profile',
-          subtitle: 'Your profile will appear here.',
-          icon: Icons.person_outline_rounded,
-        ),
-      ];
+  late final List<Widget> _pages = const [
+    SetScreen(),
+    _PlaceholderScreen(title: 'Alerts'),
+    _PlaceholderScreen(title: 'Create'),
+    _PlaceholderScreen(title: 'Messages'),
+    _PlaceholderScreen(title: 'Profile'),
+  ];
 
-  int get _bottomNavIndex {
-    if (_currentPageIndex < 2) return _currentPageIndex;
-    return _currentPageIndex + 1;
-  }
-
-  void _onItemTapped(int index) {
-    if (index == 2) {
-      _openCreatePostSheet();
-      return;
-    }
-
-    setState(() {
-      _currentPageIndex = index < 2 ? index : index - 1;
-    });
-  }
-
-  void _openCreatePostSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => CreatePostBottomSheet(
-        onPost: (content, mediaUrls) {
-          // اربطها هنا مع provider الخاص بالنشر إذا أردت
-        },
-      ),
-    );
+  void _selectTab(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: IndexedStack(
-        index: _currentPageIndex,
+        index: _selectedIndex,
         children: _pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _bottomNavIndex,
-        onTap: _onItemTapped,
-        backgroundColor: const Color(0xFF0F0F10),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white54,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        elevation: 10,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0A0A),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withOpacity(0.08),
+                width: 0.8,
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none_rounded),
-            label: 'Alerts',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.person_outline_rounded,
+                label: 'Profile',
+                selected: _selectedIndex == 0,
+                onTap: () => _selectTab(0),
+              ),
+              _NavItem(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'Messages',
+                selected: _selectedIndex == 3,
+                onTap: () => _selectTab(3),
+              ),
+              _CreateButton(
+                selected: _selectedIndex == 2,
+                onTap: () => _selectTab(2),
+              ),
+              _NavItem(
+                icon: Icons.notifications_none_rounded,
+                label: 'Alerts',
+                selected: _selectedIndex == 1,
+                onTap: () => _selectTab(1),
+              ),
+              _NavItem(
+                icon: Icons.search_rounded,
+                label: 'Search',
+                selected: _selectedIndex == 4,
+                onTap: () => _selectTab(4),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline_rounded),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            label: 'Profile',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = selected ? Colors.white : Colors.white54;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateButton extends StatelessWidget {
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CreateButton({
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 56,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.black,
+          size: 30,
+        ),
       ),
     );
   }
@@ -106,45 +167,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
 class _PlaceholderScreen extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final IconData icon;
 
   const _PlaceholderScreen({
     required this.title,
-    required this.subtitle,
-    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0B0C),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 64, color: Colors.white70),
-              const SizedBox(height: 18),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),
