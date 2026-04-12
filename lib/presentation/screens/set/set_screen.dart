@@ -1,3 +1,6 @@
+// lib/presentation/screens/set/set_screen.dart
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/models/post_model.dart';
 import '../../../data/models/story_model.dart';
 import 'widgets/post_card.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SET SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
 
 class SetScreen extends StatefulWidget {
   const SetScreen({super.key});
@@ -14,9 +21,8 @@ class SetScreen extends StatefulWidget {
 }
 
 class _SetScreenState extends State<SetScreen> {
-  final PageController _pageController = PageController();
+  final _pageController = PageController();
   int _currentPage = 0;
-  bool _showStoriesPanel = false;
   bool _isDraggingHorizontal = false;
 
   final List<PostModel> _posts = PostModel.getMockPosts();
@@ -28,256 +34,268 @@ class _SetScreenState extends State<SetScreen> {
     super.dispose();
   }
 
-  void _updatePost(int index, PostModel updatedPost) {
-    setState(() => _posts[index] = updatedPost);
-  }
-
-  void _toggleStoriesPanel() {
-    HapticFeedback.lightImpact();
-    setState(() => _showStoriesPanel = !_showStoriesPanel);
-  }
-
-  void _goNextPage() {
-    if (_currentPage < _posts.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
+  void _updatePost(int index, PostModel updated) =>
+      setState(() => _posts[index] = updated);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: _posts.length,
-            physics: (_showStoriesPanel || _isDraggingHorizontal)
-                ? const NeverScrollableScrollPhysics()
-                : const BouncingScrollPhysics(),
-            onPageChanged: (i) => setState(() => _currentPage = i),
-            itemBuilder: (ctx, i) => PostCard(
-              post: _posts[i],
-              onUpdate: (p) => _updatePost(i, p),
-              onSwipeNext: _goNextPage,
-              onSwipeRight: () => HapticFeedback.mediumImpact(),
-              onSwipeLeft: () => HapticFeedback.lightImpact(),
-              onSwipeStart: () {
-                if (!_isDraggingHorizontal) {
-                  setState(() => _isDraggingHorizontal = true);
-                }
-              },
-              onSwipeEnd: () {
-                if (_isDraggingHorizontal) {
-                  setState(() => _isDraggingHorizontal = false);
-                }
-              },
-            ),
-          ),
-
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 320),
-            curve: Curves.easeOutCubic,
-            top: _showStoriesPanel ? 0 : -260,
-            left: 0,
-            right: 0,
-            child: _StoriesPanel(
-              stories: _stories,
-              onClose: _toggleStoriesPanel,
-            ),
-          ),
-
-          if (_showStoriesPanel)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _toggleStoriesPanel,
-                child: Container(
-                  margin: const EdgeInsets.only(top: 260),
-                  color: Colors.black.withOpacity(0.5),
-                ),
-              ),
-            ),
-
-          SafeArea(
-            child: _TopBar(
-              isPanelOpen: _showStoriesPanel,
-              onSetRizeTap: _toggleStoriesPanel,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopBar extends StatelessWidget {
-  final bool isPanelOpen;
-  final VoidCallback onSetRizeTap;
-
-  const _TopBar({
-    required this.isPanelOpen,
-    required this.onSetRizeTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.search_rounded, color: Colors.white, size: 20),
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: onSetRizeTap,
-            child: Row(
-              children: [
-                const Text(
-                  'SetRise',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                AnimatedRotation(
-                  turns: isPanelOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          const SizedBox(width: 36, height: 36),
-        ],
-      ),
-    );
-  }
-}
-
-class _StoriesPanel extends StatelessWidget {
-  final List<StoryModel> stories;
-  final VoidCallback onClose;
-
-  const _StoriesPanel({
-    required this.stories,
-    required this.onClose,
-  });
-
-  static const _categories = [
-    {'label': 'Following', 'icon': Icons.people_rounded},
-    {'label': 'Cooking', 'icon': Icons.restaurant_rounded},
-    {'label': 'Sports', 'icon': Icons.sports_soccer_rounded},
-    {'label': 'Politics', 'icon': Icons.gavel_rounded},
-    {'label': 'Music', 'icon': Icons.music_note_rounded},
-    {'label': 'Travel', 'icon': Icons.flight_rounded},
-    {'label': 'Tech', 'icon': Icons.memory_rounded},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 260,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D0D0D),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.7),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
+      body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 36,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                itemCount: _categories.length,
-                itemBuilder: (_, i) {
-                  final cat = _categories[i];
-                  return Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white.withOpacity(0.15) : Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: i == 0 ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(cat['icon'] as IconData, color: Colors.white, size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          cat['label'] as String,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+            // ① الشريط العلوي
+            const _AppTopBar(),
+
+            // ② مسافة 15px بين الشريط والستوريات
+            const SizedBox(height: 15),
+
+            // ③ شريط الستوريات
+            _StoriesRow(
+              stories: _stories,
+              onStoryTap: (index) => _openStoryViewer(index),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 160,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                itemCount: stories.length,
-                itemBuilder: (ctx, i) => _StoryCard(
-                  story: stories[i],
-                  onTap: () => _openStory(ctx, stories, i),
+
+            // ④ تابس: For You / Stories / Trending
+            const SizedBox(height: 10),
+            const _FeedTabs(),
+            const SizedBox(height: 6),
+
+            // ⑤ المحتوى
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                scrollDirection: Axis.vertical,
+                itemCount: _posts.length,
+                physics: _isDraggingHorizontal
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemBuilder: (ctx, i) => PostCard(
+                  post: _posts[i],
+                  onUpdate: (p) => _updatePost(i, p),
+                  onSwipeNext: () {
+                    if (_currentPage < _posts.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                      );
+                    }
+                  },
+                  onSwipeRight: () => HapticFeedback.mediumImpact(),
+                  onSwipeLeft:  () => HapticFeedback.lightImpact(),
+                  onSwipeStart: () => setState(() => _isDraggingHorizontal = true),
+                  onSwipeEnd:   () => setState(() => _isDraggingHorizontal = false),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
     );
   }
 
-  void _openStory(BuildContext ctx, List<StoryModel> stories, int startIndex) {
-    Navigator.push(
-      ctx,
+  void _openStoryViewer(int index) {
+    Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         pageBuilder: (_, __, ___) => _StoryViewer(
-          stories: stories,
-          initialIndex: startIndex,
+          stories: _stories,
+          initialIndex: index,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ① APP TOP BAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AppTopBar extends StatefulWidget {
+  const _AppTopBar();
+
+  @override
+  State<_AppTopBar> createState() => _AppTopBarState();
+}
+
+class _AppTopBarState extends State<_AppTopBar>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = true;
+  int _selectedTab = 0;
+
+  static const _tabs = [
+    _Tab('Set',   Colors.white,                  pill: true),
+    _Tab('Rize',  Colors.white,                  pill: true),
+    _Tab('Shop',  Color(0xFF39FF14),              pill: false), // neonGreen
+    _Tab('Date',  Color(0xFFFFB300),              pill: false), // neonYellow
+    _Tab('Live',  Color(0xFFFF2200),              pill: false), // neonRed
+    _Tab('Music', Color(0xFF00FFEE),              pill: false), // cyan
+  ];
+
+  void _toggle() {
+    HapticFeedback.lightImpact();
+    setState(() => _expanded = !_expanded);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Row: ☰  SetRize  ∨
+            Row(
+              children: [
+                // ☰ Hamburger
+                GestureDetector(
+                  onTap: _toggle,
+                  child: const Icon(
+                    Icons.menu_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+
+                // SetRize (يختفي لما يُطوى)
+                if (_expanded) ...[
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _toggle,
+                    child: Row(
+                      children: [
+                        const Text(
+                          'SetRize',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: _expanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 250),
+                          child: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+
+            // Chips: Set | Rize | Shop | Date | Live | Music (ظاهرة فقط لو expanded)
+            if (_expanded) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: _tabs.length,
+                  // ✅ 10px بين كل أيقونة والثانية
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, i) {
+                    final tab    = _tabs[i];
+                    final active = _selectedTab == i;
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selectedTab = i);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: active
+                              ? (tab.pill ? Colors.white : tab.color)
+                              : Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: active
+                                ? (tab.pill ? Colors.white : tab.color)
+                                : Colors.white.withOpacity(0.18),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Text(
+                          tab.label,
+                          style: TextStyle(
+                            color: active && tab.pill
+                                ? Colors.black
+                                : Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Tab {
+  final String label;
+  final Color color;
+  final bool pill;
+  const _Tab(this.label, this.color, {required this.pill});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ③ STORIES ROW
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StoriesRow extends StatelessWidget {
+  final List<StoryModel> stories;
+  final void Function(int index) onStoryTap;
+
+  const _StoriesRow({
+    required this.stories,
+    required this.onStoryTap,
+  });
+
+  // ✅ 3cm × 4cm بالبكسل المنطقي (1cm ≈ 37.8dp)
+  static const double _cardW = 113.0; // ~3cm
+  static const double _cardH = 151.0; // ~4cm
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _cardH,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        physics: const BouncingScrollPhysics(),
+        itemCount: stories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (_, i) => _StoryCard(
+          story: stories[i],
+          width: _cardW,
+          height: _cardH,
+          onTap: () => onStoryTap(i),
         ),
       ),
     );
@@ -286,100 +304,213 @@ class _StoriesPanel extends StatelessWidget {
 
 class _StoryCard extends StatelessWidget {
   final StoryModel story;
+  final double width;
+  final double height;
   final VoidCallback onTap;
 
   const _StoryCard({
     required this.story,
+    required this.width,
+    required this.height,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // ✅ بوردر أبيض للجميع ماعدا LIVE يكون أحمر
+    final borderColor = story.isLive ? const Color(0xFFFF2200) : Colors.white;
+    final borderWidth = story.isLive ? 2.5 : 2.0;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 90,
-        height: 120,
-        margin: const EdgeInsets.only(right: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: story.isLive ? Colors.redAccent : Colors.white,
-            width: story.isLive ? 2.5 : 2,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: borderWidth),
+            boxShadow: story.isLive
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF2200).withOpacity(0.35),
+                      blurRadius: 12,
+                      spreadRadius: 0,
+                    ),
+                  ]
+                : null,
           ),
-          color: AppColors.grey,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.grey,
-                      Colors.black.withOpacity(0.8),
-                    ],
-                  ),
-                ),
-                child: const Icon(Icons.person_rounded, color: Colors.white54, size: 40),
-              ),
-              if (story.isLive)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(6, 16, 6, 6),
-                  decoration: BoxDecoration(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13.5),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background gradient
+                Container(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
+                      colors: [Color(0xFF2B2B2B), Color(0xFF111111)],
                     ),
                   ),
-                  child: Text(
-                    story.username,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                  child: Center(
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: 44,
+                      color: Colors.white.withOpacity(0.4),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ],
+
+                // Bottom gradient + username
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.88),
+                        ],
+                      ),
+                    ),
+                    child: Text(
+                      story.status == StoryStatus.own
+                          ? 'Your Story'
+                          : story.username,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                // LIVE badge
+                if (story.isLive)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF2200),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // + Button for own story
+                if (story.status == StoryStatus.own)
+                  Positioned(
+                    bottom: 32,
+                    right: 8,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF39FF14),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.add, color: Colors.black, size: 16),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ④ FEED TABS (For You / Stories / Trending)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FeedTabs extends StatefulWidget {
+  const _FeedTabs();
+
+  @override
+  State<_FeedTabs> createState() => _FeedTabsState();
+}
+
+class _FeedTabsState extends State<_FeedTabs> {
+  int _selected = 0;
+  static const _labels = ['For You', 'Stories', 'Trending'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: List.generate(_labels.length, (i) {
+          final active = _selected == i;
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _selected = i);
+            },
+            child: Padding(
+              padding: EdgeInsets.only(right: i < _labels.length - 1 ? 20 : 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _labels[i],
+                    style: TextStyle(
+                      color: active ? Colors.white : Colors.white38,
+                      fontSize: 14,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 2,
+                    width: active ? 28 : 0,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STORY VIEWER — احترافي مثل إنستقرام وتيك توك
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _StoryViewer extends StatefulWidget {
   final List<StoryModel> stories;
@@ -394,12 +525,14 @@ class _StoryViewer extends StatefulWidget {
   State<_StoryViewer> createState() => _StoryViewerState();
 }
 
-class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderStateMixin {
+class _StoryViewerState extends State<_StoryViewer>
+    with SingleTickerProviderStateMixin {
   late PageController _pageCtrl;
   late AnimationController _progressCtrl;
-  int _currentIndex = 0;
+  late int _currentIndex;
   bool _paused = false;
-  final _commentCtrl = TextEditingController();
+  final _replyCtrl = TextEditingController();
+  bool _replyFocused = false;
 
   static const _duration = Duration(seconds: 5);
 
@@ -407,12 +540,10 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _pageCtrl = PageController(initialPage: widget.initialIndex);
-    _progressCtrl = AnimationController(
-      vsync: this,
-      duration: _duration,
-    )..addStatusListener((s) {
-        if (s == AnimationStatus.completed) _nextStory();
+    _pageCtrl     = PageController(initialPage: widget.initialIndex);
+    _progressCtrl = AnimationController(vsync: this, duration: _duration)
+      ..addStatusListener((s) {
+        if (s == AnimationStatus.completed) _next();
       })
       ..forward();
   }
@@ -421,232 +552,258 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
   void dispose() {
     _pageCtrl.dispose();
     _progressCtrl.dispose();
-    _commentCtrl.dispose();
+    _replyCtrl.dispose();
     super.dispose();
   }
 
-  void _nextStory() {
+  void _next() {
     if (_currentIndex < widget.stories.length - 1) {
       setState(() => _currentIndex++);
       _pageCtrl.nextPage(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeIn,
       );
-      _progressCtrl.reset();
-      _progressCtrl.forward();
+      _progressCtrl
+        ..reset()
+        ..forward();
     } else {
       Navigator.pop(context);
     }
   }
 
-  void _prevStory() {
+  void _prev() {
     if (_currentIndex > 0) {
       setState(() => _currentIndex--);
       _pageCtrl.previousPage(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeIn,
       );
-      _progressCtrl.reset();
-      _progressCtrl.forward();
+      _progressCtrl
+        ..reset()
+        ..forward();
     }
   }
 
-  void _togglePause() {
-    setState(() => _paused = !_paused);
-    if (_paused) {
-      _progressCtrl.stop();
-    } else {
-      _progressCtrl.forward();
-    }
-  }
+  void _pause()  { if (!_paused) { _paused = true;  _progressCtrl.stop();    setState(() {}); } }
+  void _resume() { if (_paused)  { _paused = false; _progressCtrl.forward(); setState(() {}); } }
 
   @override
   Widget build(BuildContext context) {
     final story = widget.stories[_currentIndex];
+    final size  = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: false,
       body: GestureDetector(
-        onTapDown: (d) {
-          final x = d.globalPosition.dx;
-          final w = MediaQuery.of(context).size.width;
-          if (x < w * 0.33) {
-            _prevStory();
-          } else if (x > w * 0.67) {
-            _nextStory();
-          } else {
-            _togglePause();
-          }
-        },
-        onLongPressStart: (_) {
-          _paused = true;
-          _progressCtrl.stop();
-          setState(() {});
-        },
-        onLongPressEnd: (_) {
-          _paused = false;
-          _progressCtrl.forward();
-          setState(() {});
-        },
+        onLongPressStart: (_) => _pause(),
+        onLongPressEnd:   (_) => _resume(),
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // ── Pages ──────────────────────────────────────────────────────
             PageView.builder(
               controller: _pageCtrl,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.stories.length,
-              itemBuilder: (_, i) => Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _storyColor(i),
-                      Colors.black,
-                    ],
+              itemBuilder: (_, i) => _buildStoryPage(i),
+            ),
+
+            // ── Tap zones (prev / next) ─────────────────────────────────
+            Positioned.fill(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _prev,
+                      child: const ColoredBox(color: Colors.transparent),
+                    ),
                   ),
-                ),
-                child: const Center(
-                  child: Icon(Icons.person_rounded, color: Colors.white24, size: 120),
-                ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _next,
+                      child: const ColoredBox(color: Colors.transparent),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  children: List.generate(widget.stories.length, (i) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: i < _currentIndex
-                                ? 1.0
-                                : i == _currentIndex
-                                    ? _progressCtrl.value
-                                    : 0.0,
-                            backgroundColor: Colors.white30,
-                            valueColor: const AlwaysStoppedAnimation(Colors.white),
-                            minHeight: 2.5,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 20, 14, 0),
-                child: Row(
+
+            // ── Top UI ─────────────────────────────────────────────────────
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Column(
                   children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        color: AppColors.grey,
+                    // Progress bars
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                      child: Row(
+                        children: List.generate(widget.stories.length, (i) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: AnimatedBuilder(
+                                animation: _progressCtrl,
+                                builder: (_, __) => ClipRRect(
+                                  borderRadius: BorderRadius.circular(2),
+                                  child: LinearProgressIndicator(
+                                    minHeight: 2.5,
+                                    value: i < _currentIndex
+                                        ? 1.0
+                                        : i == _currentIndex
+                                            ? _progressCtrl.value
+                                            : 0.0,
+                                    backgroundColor: Colors.white30,
+                                    valueColor: const AlwaysStoppedAnimation(
+                                        Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
                       ),
-                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          story.username,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+
+                    // User row
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: story.isLive
+                                    ? const Color(0xFFFF2200)
+                                    : Colors.white,
+                                width: 2,
+                              ),
+                              color: AppColors.grey,
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
-                        ),
-                        Text(
-                          _paused ? 'Paused' : '5s ago',
-                          style: const TextStyle(color: Colors.white60, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    if (story.isLive)
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  story.username,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  _paused ? 'Paused' : '5s ago',
+                                  style: const TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          if (story.isLive)
+                            Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF2200),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ],
                       ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // ── Bottom reply bar ──────────────────────────────────────────
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: SafeArea(
                 top: false,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                   child: Row(
                     children: [
+                      // Reply input
                       Expanded(
                         child: Container(
-                          height: 42,
+                          height: 44,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(21),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(color: Colors.white24),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 14),
                           child: TextField(
-                            controller: _commentCtrl,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                            decoration: const InputDecoration(
-                              hintText: 'Reply...',
-                              hintStyle: TextStyle(color: Colors.white54),
+                            controller: _replyCtrl,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: 'Reply to ${story.username}...',
+                              hintStyle:
+                                  const TextStyle(color: Colors.white38),
                               border: InputBorder.none,
                             ),
-                            onTap: () {
-                              _paused = true;
-                              _progressCtrl.stop();
-                            },
+                            onTap: _pause,
                             onSubmitted: (_) {
-                              _commentCtrl.clear();
-                              _paused = false;
-                              _progressCtrl.forward();
+                              _replyCtrl.clear();
+                              _resume();
                             },
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
+                      // Emoji reactions
                       ...['❤️', '🔥', '😂'].map(
                         (e) => GestureDetector(
                           onTap: () {},
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(e, style: const TextStyle(fontSize: 26)),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4),
+                            child:
+                                Text(e, style: const TextStyle(fontSize: 24)),
                           ),
                         ),
                       ),
                       const SizedBox(width: 4),
+                      // Send button
                       GestureDetector(
                         onTap: () {},
                         child: Container(
@@ -656,7 +813,11 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.send_rounded, color: Colors.black, size: 18),
+                          child: const Icon(
+                            Icons.send_rounded,
+                            color: Colors.black,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ],
@@ -670,16 +831,26 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
     );
   }
 
-  Color _storyColor(int i) {
-    const colors = [
-      Color(0xFF1A0A2E),
-      Color(0xFF0A1628),
-      Color(0xFF1A0A0A),
-      Color(0xFF0A1A0A),
-      Color(0xFF1A1A0A),
-      Color(0xFF2E0A1A),
+  Widget _buildStoryPage(int i) {
+    final colors = [
+      const Color(0xFF1A0A2E),
+      const Color(0xFF0A1628),
+      const Color(0xFF1A0A0A),
+      const Color(0xFF0A1A0A),
+      const Color(0xFF1A1A0A),
+      const Color(0xFF2E0A1A),
     ];
-    return colors[i % colors.length];
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [colors[i % colors.length], Colors.black],
+        ),
+      ),
+      child: const Center(
+        child: Icon(Icons.person_rounded, color: Colors.white12, size: 120),
+      ),
+    );
   }
 }
-
