@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../data/models/story_model.dart';
+import '../story_viewer_screen.dart';
 
 class StoriesBar extends StatelessWidget {
   final List<StoryModel> stories;
@@ -13,16 +13,35 @@ class StoriesBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasStories = stories.isNotEmpty;
+
     return SizedBox(
-      height: 100,
-      child: ListView.builder(
+      height: 198,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        itemCount: stories.length,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         physics: const BouncingScrollPhysics(),
+        itemCount: hasStories ? stories.length : _fallbackStories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final story = stories[index];
-          return _StoryItem(story: story);
+          if (hasStories) {
+            return _StoryItem(story: stories[index]);
+          }
+          final item = _fallbackStories[index];
+          return _StaticStoryItem(
+            title: item.title,
+            isLive: item.isLive,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => StoryViewerScreen(
+                    title: item.title,
+                    isLive: item.isLive,
+                  ),
+                ),
+              );
+            },
+          );
         },
       ),
     );
@@ -36,82 +55,168 @@ class _StoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final title =
+        story.status == StoryStatus.own ? 'Your Story' : story.username;
+
+    return _StoryCard(
+      title: title,
+      isLive: story.isLive,
       onTap: () {
-        // TODO: Open story viewer
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opening ${story.username}\'s story')),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => StoryViewerScreen(
+              story: story,
+              title: title,
+              isLive: story.isLive,
+            ),
+          ),
         );
       },
-      child: Container(
-        width: 70,
-        margin: const EdgeInsets.only(right: 12),
+    );
+  }
+}
+
+class _StaticStoryItem extends StatelessWidget {
+  final String title;
+  final bool isLive;
+  final VoidCallback onTap;
+
+  const _StaticStoryItem({
+    required this.title,
+    required this.isLive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _StoryCard(
+      title: title,
+      isLive: isLive,
+      onTap: onTap,
+    );
+  }
+}
+
+class _StoryCard extends StatelessWidget {
+  final String title;
+  final bool isLive;
+  final VoidCallback onTap;
+
+  const _StoryCard({
+    required this.title,
+    required this.isLive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 120,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
-                // Story Circle
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: story.borderColor,
-                      width: 3,
+                AspectRatio(
+                  aspectRatio: 3 / 4,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF2B2B2B),
+                          Color(0xFF101010),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.22),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: ClipOval(
-                    child: Container(
-                      color: AppColors.grey,
-                      child: const Icon(
-                        Icons.person,
-                        color: AppColors.white,
-                        size: 32,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0xFF2B2B2B),
+                                  Color(0xFF151515),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Center(
+                            child: Icon(
+                              Icons.photo_rounded,
+                              size: 44,
+                              color: Colors.white.withOpacity(0.72),
+                            ),
+                          ),
+                          Positioned(
+                            left: 10,
+                            right: 10,
+                            bottom: 10,
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                // Live Badge
-                if (story.isLive)
+                if (isLive)
                   Positioned(
-                    bottom: 0,
-                    right: 0,
+                    top: 10,
+                    left: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.live,
-                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: AppColors.background,
-                          width: 2,
+                          color: Colors.white,
+                          width: 1.5,
                         ),
                       ),
-                      child: Text(
+                      child: const Text(
                         'LIVE',
-                        style: AppTextStyles.overline.copyWith(
-                          color: AppColors.white,
-                          fontSize: 8,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
                   ),
               ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              story.status == StoryStatus.own
-                  ? 'Your Story'
-                  : story.username,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.white,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -119,3 +224,21 @@ class _StoryItem extends StatelessWidget {
     );
   }
 }
+
+class _FallbackStory {
+  final String title;
+  final bool isLive;
+
+  const _FallbackStory({
+    required this.title,
+    required this.isLive,
+  });
+}
+
+const List<_FallbackStory> _fallbackStories = [
+  _FallbackStory(title: 'Your Story', isLive: false),
+  _FallbackStory(title: 'For You', isLive: false),
+  _FallbackStory(title: 'Trending', isLive: true),
+  _FallbackStory(title: 'Watching', isLive: false),
+  _FallbackStory(title: 'Live Now', isLive: true),
+];
