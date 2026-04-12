@@ -17,7 +17,6 @@ class _SetScreenState extends State<SetScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showStoriesPanel = false;
-  bool _isDraggingHorizontal = false;
 
   final List<PostModel> _posts = PostModel.getMockPosts();
   final List<StoryModel> _stories = StoryModel.getMockStories();
@@ -37,15 +36,6 @@ class _SetScreenState extends State<SetScreen> {
     setState(() => _showStoriesPanel = !_showStoriesPanel);
   }
 
-  void _goNextPage() {
-    if (_currentPage < _posts.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,33 +46,28 @@ class _SetScreenState extends State<SetScreen> {
             controller: _pageController,
             scrollDirection: Axis.vertical,
             itemCount: _posts.length,
-            physics: (_showStoriesPanel || _isDraggingHorizontal)
+            physics: _showStoriesPanel
                 ? const NeverScrollableScrollPhysics()
                 : const BouncingScrollPhysics(),
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (ctx, i) => PostCard(
               post: _posts[i],
               onUpdate: (p) => _updatePost(i, p),
-              onSwipeNext: _goNextPage,
-              onSwipeRight: () => HapticFeedback.mediumImpact(),
-              onSwipeLeft: () => HapticFeedback.lightImpact(),
-              onSwipeStart: () {
-                if (!_isDraggingHorizontal) {
-                  setState(() => _isDraggingHorizontal = true);
-                }
-              },
-              onSwipeEnd: () {
-                if (_isDraggingHorizontal) {
-                  setState(() => _isDraggingHorizontal = false);
+              onSwipeNext: () {
+                if (_currentPage < _posts.length - 1) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                  );
                 }
               },
             ),
           ),
 
           AnimatedPositioned(
-            duration: const Duration(milliseconds: 320),
+            duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
-            top: _showStoriesPanel ? 0 : -260,
+            top: _showStoriesPanel ? 0 : -270,
             left: 0,
             right: 0,
             child: _StoriesPanel(
@@ -96,8 +81,8 @@ class _SetScreenState extends State<SetScreen> {
               child: GestureDetector(
                 onTap: _toggleStoriesPanel,
                 child: Container(
-                  margin: const EdgeInsets.only(top: 260),
-                  color: Colors.black.withOpacity(0.5),
+                  margin: const EdgeInsets.only(top: 270),
+                  color: Colors.black.withOpacity(0.45),
                 ),
               ),
             ),
@@ -126,28 +111,29 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
       child: Row(
         children: [
-          GestureDetector(
+          InkWell(
             onTap: () {},
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.search_rounded, color: Colors.white, size: 20),
             ),
           ),
           const Spacer(),
-          GestureDetector(
+          InkWell(
             onTap: onSetRizeTap,
             child: Row(
               children: [
                 const Text(
-                  'SetRise',
+                  'SetRize',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -157,7 +143,7 @@ class _TopBar extends StatelessWidget {
                 const SizedBox(width: 4),
                 AnimatedRotation(
                   turns: isPanelOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 250),
                   child: const Icon(
                     Icons.keyboard_arrow_down_rounded,
                     color: Colors.white,
@@ -168,7 +154,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          const SizedBox(width: 36, height: 36),
+          const SizedBox(width: 38, height: 38),
         ],
       ),
     );
@@ -185,26 +171,24 @@ class _StoriesPanel extends StatelessWidget {
   });
 
   static const _categories = [
-    {'label': 'Following', 'icon': Icons.people_rounded},
-    {'label': 'Cooking', 'icon': Icons.restaurant_rounded},
-    {'label': 'Sports', 'icon': Icons.sports_soccer_rounded},
-    {'label': 'Politics', 'icon': Icons.gavel_rounded},
-    {'label': 'Music', 'icon': Icons.music_note_rounded},
-    {'label': 'Travel', 'icon': Icons.flight_rounded},
-    {'label': 'Tech', 'icon': Icons.memory_rounded},
+    {'label': 'Set', 'icon': Icons.home_rounded},
+    {'label': 'Rize', 'icon': Icons.short_text_rounded},
+    {'label': 'Shop', 'icon': Icons.shopping_bag_rounded},
+    {'label': 'Date', 'icon': Icons.favorite_rounded},
+    {'label': 'Live', 'icon': Icons.videocam_rounded},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 260,
+      height: 270,
       decoration: BoxDecoration(
-        color: const Color(0xFF0D0D0D),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        color: const Color(0xFF111111),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.7),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(0.6),
+            blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
@@ -224,12 +208,16 @@ class _StoriesPanel extends StatelessWidget {
                   final cat = _categories[i];
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white.withOpacity(0.15) : Colors.white.withOpacity(0.06),
+                      color: i == 0
+                          ? Colors.white.withOpacity(0.15)
+                          : Colors.white.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: i == 0 ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.1),
+                        color: i == 0
+                            ? Colors.white.withOpacity(0.35)
+                            : Colors.white.withOpacity(0.10),
                       ),
                     ),
                     child: Row(
@@ -252,32 +240,18 @@ class _StoriesPanel extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 160,
+              height: 170,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 itemCount: stories.length,
                 itemBuilder: (ctx, i) => _StoryCard(
                   story: stories[i],
-                  onTap: () => _openStory(ctx, stories, i),
+                  onTap: () {},
                 ),
               ),
             ),
-            const SizedBox(height: 8),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _openStory(BuildContext ctx, List<StoryModel> stories, int startIndex) {
-    Navigator.push(
-      ctx,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (_, __, ___) => _StoryViewer(
-          stories: stories,
-          initialIndex: startIndex,
         ),
       ),
     );
@@ -298,368 +272,69 @@ class _StoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
-        height: 120,
+        width: 95,
         margin: const EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: story.isLive ? Colors.redAccent : Colors.white,
-            width: story.isLive ? 2.5 : 2,
+            width: 2,
           ),
-          color: AppColors.grey,
+          color: const Color(0xFF1A1A1A),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Container(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
                 decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      AppColors.grey,
-                      Colors.black.withOpacity(0.8),
+                      Colors.white10,
+                      Colors.black.withOpacity(0.85),
                     ],
                   ),
                 ),
                 child: const Icon(Icons.person_rounded, color: Colors.white54, size: 40),
               ),
-              if (story.isLive)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
+            ),
+            if (story.isLive)
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                top: 8,
+                left: 8,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(6, 16, 6, 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
-                    ),
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(
-                    story.username,
-                    style: const TextStyle(
+                  child: const Text(
+                    'LIVE',
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 8,
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StoryViewer extends StatefulWidget {
-  final List<StoryModel> stories;
-  final int initialIndex;
-
-  const _StoryViewer({
-    required this.stories,
-    required this.initialIndex,
-  });
-
-  @override
-  State<_StoryViewer> createState() => _StoryViewerState();
-}
-
-class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderStateMixin {
-  late PageController _pageCtrl;
-  late AnimationController _progressCtrl;
-  int _currentIndex = 0;
-  bool _paused = false;
-  final _commentCtrl = TextEditingController();
-
-  static const _duration = Duration(seconds: 5);
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageCtrl = PageController(initialPage: widget.initialIndex);
-    _progressCtrl = AnimationController(
-      vsync: this,
-      duration: _duration,
-    )..addStatusListener((s) {
-        if (s == AnimationStatus.completed) _nextStory();
-      })
-      ..forward();
-  }
-
-  @override
-  void dispose() {
-    _pageCtrl.dispose();
-    _progressCtrl.dispose();
-    _commentCtrl.dispose();
-    super.dispose();
-  }
-
-  void _nextStory() {
-    if (_currentIndex < widget.stories.length - 1) {
-      setState(() => _currentIndex++);
-      _pageCtrl.nextPage(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeIn,
-      );
-      _progressCtrl.reset();
-      _progressCtrl.forward();
-    } else {
-      Navigator.pop(context);
-    }
-  }
-
-  void _prevStory() {
-    if (_currentIndex > 0) {
-      setState(() => _currentIndex--);
-      _pageCtrl.previousPage(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeIn,
-      );
-      _progressCtrl.reset();
-      _progressCtrl.forward();
-    }
-  }
-
-  void _togglePause() {
-    setState(() => _paused = !_paused);
-    if (_paused) {
-      _progressCtrl.stop();
-    } else {
-      _progressCtrl.forward();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final story = widget.stories[_currentIndex];
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTapDown: (d) {
-          final x = d.globalPosition.dx;
-          final w = MediaQuery.of(context).size.width;
-          if (x < w * 0.33) {
-            _prevStory();
-          } else if (x > w * 0.67) {
-            _nextStory();
-          } else {
-            _togglePause();
-          }
-        },
-        onLongPressStart: (_) {
-          _paused = true;
-          _progressCtrl.stop();
-          setState(() {});
-        },
-        onLongPressEnd: (_) {
-          _paused = false;
-          _progressCtrl.forward();
-          setState(() {});
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            PageView.builder(
-              controller: _pageCtrl,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.stories.length,
-              itemBuilder: (_, i) => Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _storyColor(i),
-                      Colors.black,
-                    ],
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(Icons.person_rounded, color: Colors.white24, size: 120),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  children: List.generate(widget.stories.length, (i) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: i < _currentIndex
-                                ? 1.0
-                                : i == _currentIndex
-                                    ? _progressCtrl.value
-                                    : 0.0,
-                            backgroundColor: Colors.white30,
-                            valueColor: const AlwaysStoppedAnimation(Colors.white),
-                            minHeight: 2.5,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 20, 14, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        color: AppColors.grey,
-                      ),
-                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          story.username,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        Text(
-                          _paused ? 'Paused' : '5s ago',
-                          style: const TextStyle(color: Colors.white60, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    if (story.isLive)
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             Positioned(
-              bottom: 0,
               left: 0,
               right: 0,
-              child: SafeArea(
-                top: false,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(21),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: TextField(
-                            controller: _commentCtrl,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                            decoration: const InputDecoration(
-                              hintText: 'Reply...',
-                              hintStyle: TextStyle(color: Colors.white54),
-                              border: InputBorder.none,
-                            ),
-                            onTap: () {
-                              _paused = true;
-                              _progressCtrl.stop();
-                            },
-                            onSubmitted: (_) {
-                              _commentCtrl.clear();
-                              _paused = false;
-                              _progressCtrl.forward();
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ...['❤️', '🔥', '😂'].map(
-                        (e) => GestureDetector(
-                          onTap: () {},
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(e, style: const TextStyle(fontSize: 26)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.send_rounded, color: Colors.black, size: 18),
-                        ),
-                      ),
-                    ],
+              bottom: 8,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  story.username,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -669,17 +344,4 @@ class _StoryViewerState extends State<_StoryViewer> with SingleTickerProviderSta
       ),
     );
   }
-
-  Color _storyColor(int i) {
-    const colors = [
-      Color(0xFF1A0A2E),
-      Color(0xFF0A1628),
-      Color(0xFF1A0A0A),
-      Color(0xFF0A1A0A),
-      Color(0xFF1A1A0A),
-      Color(0xFF2E0A1A),
-    ];
-    return colors[i % colors.length];
-  }
 }
-
