@@ -1,887 +1,370 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/colors.dart';
+import '../widgets/stories_widget.dart';
+import 'rize_screen.dart';
+import 'music_screen.dart';
+import 'shop_screen.dart';
+import 'dating_screen.dart';
+import 'live_screen.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../data/models/post_model.dart';
-import '../../../data/models/story_model.dart';
-import 'widgets/post_card.dart';
-
-class SetScreen extends StatefulWidget {
-  const SetScreen({super.key});
+class FeedScreen extends StatefulWidget {
+  const FeedScreen({super.key});
   @override
-  State<SetScreen> createState() => _SetScreenState();
+  State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _SetScreenState extends State<SetScreen>
+class _FeedScreenState extends State<FeedScreen>
     with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
+  int _navIndex = 0;
+  int _tabIndex = 0;
   int _currentPage = 0;
-  bool _showPanel = false;
-  bool _isDraggingHorizontal = false;
+  final PageController _feedCtrl = PageController();
 
-  final List<PostModel> _posts = PostModel.getMockPosts();
-  final List<StoryModel> _stories = StoryModel.getMockStories();
-
-  // للسحب اليدوي من الشريط
-  double _dragOffset = 0;
-  bool _dragging = false;
-  static const double _panelH = 280.0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _updatePost(int i, PostModel p) => setState(() => _posts[i] = p);
-
-  void _openPanel() {
-    HapticFeedback.lightImpact();
-    setState(() => _showPanel = true);
-  }
-
-  void _closePanel() => setState(() { _showPanel = false; _dragOffset = 0; });
-
-  void _goNextPage() {
-    if (_currentPage < _posts.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  // ── حساب offset اللوحة (للسحب اليدوي) ────────────────────────────
-  double get _panelTop {
-    if (_showPanel) {
-      // مفتوحة: اسمح بسحب للأعلى
-      return (_dragging ? -_dragOffset.clamp(0, _panelH) : 0);
-    } else {
-      // مغلقة: اسمح بسحب للأسفل
-      return -_panelH + (_dragging ? _dragOffset.clamp(0, _panelH) : 0);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(children: [
-
-        // ── FEED ──────────────────────────────────────────────────────
-        PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: _posts.length,
-          physics: (_showPanel || _isDraggingHorizontal)
-              ? const NeverScrollableScrollPhysics()
-              : const BouncingScrollPhysics(),
-          onPageChanged: (i) => setState(() => _currentPage = i),
-          itemBuilder: (ctx, i) => PostCard(
-            post: _posts[i],
-            onUpdate: (p) => _updatePost(i, p),
-            onSwipeNext: _goNextPage,
-            onSwipeRight: () => HapticFeedback.mediumImpact(),
-            onSwipeLeft: () => HapticFeedback.lightImpact(),
-            onSwipeStart: () =>
-                setState(() => _isDraggingHorizontal = true),
-            onSwipeEnd: () =>
-                setState(() => _isDraggingHorizontal = false),
-          ),
-        ),
-
-        // ── DIM overlay ───────────────────────────────────────────────
-        if (_showPanel || _dragging && _dragOffset > 20)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _closePanel,
-              child: AnimatedOpacity(
-                opacity: _showPanel ? 0.55 : (_dragOffset / _panelH) * 0.55,
-                duration: const Duration(milliseconds: 200),
-                child: Container(
-                  margin: EdgeInsets.only(
-                      top: _showPanel ? _panelH : _dragOffset),
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-
-        // ── PULL PANEL ────────────────────────────────────────────────
-        AnimatedPositioned(
-          duration: _dragging
-              ? Duration.zero
-              : const Duration(milliseconds: 320),
-          curve: Curves.easeOutCubic,
-          top: _panelTop,
-          left: 0,
-          right: 0,
-          child: _PullPanel(
-            stories: _stories,
-            isOpen: _showPanel,
-            onClose: _closePanel,
-            onTabTap: (label) {
-              _closePanel();
-              // التابات تُعالج في MainNavigationScreen
-            },
-          ),
-        ),
-
-        // ── TOP BAR (ثابت دائماً) ─────────────────────────────────────
-        SafeArea(
-          child: GestureDetector(
-            // سحب للأسفل من أي مكان في الـ TopBar يفتح اللوحة
-            onVerticalDragStart: (_) {
-              if (!_showPanel) setState(() => _dragging = true);
-            },
-            onVerticalDragUpdate: (d) {
-              if (!_showPanel && _dragging) {
-                setState(() => _dragOffset =
-                    (_dragOffset + d.delta.dy).clamp(0, _panelH));
-              } else if (_showPanel) {
-                setState(() {
-                  _dragging = true;
-                  _dragOffset =
-                      (_dragOffset + (-d.delta.dy)).clamp(0, _panelH);
-                });
-              }
-            },
-            onVerticalDragEnd: (d) {
-              if (!_showPanel) {
-                if (_dragOffset > _panelH * 0.35) {
-                  _openPanel();
-                } else {
-                  setState(() { _dragging = false; _dragOffset = 0; });
-                }
-              } else {
-                if (_dragOffset > _panelH * 0.35) {
-                  _closePanel();
-                } else {
-                  setState(() { _dragging = false; _dragOffset = 0; });
-                }
-              }
-              setState(() => _dragging = false);
-            },
-            child: _TopBar(
-              isOpen: _showPanel,
-              onTap: _showPanel ? _closePanel : _openPanel,
-            ),
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  TOP BAR — "SetRize ▼" + خطان
-// ═══════════════════════════════════════════════════════════════════
-class _TopBar extends StatelessWidget {
-  final bool isOpen;
-  final VoidCallback onTap;
-
-  const _TopBar({required this.isOpen, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            // صورة البحث
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.search_rounded,
-                    color: Colors.white, size: 20),
-              ),
-            ),
-            const Spacer(),
-            // SetRize + سهم
-            Row(children: [
-              Text('SetRize',
-                  style: AppTextStyles.h5.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.w900)),
-              const SizedBox(width: 4),
-              AnimatedRotation(
-                turns: isOpen ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white, size: 22),
-              ),
-            ]),
-            const Spacer(),
-            const SizedBox(width: 36), // توازن
-          ]),
-          // خطان صغيران — مؤشر اللوحة (مثل ريدو)
-          const SizedBox(height: 6),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-              width: 28, height: 2,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: isOpen
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Container(
-              width: 28, height: 2,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: isOpen
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ]),
-        ]),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  PULL PANEL — التابات + الستوريات
-// ═══════════════════════════════════════════════════════════════════
-class _PullPanel extends StatefulWidget {
-  final List<StoryModel> stories;
-  final bool isOpen;
-  final VoidCallback onClose;
-  final ValueChanged<String> onTabTap;
-
-  const _PullPanel({
-    required this.stories,
-    required this.isOpen,
-    required this.onClose,
-    required this.onTabTap,
-  });
-
-  @override
-  State<_PullPanel> createState() => _PullPanelState();
-}
-
-class _PullPanelState extends State<_PullPanel> {
-  int _storyTab = 0; // 0=Following, 1=ForYou
-
-  static const _tabs = [
-    {'label': 'Set',   'color': Colors.white},
-    {'label': 'Rize',  'color': AppColors.electricBlue},
-    {'label': 'Shop',  'color': AppColors.shop},
-    {'label': 'Date',  'color': AppColors.dating},
-    {'label': 'Live',  'color': AppColors.live},
-    {'label': 'Music', 'color': AppColors.music},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 280,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D0D0D),
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.7),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(children: [
-          const SizedBox(height: 10),
-
-          // ── خط الفلترة العلوي (Set, Rize, Shop...) ───────────────
-          SizedBox(
-            height: 36,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              children: _tabs.map((t) {
-                final label = t['label'] as String;
-                final color = t['color'] as Color;
-                final isSet = label == 'Set';
-                return GestureDetector(
-                  onTap: () => widget.onTabTap(label),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSet
-                          ? AppColors.white
-                          : color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSet
-                            ? AppColors.white
-                            : color.withOpacity(0.5),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: isSet ? AppColors.black : Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // ── خط الفلترة السفلي (Following / For You) ──────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(children: [
-              _storyTabBtn(0, 'Following'),
-              const SizedBox(width: 16),
-              _storyTabBtn(1, 'For You'),
-              const Spacer(),
-              // زر إضافة ستوري
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.electricBlue.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: AppColors.electricBlue.withOpacity(0.4)),
-                  ),
-                  child: const Row(children: [
-                    Icon(Icons.add_rounded,
-                        color: AppColors.electricBlue, size: 14),
-                    SizedBox(width: 4),
-                    Text('Story',
-                        style: TextStyle(
-                          color: AppColors.electricBlue,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter',
-                        )),
-                  ]),
-                ),
-              ),
-            ]),
-          ),
-
-          const SizedBox(height: 10),
-
-          // ── الستوريات المستطيلة ───────────────────────────────────
-          SizedBox(
-            height: 148,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: widget.stories.length,
-              itemBuilder: (ctx, i) => _StoryCard(
-                story: widget.stories[i],
-                onTap: () => _openStory(ctx, i),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
-  }
-
-  Widget _storyTabBtn(int idx, String label) {
-    final active = _storyTab == idx;
-    return GestureDetector(
-      onTap: () => setState(() => _storyTab = idx),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
-            style: TextStyle(
-              color: active ? Colors.white : AppColors.grey2,
-              fontSize: 13,
-              fontWeight:
-                  active ? FontWeight.w800 : FontWeight.w400,
-              fontFamily: 'Inter',
-            )),
-        const SizedBox(height: 3),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 2,
-          width: active ? label.length * 7.5 : 0,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ]),
-    );
-  }
-
-  void _openStory(BuildContext ctx, int startIndex) {
-    Navigator.push(
-      ctx,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (_, __, ___) => _StoryViewer(
-          stories: widget.stories,
-          initialIndex: startIndex,
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  STORY CARD — مستطيل عمودي (2:3 تقريباً)
-// ═══════════════════════════════════════════════════════════════════
-class _StoryCard extends StatelessWidget {
-  final StoryModel story;
-  final VoidCallback onTap;
-
-  const _StoryCard({required this.story, required this.onTap});
-
-  Color get _borderColor {
-    switch (story.status) {
-      case StoryStatus.live:        return AppColors.storyLive;
-      case StoryStatus.own:         return AppColors.storyOwn;
-      case StoryStatus.closeFriend: return AppColors.storyCloseFriend;
-      case StoryStatus.unseen:      return AppColors.storyUnseen;
-      case StoryStatus.seen:        return Colors.transparent;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isSeen = story.status == StoryStatus.seen;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 86,
-        height: 140,
-        margin: const EdgeInsets.only(right: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: _borderColor,
-            width: isSeen ? 0 : 2.5,
-          ),
-          color: AppColors.grey,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(fit: StackFit.expand, children: [
-
-            // خلفية متدرجة
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    _bgColor().withOpacity(0.8),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                ),
-              ),
-            ),
-
-            // أيقونة الشخص
-            const Center(
-              child: Icon(Icons.person_rounded,
-                  color: Colors.white38, size: 36),
-            ),
-
-            // LIVE badge
-            if (story.isLive)
-              Positioned(
-                top: 8, left: 0, right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.storyLive,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: const Text('LIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'Inter',
-                        )),
-                  ),
-                ),
-              ),
-
-            // Own: زر +
-            if (story.status == StoryStatus.own)
-              Positioned(
-                bottom: 28, right: 6,
-                child: Container(
-                  width: 20, height: 20,
-                  decoration: const BoxDecoration(
-                    color: AppColors.electricBlue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.add_rounded,
-                      color: Colors.white, size: 14),
-                ),
-              ),
-
-            // اسم المستخدم
-            Positioned(
-              bottom: 0, left: 0, right: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(6, 18, 6, 6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.85),
-                    ],
-                  ),
-                ),
-                child: Text(
-                  story.status == StoryStatus.own
-                      ? 'Your Story'
-                      : story.username,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Color _bgColor() {
-    switch (story.status) {
-      case StoryStatus.live:        return const Color(0xFF2E0A0A);
-      case StoryStatus.own:         return const Color(0xFF0A2E0A);
-      case StoryStatus.closeFriend: return const Color(0xFF2E1A0A);
-      case StoryStatus.unseen:      return const Color(0xFF0A1A2E);
-      case StoryStatus.seen:        return const Color(0xFF1A1A1A);
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  STORY VIEWER — مثل إنستقرام/تيكتوك
-// ═══════════════════════════════════════════════════════════════════
-class _StoryViewer extends StatefulWidget {
-  final List<StoryModel> stories;
-  final int initialIndex;
-
-  const _StoryViewer({
-    required this.stories,
-    required this.initialIndex,
-  });
-
-  @override
-  State<_StoryViewer> createState() => _StoryViewerState();
-}
-
-class _StoryViewerState extends State<_StoryViewer>
-    with SingleTickerProviderStateMixin {
-  late PageController _pageCtrl;
-  late AnimationController _progressCtrl;
-  late int _currentIndex;
-  bool _paused = false;
-  bool _liked = false;
-  final _replyCtrl = TextEditingController();
-
-  static const _duration = Duration(seconds: 6);
+  // ===== PULL DOWN PANEL =====
+  double _panelOffset = 0;
+  bool _panelOpen = false;
+  late AnimationController _panelCtrl;
+  late Animation<double> _panelAnim;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageCtrl = PageController(initialPage: widget.initialIndex);
-    _progressCtrl = AnimationController(vsync: this, duration: _duration)
-      ..addStatusListener((s) {
-        if (s == AnimationStatus.completed) _next();
-      })
-      ..addListener(() => setState(() {}))
-      ..forward();
+    _panelCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
+    _panelCtrl.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _pageCtrl.dispose();
-    _progressCtrl.dispose();
-    _replyCtrl.dispose();
+    _panelCtrl.dispose();
+    _feedCtrl.dispose();
     super.dispose();
   }
 
-  void _next() {
-    if (_currentIndex < widget.stories.length - 1) {
-      setState(() => _currentIndex++);
-      _pageCtrl.nextPage(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeIn);
-      _progressCtrl.reset();
-      _progressCtrl.forward();
-    } else {
-      Navigator.pop(context);
+  void _openPanel() {
+    HapticFeedback.lightImpact();
+    _panelCtrl.forward();
+    setState(() { _panelOpen = true; _panelOffset = 1; });
+  }
+
+  void _closePanel() {
+    _panelCtrl.reverse();
+    setState(() { _panelOpen = false; _panelOffset = 0; });
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails d) {
+    if (d.delta.dy > 0 && !_panelOpen) {
+      setState(() => _panelOffset = (_panelOffset + d.delta.dy / 280).clamp(0.0, 1.0));
+    } else if (d.delta.dy < 0 && _panelOpen) {
+      setState(() => _panelOffset = (_panelOffset + d.delta.dy / 280).clamp(0.0, 1.0));
     }
   }
 
-  void _prev() {
-    if (_currentIndex > 0) {
-      setState(() => _currentIndex--);
-      _pageCtrl.previousPage(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeIn);
-      _progressCtrl.reset();
-      _progressCtrl.forward();
-    }
+  void _onVerticalDragEnd(DragEndDetails d) {
+    if (_panelOffset > 0.4) { _openPanel(); } else { _closePanel(); }
   }
 
-  void _togglePause() {
-    setState(() => _paused = !_paused);
-    _paused ? _progressCtrl.stop() : _progressCtrl.forward();
+  final List<Map<String, dynamic>> _posts = List.generate(10, (i) => {
+    'username': '@user_$i',
+    'title': 'Amazing content title that grabs attention right away',
+    'hashtags': '#trending #explore #setrise #viral',
+    'likes': (i + 1) * 1200,
+    'comments': (i + 1) * 340,
+    'shares': (i + 1) * 210,
+    'sends': (i + 1) * 100,
+    'saves': (i + 1) * 510,
+    'isLiked': false,
+    'isCommented': false,
+    'isShared': false,
+    'isSent': false,
+    'isSaved': false,
+    'isFollowing': false,
+    'isPlaying': true,
+    'color': [
+      const Color(0xFF1A0A2E),
+      const Color(0xFF0A1628),
+      const Color(0xFF1A0A0A),
+      const Color(0xFF0A1A0A),
+      const Color(0xFF1A1A0A),
+    ][i % 5],
+  });
+
+  void _switchTab(int index) => setState(() => _tabIndex = index);
+
+  void _showMenuSheet() {
+    showModalBottomSheet(
+      context: context, backgroundColor: kWhite, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _MenuSheet(onApply: () => setState(() {})),
+    );
+  }
+
+  void _showCommentsSheet(Map post) {
+    showModalBottomSheet(
+      context: context, backgroundColor: kWhite, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _CommentsSheet(post: post),
+    );
+  }
+
+  void _showInfoSheet(Map post) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: kWhite,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModal) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          maxChildSize: 0.92,
+          builder: (_, ctrl) => SingleChildScrollView(
+            controller: ctrl,
+            padding: const EdgeInsets.all(24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Row(children: [
+                CircleAvatar(radius: 28, backgroundColor: Colors.grey.shade200,
+                    child: Image.asset(aAvatar, width: 40,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.person, color: kBlack, size: 28))),
+                const SizedBox(width: 14),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(post['username'], style: const TextStyle(
+                      color: kBlack, fontWeight: FontWeight.bold,
+                      fontSize: 16, fontFamily: 'HarmonyOS')),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => post['isFollowing'] = !post['isFollowing']);
+                      setModal(() {});
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: post['isFollowing'] ? Colors.grey.shade200 : kBlack,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        post['isFollowing'] ? 'Following ✓' : 'Follow',
+                        style: TextStyle(
+                            color: post['isFollowing'] ? kBlack : kWhite,
+                            fontSize: 13, fontWeight: FontWeight.bold,
+                            fontFamily: 'HarmonyOS'),
+                      ),
+                    ),
+                  ),
+                ]),
+              ]),
+              const SizedBox(height: 20),
+              Text(post['title'], style: const TextStyle(
+                  color: kBlack, fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'HarmonyOS', height: 1.5)),
+              const SizedBox(height: 10),
+              Text(post['hashtags'],
+                  style: const TextStyle(
+                      color: kElectricBlue, fontSize: 14,
+                      fontFamily: 'HarmonyOS')),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final story = widget.stories[_currentIndex];
-    final size = MediaQuery.of(context).size;
+    final panelProgress = _panelOpen ? _panelCtrl.value : _panelOffset;
+    final panelHeight = 320.0;
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      resizeToAvoidBottomInset: true,
+      backgroundColor: kBg,
       body: GestureDetector(
-        onTapDown: (d) {
-          final x = d.globalPosition.dx;
-          if (x < size.width * 0.33) _prev();
-          else if (x > size.width * 0.67) _next();
-          else _togglePause();
-        },
-        onLongPressStart: (_) {
-          setState(() => _paused = true);
-          _progressCtrl.stop();
-        },
-        onLongPressEnd: (_) {
-          setState(() => _paused = false);
-          _progressCtrl.forward();
-        },
-        child: Stack(fit: StackFit.expand, children: [
+        onVerticalDragUpdate: _onVerticalDragUpdate,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        child: Stack(children: [
 
-          // ── خلفية القصة ─────────────────────────────────────────────
+          // ===== FEED =====
           PageView.builder(
-            controller: _pageCtrl,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.stories.length,
-            itemBuilder: (_, i) => Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [_color(i), Colors.black],
-                ),
-              ),
-              child: const Center(
-                child: Icon(Icons.person_rounded,
-                    color: Colors.white12, size: 120),
-              ),
-            ),
-          ),
-
-          // ── شرائط التقدم ────────────────────────────────────────────
-          SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                children: List.generate(widget.stories.length, (i) {
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: i < _currentIndex
-                              ? 1.0
-                              : i == _currentIndex
-                                  ? _progressCtrl.value
-                                  : 0.0,
-                          backgroundColor: Colors.white30,
-                          valueColor:
-                              const AlwaysStoppedAnimation(Colors.white),
-                          minHeight: 2.5,
-                        ),
-                      ),
-                    ),
-                  );
+            scrollDirection: Axis.vertical,
+            controller: _feedCtrl,
+            itemCount: _posts.length,
+            onPageChanged: (i) => setState(() => _currentPage = i),
+            physics: _panelOpen ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
+            itemBuilder: (_, i) {
+              final p = _posts[i];
+              return _PostItem(
+                post: p,
+                onLike: () => setState(() {
+                  p['isLiked'] = !p['isLiked'];
+                  p['likes'] += p['isLiked'] ? 1 : -1;
                 }),
-              ),
-            ),
+                onComment: () => _showCommentsSheet(p),
+                onShare: () => setState(() => p['isShared'] = !p['isShared']),
+                onSend: () => setState(() => p['isSent'] = !p['isSent']),
+                onFollow: () => setState(() => p['isFollowing'] = !p['isFollowing']),
+                onPlayPause: () => setState(() => p['isPlaying'] = !p['isPlaying']),
+                onInfo: () => _showInfoSheet(p),
+              );
+            },
           ),
 
-          // ── هيدر: أفاتار + اسم + X ──────────────────────────────────
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 22, 14, 0),
-              child: Row(children: [
-                Container(
-                  width: 38, height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    color: AppColors.grey,
+          // ===== OVERLAY تعتيم =====
+          if (panelProgress > 0)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _closePanel,
+                child: Container(color: Colors.black.withOpacity(0.45 * panelProgress)),
+              ),
+            ),
+
+          // ===== PANEL اللوحة =====
+          Positioned(
+            top: -panelHeight + (panelHeight * panelProgress),
+            left: 0, right: 0,
+            child: Container(
+              height: panelHeight,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D0D0D),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.6), blurRadius: 20, offset: const Offset(0, 8))],
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  // ✅ مساحة كافية تحت الشريط العلوي
+                  const SizedBox(height: 56),
+                  // التابات داخل اللوحة
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: List.generate(kTabs.length, (i) {
+                        final isActive = _tabIndex == i;
+                        final tab = kTabs[i];
+                        final label = tab['label'] as String;
+                        final activeColor = tab['color'] as Color;
+                        return GestureDetector(
+                          onTap: () {
+                            _switchTab(i);
+                            _closePanel();
+                            Widget? screen;
+                            if (label == 'Rize')  screen = const RizeScreen();
+                            if (label == 'Music') screen = const MusicScreen();
+                            if (label == 'Shop')  screen = const ShopScreen();
+                            if (label == 'Date')  screen = const DatingScreen();
+                            if (label == 'Live')  screen = const LiveScreen();
+                            if (screen != null) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            // ✅ تباعد 9px بين الكلمات بدون خلفية
+                            margin: const EdgeInsets.only(right: 9),
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                            child: Text(label, style: TextStyle(
+                              color: isActive ? kWhite : kWhite.withOpacity(0.5),
+                              fontSize: 16,
+                              fontWeight: isActive ? FontWeight.w900 : FontWeight.w500,
+                              fontFamily: 'HarmonyOS',
+                            )),
+                          ),
+                        );
+                      }),
+                    ),
                   ),
-                  child: const Icon(Icons.person_rounded,
-                      color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 10),
-                Column(crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(story.username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        fontFamily: 'Inter',
-                      )),
-                  Text(
-                    _paused ? 'Paused ⏸' : '· Just now',
-                    style: const TextStyle(
-                        color: Colors.white60, fontSize: 11,
-                        fontFamily: 'Inter'),
+                  const SizedBox(height: 14),
+                  // الستوريات داخل اللوحة
+                  const StoriesBar(),
+                  const SizedBox(height: 8),
+                  Container(width: 40, height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(2)),
                   ),
                 ]),
-                const Spacer(),
-                if (story.isLive)
-                  Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.storyLive,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text('LIVE',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                            fontFamily: 'Inter')),
-                  ),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close_rounded,
-                      color: Colors.white, size: 26),
-                ),
-              ]),
+              ),
             ),
           ),
 
-          // ── شريط التفاعل السفلي ──────────────────────────────────────
+          // ===== TOP BAR ثابت =====
+          SafeArea(child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(children: [
+              GestureDetector(
+                onTap: _showMenuSheet,
+                child: const Icon(Icons.menu, color: kWhite, size: 26),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _panelOpen ? _closePanel : _openPanel,
+                child: Row(children: [
+                  const Text('SetRize', style: TextStyle(
+                    color: kWhite, fontSize: 18,
+                    fontWeight: FontWeight.w900, fontFamily: 'HarmonyOS',
+                  )),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: _panelOpen ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: const Icon(Icons.keyboard_arrow_down, color: kWhite, size: 20),
+                  ),
+                ]),
+              ),
+            ]),
+          )),
+
+          // ===== BOTTOM NAV =====
           Positioned(
             bottom: 0, left: 0, right: 0,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                child: Row(children: [
-                  // حقل الرد
-                  Expanded(
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(21),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14),
-                      child: TextField(
-                        controller: _replyCtrl,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontFamily: 'Inter'),
-                        decoration: const InputDecoration(
-                          hintText: 'Reply...',
-                          hintStyle: TextStyle(
-                              color: Colors.white54, fontFamily: 'Inter'),
-                          border: InputBorder.none,
-                        ),
-                        onTap: () {
-                          _paused = true;
-                          _progressCtrl.stop();
-                        },
-                        onSubmitted: (_) {
-                          _replyCtrl.clear();
-                          _paused = false;
-                          _progressCtrl.forward();
-                        },
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.96)],
+                ),
+              ),
+              padding: const EdgeInsets.only(bottom: 8, top: 8),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _nb(aProfileOff, aProfileOn, 'Profile', 0),
+                    _nb(aMsgOff, aMsgOn, 'Messages', 1),
+                    GestureDetector(
+                      onTap: () => setState(() => _navIndex = 2),
+                      child: Container(
+                        width: 52, height: 34,
+                        decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(10)),
+                        child: const Center(child: Text('+', style: TextStyle(color: kBlack, fontSize: 26, fontWeight: FontWeight.bold))),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  // ردود سريعة (قلب + نار)
-                  GestureDetector(
-                    onTap: () => setState(() => _liked = !_liked),
-                    child: Icon(
-                      _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: _liked ? AppColors.neonRed : Colors.white,
-                      size: 28,
+                    _nb(aAlertOff, aAlertOn, 'Alerts', 3),
+                    GestureDetector(
+                      onTap: () => setState(() => _navIndex = 4),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.search, color: _navIndex == 4 ? kWhite : kGrey2, size: 26),
+                        const SizedBox(height: 2),
+                        Text('Search', style: TextStyle(color: _navIndex == 4 ? kWhite : kGrey2, fontSize: 10, fontFamily: 'HarmonyOS')),
+                      ]),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Text('🔥',
-                        style: TextStyle(fontSize: 24)),
-                  ),
-                  const SizedBox(width: 8),
-                  // إرسال
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: 38, height: 38,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.send_rounded,
-                          color: Colors.black, size: 18),
-                    ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
             ),
           ),
@@ -890,11 +373,411 @@ class _StoryViewerState extends State<_StoryViewer>
     );
   }
 
-  Color _color(int i) {
-    const colors = [
-      Color(0xFF1A0A2E), Color(0xFF0A1628), Color(0xFF1A0A0A),
-      Color(0xFF0A1A0A), Color(0xFF1A1A0A), Color(0xFF2E0A1A),
-    ];
-    return colors[i % colors.length];
+  Widget _nb(String offPath, String onPath, String label, int i) {
+    final sel = _navIndex == i;
+    return GestureDetector(
+      onTap: () => setState(() => _navIndex = i),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Image.asset(sel ? onPath : offPath, width: 26, height: 26, color: sel ? kWhite : kGrey2,
+            errorBuilder: (_, __, ___) => Icon(Icons.person, color: sel ? kWhite : kGrey2, size: 26)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: sel ? kWhite : kGrey2, fontSize: 10, fontFamily: 'HarmonyOS')),
+      ]),
+    );
+  }
+}
+
+// ===== POST ITEM =====
+class _PostItem extends StatefulWidget {
+  final Map<String, dynamic> post;
+  final VoidCallback onLike, onComment, onShare, onSend, onFollow, onPlayPause, onInfo;
+  const _PostItem({required this.post, required this.onLike, required this.onComment,
+    required this.onShare, required this.onSend,
+    required this.onFollow, required this.onPlayPause, required this.onInfo});
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> with SingleTickerProviderStateMixin {
+  bool _showHeart = false;
+  late AnimationController _heartCtrl;
+  late Animation<double> _heartAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _heartCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _heartAnim = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _heartCtrl, curve: Curves.elasticOut));
+    _heartCtrl.addStatusListener((s) {
+      if (s == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) setState(() => _showHeart = false);
+          _heartCtrl.reset();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() { _heartCtrl.dispose(); super.dispose(); }
+
+  void _triggerHeart() {
+    setState(() => _showHeart = true);
+    _heartCtrl.forward();
+    if (!widget.post['isLiked']) widget.onLike();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFollowing = widget.post['isFollowing'] as bool;
+    return GestureDetector(
+      onTap: widget.onPlayPause,
+      onDoubleTap: _triggerHeart,
+      child: Stack(fit: StackFit.expand, children: [
+        Container(color: widget.post['color']),
+        if (!widget.post['isPlaying'])
+          Center(child: Container(
+            width: 70, height: 70,
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+            child: const Icon(Icons.play_arrow, color: kWhite, size: 44),
+          )),
+        Positioned(bottom: 0, left: 0, right: 0, height: 320,
+          child: DecoratedBox(decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black.withOpacity(0.95)]),
+          )),
+        ),
+        if (_showHeart)
+          Center(child: ScaleTransition(scale: _heartAnim,
+            child: const Icon(Icons.favorite, color: kNeonRed, size: 120))),
+
+        // RIGHT ACTIONS
+        Positioned(right: 10, bottom: 90,
+          child: Column(children: [
+            _ab(off: aLikeOff, on: aLikeOn, label: fmt(widget.post['likes']),
+                activeColor: kNeonRed, active: widget.post['isLiked'], onTap: widget.onLike),
+            _ab(off: aCommentOff, on: aCommentOn, label: fmt(widget.post['comments']),
+                activeColor: kWhite, active: widget.post['isCommented'], onTap: widget.onComment),
+            // ✅ مثلث بدل مشاركة
+            _triangleBtn(
+              active: widget.post['isShared'],
+              label: fmt(widget.post['shares']),
+              onTap: widget.onShare,
+            ),
+            _ab(off: aSendOff, on: aSendOn, label: fmt(widget.post['sends']),
+                activeColor: kNeonGreen, active: widget.post['isSent'], onTap: widget.onSend),
+            // ❌ حذف Save
+            const SizedBox(height: 6),
+            _MusicDisk(),
+            const SizedBox(height: 6),
+            // ✅ Info button
+            GestureDetector(
+              onTap: widget.onInfo,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Column(children: [
+                  Image.asset(aInfo, width: 28, height: 28, color: kWhite,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.keyboard_arrow_up, color: kWhite, size: 28)),
+                  const Text('Info', style: TextStyle(
+                      color: kWhite, fontSize: 10, fontFamily: 'HarmonyOS')),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+
+        // BOTTOM INFO
+        Positioned(bottom: 70, left: 12, right: 80,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              CircleAvatar(radius: 16, backgroundColor: kGrey,
+                child: ClipOval(child: Image.asset(aAvatar, width: 32, height: 32,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.person, color: kWhite, size: 18)))),
+              const SizedBox(width: 8),
+              Expanded(child: Text(widget.post['username'],
+                style: const TextStyle(color: kWhite, fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'HarmonyOS'))),
+              if (!isFollowing)
+                GestureDetector(
+                  onTap: widget.onFollow,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(border: Border.all(color: kWhite, width: 1.5), borderRadius: BorderRadius.circular(6)),
+                    child: const Text('Follow', style: TextStyle(color: kWhite, fontSize: 11, fontWeight: FontWeight.w500, fontFamily: 'HarmonyOS')),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 8),
+            Text(widget.post['title'],
+              style: const TextStyle(color: kWhite, fontSize: 14, fontWeight: FontWeight.w900, height: 1.4, fontFamily: 'HarmonyOS'),
+              maxLines: 2, overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _ab({required String off, required String on, required String label,
+    required Color activeColor, required bool active, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(children: [
+          Image.asset(active ? on : off, width: 30, height: 30, color: active ? activeColor : kIcon,
+            errorBuilder: (_, __, ___) => Icon(Icons.star, color: active ? activeColor : kIcon, size: 30)),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(color: kWhite, fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'HarmonyOS')),
+        ]),
+      ),
+    );
+  }
+
+  // ✅ مثلث بدل مشاركة - مثل Vero
+  Widget _triangleBtn({required bool active, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 30, height: 30,
+            child: CustomPaint(
+              painter: _TrianglePainter(
+                color: active ? kCyan : kIcon,
+                filled: active,
+              ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(
+              color: kWhite, fontSize: 12,
+              fontWeight: FontWeight.w500, fontFamily: 'HarmonyOS')),
+        ]),
+      ),
+    );
+  }
+}
+
+// ===== TRIANGLE PAINTER =====
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+  final bool filled;
+
+  _TrianglePainter({required this.color, required this.filled});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path();
+    path.moveTo(size.width * 0.5, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_TrianglePainter old) =>
+      old.color != color || old.filled != filled;
+}
+
+class _MusicDisk extends StatefulWidget {
+  @override
+  State<_MusicDisk> createState() => _MusicDiskState();
+}
+
+class _MusicDiskState extends State<_MusicDisk> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  @override
+  void initState() { super.initState(); _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(); }
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => RotationTransition(
+    turns: _ctrl,
+    child: Container(
+      width: 36, height: 36,
+      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: kWhite, width: 2), color: kGrey),
+      child: ClipOval(child: Image.asset(aMusic, width: 36, height: 36, color: kWhite,
+        errorBuilder: (_, __, ___) => const Icon(Icons.music_note, color: kWhite, size: 18))),
+    ),
+  );
+}
+
+// ===== MENU SHEET =====
+class _MenuSheet extends StatefulWidget {
+  final VoidCallback onApply;
+  const _MenuSheet({required this.onApply});
+  @override
+  State<_MenuSheet> createState() => _MenuSheetState();
+}
+
+class _MenuSheetState extends State<_MenuSheet> {
+  String? _mood, _category, _sport, _region, _country;
+  bool _showCountries = false;
+  static const moods = ['😴 Chill','😤 Hyped','😞 Sad','🧘 Focus','💪 Motivated'];
+  static const categories = ['💻 Technology','🏛️ Politics','🎬 Movies','🎵 Music','📖 Stories','💰 Business','🎓 Education','😂 Comedy','🍳 Cooking','🎭 Adventure','❤️ Dating','🛍️ Shop','🔴 Live','🌿 Nature','✈️ Travel','🎨 Art'];
+  static const sports = ['⚽ Football','🏀 Basketball','🎾 Tennis','🏋️ Fitness','🥊 Boxing','🏊 Swimming','🏃 Running','🚴 Cycling','🎯 E-Sports','🏈 American Football','🏐 Volleyball'];
+  static const Map<String, List<String>> regions = {
+    '🔥 Trending': ['🇩🇿 Algeria','🇺🇸 USA','🇧🇷 Brazil','🇯🇵 Japan','🇫🇷 France'],
+    '🌍 Africa': ['🇩🇿 Algeria','🇹🇳 Tunisia','🇪🇬 Egypt','🇲🇦 Morocco','🇳🇬 Nigeria'],
+    '🇪🇺 Europe': ['🇫🇷 France','🇩🇪 Germany','🇬🇧 UK','🇮🇹 Italy','🇪🇸 Spain'],
+    '🌎 Americas': ['🇺🇸 USA','🇧🇷 Brazil','🇲🇽 Mexico','🇨🇦 Canada','🇦🇷 Argentina'],
+    '🌏 Asia': ['🇸🇦 Saudi Arabia','🇦🇪 UAE','🇯🇵 Japan','🇰🇷 South Korea','🇨🇳 China'],
+    '🌊 Oceania': ['🇦🇺 Australia','🇳🇿 New Zealand','🇫🇯 Fiji'],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: kWhite,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          _title('😊 Mood'), const SizedBox(height: 8),
+          _chips(moods, _mood, (v) => setState(() => _mood = v)),
+          const SizedBox(height: 14),
+          _title('🎯 Category'), const SizedBox(height: 8),
+          _chips(categories, _category, (v) => setState(() => _category = v)),
+          const SizedBox(height: 14),
+          _title('🏆 Sports'), const SizedBox(height: 8),
+          _chips(sports, _sport, (v) => setState(() => _sport = v)),
+          const SizedBox(height: 14),
+          _title('🌍 Region'), const SizedBox(height: 8),
+          _chips(regions.keys.toList(), _region, (v) { setState(() { _region = v; _country = null; _showCountries = true; }); }),
+          if (_showCountries && _region != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('🗺️ $_region', style: const TextStyle(color: kBlack, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'HarmonyOS')),
+                const SizedBox(height: 8),
+                _chips(regions[_region] ?? [], _country, (v) => setState(() => _country = v)),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () => setState(() { _mood = _category = _sport = _region = _country = null; _showCountries = false; }),
+              child: Container(height: 48, decoration: BoxDecoration(border: Border.all(color: kBlack, width: 1.5), borderRadius: BorderRadius.circular(12)),
+                child: const Center(child: Text('Reset All', style: TextStyle(color: kBlack, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')))),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: GestureDetector(
+              onTap: () { widget.onApply(); Navigator.pop(context); },
+              child: Container(height: 48, decoration: BoxDecoration(color: kBlack, borderRadius: BorderRadius.circular(12)),
+                child: const Center(child: Text('Apply', style: TextStyle(color: kWhite, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')))),
+            )),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _title(String t) => Text(t, style: const TextStyle(color: kBlack, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS'));
+  Widget _chips(List<String> items, String? selected, Function(String) onTap) {
+    return Wrap(spacing: 6, runSpacing: 6, children: items.map((item) {
+      final isSel = selected == item;
+      return GestureDetector(
+        onTap: () => onTap(item),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: isSel ? kBlack : Colors.grey.shade100, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSel ? kBlack : Colors.grey.shade300)),
+          child: Text(item, style: TextStyle(color: isSel ? kWhite : kBlack, fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'HarmonyOS')),
+        ),
+      );
+    }).toList());
+  }
+}
+
+// ===== COMMENTS SHEET =====
+class _CommentsSheet extends StatefulWidget {
+  final Map post;
+  const _CommentsSheet({required this.post});
+  @override
+  State<_CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends State<_CommentsSheet> {
+  final _ctrl = TextEditingController();
+  final List<Map<String, dynamic>> _comments = [
+    {'id':'1','user':'ahmed_99','text':'Amazing! 🔥','time':'2m','likes':24,'isLiked':false,'isOwn':false},
+    {'id':'2','user':'sara_x','text':'Love this ❤️','time':'5m','likes':18,'isLiked':false,'isOwn':false},
+    {'id':'3','user':'me','text':'My comment ✌️','time':'10m','likes':3,'isLiked':false,'isOwn':true},
+  ];
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void _send() {
+    if (_ctrl.text.trim().isEmpty) return;
+    setState(() { _comments.add({'id': DateTime.now().toString(), 'user': 'me', 'text': _ctrl.text.trim(), 'time': 'now', 'likes': 0, 'isLiked': false, 'isOwn': true}); _ctrl.clear(); });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.80,
+      decoration: const BoxDecoration(color: kWhite, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      child: Column(children: [
+        const SizedBox(height: 12),
+        Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 12),
+        Text('${_comments.length} Comments', style: const TextStyle(color: kBlack, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
+        Divider(color: Colors.grey.shade200),
+        Expanded(child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _comments.length,
+          itemBuilder: (_, i) {
+            final c = _comments[i];
+            final isOwn = c['isOwn'] as bool;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                CircleAvatar(radius: 18, backgroundColor: isOwn ? kBlack : Colors.grey.shade200,
+                  child: Icon(Icons.person, color: isOwn ? kWhite : kBlack, size: 20)),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Text(c['user'], style: const TextStyle(color: kBlack, fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'HarmonyOS')),
+                    const SizedBox(width: 6),
+                    Text(c['time'], style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                  ]),
+                  const SizedBox(height: 4),
+                  Text(c['text'], style: const TextStyle(color: kBlack, fontSize: 14, fontFamily: 'HarmonyOS')),
+                ])),
+              ]),
+            );
+          },
+        )),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(color: kWhite, border: Border(top: BorderSide(color: Colors.grey.shade200))),
+          child: Row(children: [
+            Expanded(child: Container(
+              height: 42,
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(21)),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(controller: _ctrl, decoration: const InputDecoration(hintText: 'Add a comment...', hintStyle: TextStyle(fontFamily: 'HarmonyOS'), border: InputBorder.none)),
+            )),
+            const SizedBox(width: 10),
+            GestureDetector(onTap: _send,
+              child: Container(width: 40, height: 40, decoration: const BoxDecoration(color: kBlack, shape: BoxShape.circle),
+                child: const Icon(Icons.send, color: kWhite, size: 18))),
+          ]),
+        ),
+      ]),
+    );
   }
 }
