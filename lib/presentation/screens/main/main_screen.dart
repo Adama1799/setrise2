@@ -29,21 +29,14 @@ class _MainScreenState extends State<MainScreen>
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
 
-  static const _tabs = [
-    {'label': 'Set',   'icon': Icons.home_rounded,       'color': AppColors.white},
-    {'label': 'Rize',  'icon': Icons.article_rounded,    'color': AppColors.white},
-    {'label': 'Shop',  'icon': Icons.storefront_rounded, 'color': AppColors.shop},
-    {'label': 'Date',  'icon': Icons.favorite_rounded,   'color': AppColors.dating},
-    {'label': 'Live',  'icon': Icons.live_tv_rounded,    'color': AppColors.live},
-    {'label': 'Music', 'icon': Icons.music_note_rounded, 'color': AppColors.music},
-  ];
+  static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
 
   @override
   void initState() {
     super.initState();
     _panelCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 320),
+      duration: const Duration(milliseconds: 260),
     );
     _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.addListener(() => setState(() {}));
@@ -121,8 +114,8 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Panel height: tabs only (no stories)
-    const panelH = 110.0;
+    // Panel height: text tabs only
+    const panelH = 90.0;
 
     return WillPopScope(
       onWillPop: () async {
@@ -142,16 +135,16 @@ class _MainScreenState extends State<MainScreen>
             Positioned.fill(
               child: GestureDetector(
                 onTap: _closePanel,
-                child: Container(color: Colors.black.withOpacity(0.5 * _panelAnim.value)),
+                child: Container(color: Colors.black.withOpacity(0.45 * _panelAnim.value)),
               ),
             ),
 
-          // 3. Pull-down panel (tabs only — no stories)
+          // 3. Pull-down panel — text words only, no icons
           Positioned(
             top: -panelH + (panelH * _panelAnim.value),
             left: 0, right: 0,
             child: _PullDownPanel(
-              tabs: _tabs,
+              labels: _tabLabels,
               activeTab: _contentTab,
               onTabSelect: (i) {
                 setState(() => _contentTab = i);
@@ -160,7 +153,7 @@ class _MainScreenState extends State<MainScreen>
             ),
           ),
 
-          // 4. Top bar — ☰ far left | SetRize center | 🔍 far right
+          // 4. Top bar — pushed to very top
           SafeArea(
             child: _TopBar(
               panelOpen: _panelOpen,
@@ -179,7 +172,7 @@ class _MainScreenState extends State<MainScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOP BAR  ─  ☰ far left | SetRize center | 🔍 far right
+// TOP BAR — ☰ SetRize (far left together) | 🔍 (far right)
 // ══════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final bool panelOpen;
@@ -197,78 +190,69 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      // Push to very top — minimal vertical padding
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
 
           // ☰ — far left
           GestureDetector(
-            onTap: onMenuTap,
-            child: Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.menu_rounded, color: AppColors.white, size: 22),
-            ),
+            onTap: _showMenuSheet(context),
+            child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
 
-          // SetRize ˅ — center
+          const SizedBox(width: 8),
+
+          // SetRize ˅ — right next to ☰
           GestureDetector(
             onTap: onSetRizeTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('SetRize',
-                  style: AppTextStyles.h5.copyWith(
-                    color: AppColors.white, fontWeight: FontWeight.w900)),
-                const SizedBox(width: 4),
-                AnimatedRotation(
-                  turns: panelOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.white, size: 20),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(
+                'SetRize',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.3,
                 ),
-              ]),
-            ),
+              ),
+              const SizedBox(width: 2),
+              AnimatedRotation(
+                turns: panelOpen ? 0.5 : 0,
+                duration: const Duration(milliseconds: 260),
+                child: const Icon(Icons.keyboard_arrow_down_rounded,
+                    color: Colors.white, size: 20),
+              ),
+            ]),
           ),
+
+          const Spacer(),
 
           // 🔍 — far right
           GestureDetector(
             onTap: onSearchTap,
-            child: Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.search_rounded, color: AppColors.white, size: 22),
-            ),
+            child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
           ),
 
         ],
       ),
     );
   }
+
+  // Returns a no-op tap handler; menu is handled in parent via onMenuTap
+  VoidCallback _showMenuSheet(BuildContext context) => onMenuTap;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PULL-DOWN PANEL  ─  Tabs only, 10px spacing, NO stories
+// PULL-DOWN PANEL — plain text words, 10px gap, TikTok style
 // ══════════════════════════════════════════════════════════════════════════════
 class _PullDownPanel extends StatelessWidget {
-  final List<Map<String, dynamic>> tabs;
+  final List<String> labels;
   final int activeTab;
   final Function(int) onTabSelect;
 
   const _PullDownPanel({
-    required this.tabs,
+    required this.labels,
     required this.activeTab,
     required this.onTabSelect,
   });
@@ -276,74 +260,72 @@ class _PullDownPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 110,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D0D0D),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black87, blurRadius: 20, offset: Offset(0, 8))],
-      ),
+      height: 90,
+      color: Colors.black.withOpacity(0.92),
       child: SafeArea(
         bottom: false,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
-            // Tabs row — 10px gap between each tab
-            SizedBox(
-              height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                itemCount: tabs.length,
-                itemBuilder: (_, i) {
-                  final tab = tabs[i];
+            // Text-only tab row — like TikTok
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: List.generate(labels.length, (i) {
                   final active = activeTab == i;
-                  final color = tab['color'] as Color;
                   return GestureDetector(
                     onTap: () => onTabSelect(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(right: 10), // 10px spacing
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: active
-                            ? color.withOpacity(0.15)
-                            : Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: active
-                              ? color.withOpacity(0.55)
-                              : Colors.white.withOpacity(0.08),
-                          width: active ? 1.5 : 1,
-                        ),
+                    child: Padding(
+                      // 10px gap between words
+                      padding: EdgeInsets.only(
+                        right: i < labels.length - 1 ? 10 : 0,
                       ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(tab['icon'] as IconData,
-                            color: active ? color : Colors.white38, size: 14),
-                        const SizedBox(width: 6),
-                        Text(tab['label'] as String,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: active ? color : Colors.white38,
-                            fontWeight: active ? FontWeight.w800 : FontWeight.w400,
-                          )),
-                      ]),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            labels[i],
+                            style: TextStyle(
+                              color: active ? Colors.white : Colors.white54,
+                              fontSize: active ? 16 : 15,
+                              fontWeight: active ? FontWeight.w800 : FontWeight.w400,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          // Active underline — like TikTok
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            height: 2,
+                            width: active ? 20 : 0,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
-                },
+                }),
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
-            // Handle indicator
+            // Drag handle
             Container(
-              width: 36, height: 4,
+              width: 32, height: 3,
               decoration: BoxDecoration(
-                  color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
           ],
         ),
       ),
@@ -352,7 +334,7 @@ class _PullDownPanel extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTTOM NAV  ─  Profile | Messages | [+] | Alerts | Search
+// BOTTOM NAV
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
@@ -370,10 +352,7 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.97)],
-        ),
+        color: Colors.black,
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.07))),
       ),
       child: SafeArea(
@@ -394,8 +373,6 @@ class _BottomNav extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(
-                        color: AppColors.white.withOpacity(0.18), blurRadius: 12)],
                     ),
                     child: const Center(child: Text('+',
                       style: TextStyle(color: AppColors.black,
@@ -413,8 +390,7 @@ class _BottomNav extends StatelessWidget {
                     Icon(item['icon'] as IconData, color: AppColors.grey2, size: 26),
                     const SizedBox(height: 2),
                     Text(item['label'] as String,
-                      style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.grey2, fontSize: 10)),
+                      style: TextStyle(color: AppColors.grey2, fontSize: 10)),
                   ]),
                 ),
               );
@@ -479,7 +455,7 @@ class _CreateSheet extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MENU SHEET  (زر ☰)
+// MENU SHEET
 // ══════════════════════════════════════════════════════════════════════════════
 class _MenuSheet extends StatelessWidget {
   final VoidCallback onProfile, onMessages, onAlerts, onSearch;
