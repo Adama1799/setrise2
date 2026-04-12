@@ -24,10 +24,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
 
-  int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music
+  int _contentTab = 0;
   bool _panelOpen = false;
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
+
+  // Track drag on panel for swipe-to-close
+  double _dragStart = 0;
 
   static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
 
@@ -36,9 +39,13 @@ class _MainScreenState extends State<MainScreen>
     super.initState();
     _panelCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 280),
     );
-    _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
+    _panelAnim = CurvedAnimation(
+      parent: _panelCtrl,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
     _panelCtrl.addListener(() => setState(() {}));
   }
 
@@ -50,7 +57,11 @@ class _MainScreenState extends State<MainScreen>
 
   void _togglePanel() {
     HapticFeedback.lightImpact();
-    _panelOpen ? _panelCtrl.reverse() : _panelCtrl.forward();
+    if (_panelOpen) {
+      _panelCtrl.reverse();
+    } else {
+      _panelCtrl.forward();
+    }
     setState(() => _panelOpen = !_panelOpen);
   }
 
@@ -114,9 +125,6 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Panel height: text tabs only
-    const panelH = 90.0;
-
     return WillPopScope(
       onWillPop: () async {
         if (_panelOpen) { _closePanel(); return false; }
@@ -127,40 +135,59 @@ class _MainScreenState extends State<MainScreen>
         backgroundColor: AppColors.background,
         body: Stack(children: [
 
-          // 1. Content
+          // ── 1. Full screen content ──
           _buildContent(),
 
-          // 2. Dark overlay when panel open
-          if (_panelAnim.value > 0)
+          // ── 2. Tap-outside overlay to close panel ──
+          if (_panelOpen)
             Positioned.fill(
               child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onTap: _closePanel,
-                child: Container(color: Colors.black.withOpacity(0.45 * _panelAnim.value)),
+                child: Container(
+                  color: Colors.black.withOpacity(0.35 * _panelAnim.value),
+                ),
               ),
             ),
 
-          // 3. Pull-down panel — text words only, no icons
-          Positioned(
-            top: -panelH + (panelH * _panelAnim.value),
-            left: 0, right: 0,
-            child: _PullDownPanel(
-              labels: _tabLabels,
-              activeTab: _contentTab,
-              onTabSelect: (i) {
-                setState(() => _contentTab = i);
-                _closePanel();
-              },
-            ),
-          ),
-
-          // 4. Top bar — pushed to very top
+          // ── 3. SafeArea column: TopBar + animated dropdown ──
           SafeArea(
-            child: _TopBar(
-              panelOpen: _panelOpen,
-              onSetRizeTap: _togglePanel,
-              onMenuTap: _showMenuSheet,
-              onSearchTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+                // Top bar row
+                _TopBar(
+                  panelOpen: _panelOpen,
+                  onSetRizeTap: _togglePanel,
+                  onMenuTap: _showMenuSheet,
+                  onSearchTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                ),
+
+                // Dropdown panel — slides down below top bar
+                SizeTransition(
+                  sizeFactor: _panelAnim,
+                  axisAlignment: -1,
+                  child: GestureDetector(
+                    // Swipe up to close
+                    onVerticalDragStart: (d) => _dragStart = d.globalPosition.dy,
+                    onVerticalDragEnd: (d) {
+                      if (d.velocity.pixelsPerSecond.dy < -300) _closePanel();
+                    },
+                    child: _DropdownPanel(
+                      labels: _tabLabels,
+                      activeTab: _contentTab,
+                      onTabSelect: (i) {
+                        setState(() => _contentTab = i);
+                        _closePanel();
+                      },
+                      onClose: _closePanel,
+                    ),
+                  ),
+                ),
+
+              ],
             ),
           ),
 
@@ -172,7 +199,7 @@ class _MainScreenState extends State<MainScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOP BAR — ☰ SetRize (far left together) | 🔍 (far right)
+// TOP BAR  ─  ☰ SetRize˅ (left) | 🔍 (right)
 // ══════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final bool panelOpen;
@@ -190,144 +217,182 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Push to very top — minimal vertical padding
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 6),
       child: Row(
         children: [
-
-          // ☰ — far left
+          // ☰
           GestureDetector(
-            onTap: _showMenuSheet(context),
-            child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+            onTap: onMenuTap,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.only(right: 10),
+              child: Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+            ),
           ),
 
-          const SizedBox(width: 8),
-
-          // SetRize ˅ — right next to ☰
+          // SetRize ˅
           GestureDetector(
             onTap: onSetRizeTap,
+            behavior: HitTestBehavior.opaque,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(
+              const Text(
                 'SetRize',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: 3),
               AnimatedRotation(
                 turns: panelOpen ? 0.5 : 0,
-                duration: const Duration(milliseconds: 260),
+                duration: const Duration(milliseconds: 280),
                 child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white, size: 20),
+                    color: Colors.white, size: 22),
               ),
             ]),
           ),
 
           const Spacer(),
 
-          // 🔍 — far right
+          // 🔍
           GestureDetector(
             onTap: onSearchTap,
+            behavior: HitTestBehavior.opaque,
             child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
           ),
-
         ],
       ),
     );
   }
-
-  // Returns a no-op tap handler; menu is handled in parent via onMenuTap
-  VoidCallback _showMenuSheet(BuildContext context) => onMenuTap;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PULL-DOWN PANEL — plain text words, 10px gap, TikTok style
+// DROPDOWN PANEL
+// "SetRize" title at top + tab words below
+// Height ~7cm, swipeable to dismiss
 // ══════════════════════════════════════════════════════════════════════════════
-class _PullDownPanel extends StatelessWidget {
+class _DropdownPanel extends StatelessWidget {
   final List<String> labels;
   final int activeTab;
   final Function(int) onTabSelect;
+  final VoidCallback onClose;
 
-  const _PullDownPanel({
+  const _DropdownPanel({
     required this.labels,
     required this.activeTab,
     required this.onTabSelect,
+    required this.onClose,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
-      color: Colors.black.withOpacity(0.92),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 6),
+      // ~7cm on a typical 160dpi+ screen
+      height: 265,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E0E0E),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.7),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
 
-            // Text-only tab row — like TikTok
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: List.generate(labels.length, (i) {
-                  final active = activeTab == i;
-                  return GestureDetector(
-                    onTap: () => onTabSelect(i),
-                    child: Padding(
-                      // 10px gap between words
-                      padding: EdgeInsets.only(
-                        right: i < labels.length - 1 ? 10 : 0,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            labels[i],
-                            style: TextStyle(
-                              color: active ? Colors.white : Colors.white54,
-                              fontSize: active ? 16 : 15,
-                              fontWeight: active ? FontWeight.w800 : FontWeight.w400,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          // Active underline — like TikTok
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            height: 2,
-                            width: active ? 20 : 0,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(1),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ),
+          // ── SetRize header ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+            child: Row(
+              children: [
+                const Text(
+                  'SetRize',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const Spacer(),
+                // Tap X to close
+                GestureDetector(
+                  onTap: onClose,
+                  child: const Icon(Icons.keyboard_arrow_up_rounded,
+                      color: Colors.white54, size: 28),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
-            // Drag handle
-            Container(
-              width: 32, height: 3,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          // Thin divider
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: Colors.white.withOpacity(0.08), height: 1),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Tab words — plain text, 10px apart ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 10, // 10px horizontal gap
+              runSpacing: 14,
+              children: List.generate(labels.length, (i) {
+                final active = activeTab == i;
+                return GestureDetector(
+                  onTap: () => onTabSelect(i),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        labels[i],
+                        style: TextStyle(
+                          color: active ? Colors.white : Colors.white54,
+                          fontSize: active ? 17 : 16,
+                          fontWeight: active ? FontWeight.w800 : FontWeight.w400,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Active underline
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: 2.5,
+                        width: active ? 22 : 0,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ),
+          ),
 
-            const SizedBox(height: 6),
-          ],
-        ),
+          const Spacer(),
+
+          // Drag handle at bottom
+          Container(
+            width: 38, height: 4,
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+        ],
       ),
     );
   }
@@ -364,7 +429,6 @@ class _BottomNav extends StatelessWidget {
             children: List.generate(_items.length, (i) {
               final item = _items[i];
               final isCreate = item['icon'] == null;
-
               if (isCreate) {
                 return GestureDetector(
                   onTap: () => onTap(i),
@@ -380,7 +444,6 @@ class _BottomNav extends StatelessWidget {
                   ),
                 );
               }
-
               return GestureDetector(
                 onTap: () => onTap(i),
                 behavior: HitTestBehavior.opaque,
@@ -424,7 +487,6 @@ class _CreateSheet extends StatelessWidget {
       ]),
     );
   }
-
   Widget _item(BuildContext ctx, IconData icon, String title, String sub, Color color) {
     return GestureDetector(
       onTap: () => Navigator.pop(ctx),
@@ -463,7 +525,6 @@ class _MenuSheet extends StatelessWidget {
     required this.onProfile, required this.onMessages,
     required this.onAlerts, required this.onSearch,
   });
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -482,7 +543,6 @@ class _MenuSheet extends StatelessWidget {
       ]),
     );
   }
-
   Widget _item(IconData icon, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
