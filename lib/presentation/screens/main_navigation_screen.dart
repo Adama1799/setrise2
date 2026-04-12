@@ -1,81 +1,154 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import 'set/set_screen.dart';
+import 'rize/rize_screen.dart';
+import 'dating/dating_screen.dart';
+import 'live/live_screen.dart';
+import 'shop/shop_screen.dart';
+import 'music/music_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
-
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  DateTime? _lastBackPress;
 
-  late final List<Widget> _pages = const [
+  // الصفحات الأساسية — Set فقط في الـ IndexedStack
+  // باقي التابات تُفتح من شريط السحب العلوي
+  final List<Widget> _pages = const [
     SetScreen(),
-    _PlaceholderScreen(title: 'Alerts'),
-    _PlaceholderScreen(title: 'Create'),
-    _PlaceholderScreen(title: 'Messages'),
-    _PlaceholderScreen(title: 'Profile'),
+    RizeScreen(),
+    DatingScreen(),
+    LiveScreen(),
+    ShopScreen(),
+    MusicScreen(),
   ];
 
-  void _selectTab(int index) {
-    setState(() => _selectedIndex = index);
+  Future<bool> _onWillPop() async {
+    if (_selectedIndex != 0) {
+      setState(() => _selectedIndex = 0);
+      return false;
+    }
+    final now = DateTime.now();
+    if (_lastBackPress == null ||
+        now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+      _lastBackPress = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Press back again to exit',
+              style: TextStyle(fontFamily: 'Inter')),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppColors.grey,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return false;
+    }
+    SystemNavigator.pop();
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (_) => _onWillPop(),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
+        ),
+        // ── شريط سفلي جديد: Home | Alerts | + | Messages | Profile ──
+        bottomNavigationBar: _BottomBar(
+          selectedIndex: _selectedIndex,
+          onTap: (i) => setState(() => _selectedIndex = i),
+        ),
       ),
-      bottomNavigationBar: SafeArea(
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BOTTOM BAR  —  5 أزرار فقط
+// ═══════════════════════════════════════════════════════════════════
+class _BottomBar extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+
+  const _BottomBar({required this.selectedIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          top: BorderSide(color: AppColors.grey.withOpacity(0.35), width: 0.8),
+        ),
+      ),
+      child: SafeArea(
         top: false,
-        child: Container(
-          padding: const EdgeInsets.only(top: 8, bottom: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A0A0A),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.08),
-                width: 0.8,
-              ),
-            ),
-          ),
+        child: SizedBox(
+          height: 58,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(
-                icon: Icons.person_outline_rounded,
-                label: 'Profile',
-                selected: _selectedIndex == 0,
-                onTap: () => _selectTab(0),
+              // Home
+              _BottomBtn(
+                icon: Icons.home_rounded,
+                label: 'Home',
+                active: selectedIndex == 0,
+                activeColor: AppColors.white,
+                onTap: () => onTap(0),
               ),
-              _NavItem(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: 'Messages',
-                selected: _selectedIndex == 3,
-                onTap: () => _selectTab(3),
-              ),
-              _CreateButton(
-                selected: _selectedIndex == 2,
-                onTap: () => _selectTab(2),
-              ),
-              _NavItem(
-                icon: Icons.notifications_none_rounded,
+              // Alerts
+              _BottomBtn(
+                icon: Icons.notifications_outlined,
+                activeIcon: Icons.notifications_rounded,
                 label: 'Alerts',
-                selected: _selectedIndex == 1,
-                onTap: () => _selectTab(1),
+                active: false,
+                activeColor: AppColors.neonYellow,
+                badge: 3,
+                onTap: () {},
               ),
-              _NavItem(
-                icon: Icons.search_rounded,
-                label: 'Search',
-                selected: _selectedIndex == 4,
-                onTap: () => _selectTab(4),
+              // + زر وسط
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  width: 48,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.add_rounded,
+                      color: AppColors.black, size: 26),
+                ),
+              ),
+              // Messages
+              _BottomBtn(
+                icon: Icons.chat_bubble_outline_rounded,
+                activeIcon: Icons.chat_bubble_rounded,
+                label: 'Messages',
+                active: false,
+                activeColor: AppColors.electricBlue,
+                badge: 2,
+                onTap: () {},
+              ),
+              // Profile
+              _BottomBtn(
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
+                label: 'Profile',
+                active: false,
+                activeColor: AppColors.white,
+                onTap: () {},
               ),
             ],
           ),
@@ -85,107 +158,80 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _BottomBtn extends StatelessWidget {
   final IconData icon;
+  final IconData? activeIcon;
   final String label;
-  final bool selected;
+  final bool active;
+  final Color activeColor;
+  final int? badge;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _BottomBtn({
     required this.icon,
+    this.activeIcon,
     required this.label,
-    required this.selected,
+    required this.active,
+    required this.activeColor,
+    this.badge,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color color = selected ? Colors.white : Colors.white54;
-
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 3),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  active ? (activeIcon ?? icon) : icon,
+                  color: active ? activeColor : AppColors.grey2,
+                  size: 26,
+                ),
+                if (badge != null && badge! > 0)
+                  Positioned(
+                    top: -4,
+                    right: -6,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: AppColors.neonRed,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$badge',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                color: color,
-                fontSize: 10.5,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: active ? activeColor : AppColors.grey2,
+                fontSize: 9,
+                fontWeight:
+                    active ? FontWeight.w700 : FontWeight.w400,
+                fontFamily: 'Inter',
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateButton extends StatelessWidget {
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _CreateButton({
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 56,
-        height: 38,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add_rounded,
-          color: Colors.black,
-          size: 30,
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-
-  const _PlaceholderScreen({
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
         ),
       ),
     );
