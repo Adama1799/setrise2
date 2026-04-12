@@ -25,9 +25,7 @@ class _SetScreenState extends State<SetScreen> {
   }
 
   void _updatePost(int index, PostModel updatedPost) {
-    setState(() {
-      _posts[index] = updatedPost;
-    });
+    setState(() => _posts[index] = updatedPost);
   }
 
   void _goNextPage() {
@@ -43,79 +41,21 @@ class _SetScreenState extends State<SetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: _posts.length,
-            onPageChanged: (index) => setState(() => _currentPage = index),
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              return PostCard(
-                post: _posts[index],
-                onUpdate: (updatedPost) => _updatePost(index, updatedPost),
-                onSwipeNext: _goNextPage,
-                onSwipeRight: () => HapticFeedback.mediumImpact(),
-                onSwipeLeft: () => HapticFeedback.lightImpact(),
-                onSwipeStart: () {},
-                onSwipeEnd: () {},
-              );
-            },
-          ),
-
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.35),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.menu_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'SetRise',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.35),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.search_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      body: PageView.builder(
+        controller: _pageController,
+        scrollDirection: Axis.vertical,
+        itemCount: _posts.length,
+        physics: const BouncingScrollPhysics(),
+        onPageChanged: (i) => setState(() => _currentPage = i),
+        itemBuilder: (ctx, i) => PostCard(
+          post: _posts[i],
+          onUpdate: (p) => _updatePost(i, p),
+          onSwipeNext: _goNextPage,
+          onSwipeRight: () => HapticFeedback.mediumImpact(),
+          onSwipeLeft: () => HapticFeedback.lightImpact(),
+          onSwipeStart: () {},
+          onSwipeEnd: () {},
+        ),
       ),
     );
   }
