@@ -120,14 +120,6 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    // ✅ الارتفاع الكلي للبانل:
-    // 10px  (~1سم) فراغ بعد SetRize
-    // 40px  التبويبات
-    // 190px (~5سم) فراغ الستوريات
-    // 20px  drag handle + padding
-    // = 260px
-    const panelH = 260.0;
-
     return WillPopScope(
       onWillPop: () async {
         if (_panelOpen) { _closePanel(); return false; }
@@ -138,7 +130,7 @@ class _MainScreenState extends State<MainScreen>
         backgroundColor: AppColors.background,
         body: Stack(children: [
 
-          // ── 1. المحتوى ──
+          // ── 1. المحتوى الكامل ──
           _buildContent(),
 
           // ── 2. تعتيم الخلفية عند فتح البانل ──
@@ -151,9 +143,9 @@ class _MainScreenState extends State<MainScreen>
               ),
             ),
 
-          // ── 3. البانل (ينزل من تحت TopBar مباشرة) ──
+          // ── 3. البانل ينزل من أعلى الشاشة ──
           Positioned(
-            top: -panelH + (panelH * _panelAnim.value),
+            top: -320 + (320 * _panelAnim.value),
             left: 0,
             right: 0,
             child: _PullDownPanel(
@@ -166,7 +158,7 @@ class _MainScreenState extends State<MainScreen>
             ),
           ),
 
-          // ── 4. الشريط العلوي الثابت ──
+          // ── 4. TopBar ثابت فوق كل شيء ──
           SafeArea(
             child: _TopBar(
               panelOpen: _panelOpen,
@@ -177,6 +169,7 @@ class _MainScreenState extends State<MainScreen>
                   MaterialPageRoute(builder: (_) => const SearchScreen())),
             ),
           ),
+
 
         ]),
 
@@ -288,8 +281,8 @@ class _PullDownPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
 
-            // ✅ ~1 سنتمتر بين SetRize والتبويبات
-            const SizedBox(height: 10),
+            // TopBar height (34px) + 1cm gap (10px)
+            const SizedBox(height: 44),
 
             // ✅ صف التبويبات
             SingleChildScrollView(
