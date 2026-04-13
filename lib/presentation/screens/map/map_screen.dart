@@ -1,5 +1,3 @@
-Enter// lib/presentation/screens/map/map_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -17,11 +15,10 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late final MapController _mapController;
-  bool _ghostMode = false; // وضع الخصوصية (Ghost Mode)
+  bool _ghostMode = false;
   bool _showHeatmap = false;
   bool _showFriends = true;
 
-  // بيانات وهمية للأصدقاء مع مواقعهم
   final List<Map<String, dynamic>> _friends = [
     {'name': 'Sara',  'avatar': '👩', 'lat': 36.7538, 'lng': 3.0588, 'bitmoji': '😎'},
     {'name': 'Ahmed', 'avatar': '🧔', 'lat': 36.7520, 'lng': 3.0420, 'bitmoji': '🎧'},
@@ -42,25 +39,23 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // الخريطة الأساسية
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              center: LatLng(36.7538, 3.0588), // الجزائر العاصمة
-              zoom: 12.0,
+              initialCenter: const LatLng(36.7538, 3.0588),
+              initialZoom: 12.0,
               maxZoom: 18.0,
               minZoom: 3.0,
-              interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              ),
             ),
             children: [
-              // طبقة البلاط (OpenStreetMap)
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.setrise',
-                // خيارات لتخصيص المظهر
-                tileProvider: CancellableNetworkTileProvider(),
+                tileProvider: NetworkTileProvider(),
               ),
-              // طبقة علامات الأصدقاء مع التجميع
               if (_showFriends && !_ghostMode)
                 MarkerClusterLayerWidget(
                   options: MarkerClusterLayerOptions(
@@ -71,7 +66,6 @@ class _MapScreenState extends State<MapScreen> {
                     maxZoom: 15.0,
                     markers: _buildFriendMarkers(),
                     builder: (context, markers) {
-                      // علامة تجميع (تظهر رقم الأصدقاء)
                       return Container(
                         decoration: BoxDecoration(
                           color: AppColors.electricBlue,
@@ -99,31 +93,23 @@ class _MapScreenState extends State<MapScreen> {
                     },
                   ),
                 ),
-              // طبقة الخريطة الحرارية (اختيارية)
               if (_showHeatmap && !_ghostMode)
-                RichAttributionWidget(
+                const RichAttributionWidget(
                   attributions: [
-                    TextSourceAttribution(
-                      'OpenStreetMap contributors',
-                      onTap: () => {},
-                    ),
+                    TextSourceAttribution('OpenStreetMap contributors'),
                   ],
                 ),
             ],
           ),
-
-          // أزرار التحكم العلوية
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // صف الأزرار الرئيسية
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // زر القائمة / الرجوع
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
@@ -136,7 +122,6 @@ class _MapScreenState extends State<MapScreen> {
                               color: Colors.white, size: 20),
                         ),
                       ),
-                      // عنوان أو بحث
                       GestureDetector(
                         onTap: () {},
                         child: Container(
@@ -161,7 +146,6 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // أزرار الخصوصية والتحكم
                   Row(
                     children: [
                       _buildToggleChip(
@@ -190,8 +174,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-
-          // شريط الأصدقاء الأفقي في الأسفل (مثل Snapchat)
           if (!_ghostMode)
             Positioned(
               bottom: 20,
@@ -207,7 +189,6 @@ class _MapScreenState extends State<MapScreen> {
                     final friend = _friends[index];
                     return GestureDetector(
                       onTap: () {
-                        // تحريك الخريطة إلى موقع الصديق
                         _mapController.move(
                           LatLng(friend['lat'], friend['lng']),
                           14.0,
@@ -307,7 +288,7 @@ class _MapScreenState extends State<MapScreen> {
         width: 80.0,
         height: 80.0,
         point: LatLng(friend['lat'], friend['lng']),
-        builder: (ctx) => GestureDetector(
+        child: GestureDetector(
           onTap: () => _showFriendPreview(friend),
           child: Column(
             children: [
