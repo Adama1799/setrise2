@@ -1,6 +1,7 @@
 // lib/presentation/screens/main/main_screen.dart
 
 import 'dart:ui' as ui;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -16,6 +17,7 @@ import '../messages/messages_screen.dart';
 import '../search/search_screen.dart';
 import '../alerts/alerts_screen.dart';
 
+/// الشاشة الرئيسية للتطبيق - تجربة مستخدم احترافية بمعايير iOS
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
   @override
@@ -23,7 +25,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   
   // ---------- الحالة الأساسية ----------
   int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music
@@ -34,40 +36,74 @@ class _MainScreenState extends State<MainScreen>
   // ✅ (1) نظام القفل / Safe Run
   bool _isProcessing = false;
   
-  // ✅ (2) سرعة الأنيميشن التكيفية
+  // ✅ (2) سرعة الأنيميشن التكيفية (Adaptive Animation Speed)
   DateTime _lastInteractionTime = DateTime.now();
   static const Duration _normalDuration = Duration(milliseconds: 260);
   static const Duration _fastDuration = Duration(milliseconds: 150);
   
-  // ✅ (3) PageView Controller
+  // ✅ (3) PageView Controller (سحب أفقي بين التبويبات)
   late PageController _pageController;
+  
+  // ✅ (4) التحكم بحالة شريط الحالة (Smart Status Bar)
+  Brightness _statusBarBrightness = Brightness.light;
+  
+  // ✅ (5) قائمة آخر البحوث (محاكاة)
+  static final List<String> _recentSearches = ['Flutter UI', 'iOS Animations', 'Dark Mode'];
   
   static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     
-    // تهيئة PageController
     _pageController = PageController(initialPage: _contentTab);
     
-    // تهيئة AnimationController مع المدة الافتراضية
     _panelCtrl = AnimationController(
       vsync: this,
       duration: _normalDuration,
     );
     _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.addListener(() => setState(() {}));
+    
+    // تحديث شريط الحالة بعد بناء الواجهة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateStatusBar();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _panelCtrl.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
-  // ✅ (4) دالة آمنة لتنفيذ الأوامر (Safe Run)
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _updateStatusBar();
+  }
+
+  // تحديث شريط الحالة بناءً على فتح البانل
+  void _updateStatusBar() {
+    final brightness = _panelOpen ? Brightness.dark : Brightness.light;
+    if (_statusBarBrightness != brightness) {
+      _statusBarBrightness = brightness;
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: _panelOpen ? Brightness.light : Brightness.dark,
+          statusBarBrightness: _panelOpen ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: Colors.black,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+      );
+    }
+  }
+
+  // ✅ تنفيذ آمن للأوامر (يمنع التداخل)
   Future<void> _safeRun(Future<void> Function() action) async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -78,7 +114,7 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  // ✅ (5) تحديث سرعة الأنيميشن بناءً على وقت آخر تفاعل
+  // ✅ تحديث سرعة الأنيميشن بناءً على وتيرة المستخدم
   void _updateAnimationSpeed() {
     final now = DateTime.now();
     final diff = now.difference(_lastInteractionTime);
@@ -88,78 +124,114 @@ class _MainScreenState extends State<MainScreen>
     _lastInteractionTime = now;
   }
 
-  // ✅ (6) فتح/إغلاق البانل مع تأثير زجاجي وسرعة متكيفة
+  // ✅ فتح/إغلاق البانل المنسدل مع Haptic
   void _togglePanel() {
     _safeRun(() async {
       _updateAnimationSpeed();
-      HapticFeedback.lightImpact();
+      HapticFeedback.mediumImpact(); // أقوى من lightImpact
       if (_panelOpen) {
         await _panelCtrl.reverse();
       } else {
         await _panelCtrl.forward();
       }
-      setState(() => _panelOpen = !_panelOpen);
+      setState(() {
+        _panelOpen = !_panelOpen;
+        _updateStatusBar();
+      });
     });
   }
 
+  // ✅ إغلاق البانل فقط
   void _closePanel() {
     if (!_panelOpen) return;
     _safeRun(() async {
       _updateAnimationSpeed();
       await _panelCtrl.reverse();
-      setState(() => _panelOpen = false);
+      setState(() {
+        _panelOpen = false;
+        _updateStatusBar();
+      });
     });
   }
 
-  // ✅ (7) بناء المحتوى الرئيسي باستخدام PageView مع إيماءة السحب
+  // ✅ المحتوى الرئيسي: PageView مع سحب أفقي (Bouncy Physics) + تأثير Parallax بسيط
   Widget _buildContent() {
-    return PageView(
+    return PageView.builder(
       controller: _pageController,
+      physics: const BouncingScrollPhysics(
+        decelerationRate: ScrollDecelerationRate.normal,
+      ),
       onPageChanged: (index) {
         if (_contentTab != index) {
           setState(() => _contentTab = index);
         }
-        // ✅ إغلاق البانل تلقائياً عند تغيير الصفحة (Panel Conflict Fix)
         _closePanel();
       },
-      children: const [
-        SetScreen(),
-        RizeScreen(),
-        ShopScreen(),
-        DatingScreen(),
-        LiveScreen(),
-        MusicScreen(),
-      ],
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        // تأثير Parallax: العنصر يتحرك أبطأ قليلاً مع السحب
+        return AnimatedBuilder(
+          animation: _pageController,
+          builder: (context, child) {
+            double pageOffset = 0.0;
+            if (_pageController.hasClients) {
+              pageOffset = _pageController.page! - index;
+            }
+            return Transform.translate(
+              offset: Offset(pageOffset * 20, 0), // حركة خفيفة
+              child: child,
+            );
+          },
+          child: _getPageByIndex(index),
+        );
+      },
     );
   }
 
-  // ✅ (8) التنقل بين التبويبات مع مزامنة PageView
+  Widget _getPageByIndex(int index) {
+    switch (index) {
+      case 0: return const SetScreen();
+      case 1: return const RizeScreen();
+      case 2: return const ShopScreen();
+      case 3: return const DatingScreen();
+      case 4: return const LiveScreen();
+      case 5: return const MusicScreen();
+      default: return const SetScreen();
+    }
+  }
+
+  // ✅ اختيار تبويب مع أنيميشن سلس
   void _selectTab(int index) {
     _safeRun(() async {
       if (_contentTab == index) return;
       _updateAnimationSpeed();
-      _pageController.animateToPage(
+      await _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOutCubic,
       );
       setState(() => _contentTab = index);
     });
   }
 
-  // ✅ (9) معالجة النقر على الـ Bottom Navigation Bar
+  // ✅ النقر على الـ Bottom Navigation Bar
   void _onNavTap(int i) {
     _safeRun(() async {
-      _closePanel(); // إغلاق البانل أولاً (Panel Conflict Fix)
+      _closePanel();
       
       if (i == 2) {
         _showCreateSheet();
         return;
       }
 
-      // ✅ زر Home (i == 4) يفتح/يغلق البانل بدلاً من العودة لـ Set
+      // ✅ زر Home الذكي (المحسن)
       if (i == 4) {
-        _togglePanel();
+        if (_contentTab == 0) {
+          _togglePanel();
+        } else {
+          HapticFeedback.selectionClick();
+          _selectTab(0);
+        }
         return;
       }
 
@@ -171,26 +243,12 @@ class _MainScreenState extends State<MainScreen>
       ];
       final s = i < screens.length ? screens[i] : null;
       if (s != null) {
-        // ✅ استخدام انتقال مخصص (Page Transition Controller)
+        // ✅ استخدام CupertinoPageRoute لدعم إيماءة الرجوع من اليسار (iOS Swipe Back)
         Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => s,
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 0.03);
-              const end = Offset.zero;
-              const curve = Curves.easeOutCubic;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              var offsetAnimation = animation.drive(tween);
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: offsetAnimation,
-                  child: child,
-                ),
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 280),
+          CupertinoPageRoute(
+            builder: (_) => s,
+            title: '',
           ),
         );
       }
@@ -198,101 +256,149 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _showCreateSheet() {
+    HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0D0D0D),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (_) => _CreateSheet(),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => const _CreateSheet(),
     );
   }
 
   void _showMenuSheet() {
     _closePanel();
+    HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (_) => _MenuSheet(
-        onProfile:  () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())); },
-        onMessages: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const MessagesScreen())); },
-        onAlerts:   () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AlertsScreen())); },
-        onSearch:   () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())); },
+        onProfile:  () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const ProfileScreen())); },
+        onMessages: () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const MessagesScreen())); },
+        onAlerts:   () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const AlertsScreen())); },
+        onSearch:   () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const SearchScreen())); },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_panelOpen) { _closePanel(); return false; }
-        if (_contentTab != 0) { _selectTab(0); return false; }
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: Stack(children: [
-
-          // ── 1. المحتوى (PageView مع السحب) ──
-          _buildContent(),
-
-          // ── 2. تأثير الزجاج (Glass/Blur) + تعتيم الخلفية ──
-          if (_panelAnim.value > 0)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _closePanel,
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(
-                    sigmaX: 8.0 * _panelAnim.value,
-                    sigmaY: 8.0 * _panelAnim.value,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: _panelOpen ? Brightness.light : Brightness.dark,
+        statusBarBrightness: _panelOpen ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: WillPopScope(
+        onWillPop: () async {
+          if (_panelOpen) { _closePanel(); return false; }
+          if (_contentTab != 0) { _selectTab(0); return false; }
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: const Text('خروج'),
+              content: const Text('هل تريد الخروج من التطبيق؟'),
+              actions: [
+                CupertinoDialogAction(child: const Text('لا'), onPressed: () => Navigator.pop(ctx, false)),
+                CupertinoDialogAction(isDestructiveAction: true, child: const Text('نعم'), onPressed: () => Navigator.pop(ctx, true)),
+              ],
+            ),
+          );
+          return shouldExit ?? false;
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          extendBodyBehindAppBar: true,
+          extendBody: true,
+          body: Stack(children: [
+            _buildContent(),
+  
+            // تأثير الزجاج (Glass/Blur) مع تعتيم الخلفية
+            if (_panelAnim.value > 0)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: _closePanel,
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(
+                      sigmaX: 12.0 * _panelAnim.value,
+                      sigmaY: 12.0 * _panelAnim.value,
+                    ),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.4 * _panelAnim.value),
+                    ),
                   ),
+                ),
+              ),
+  
+            // البانل المنسدل مع إمكانية السحب للإغلاق
+            Positioned(
+              top: -340 + (340 * _panelAnim.value),
+              left: 0,
+              right: 0,
+              child: GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  if (details.primaryDelta! > 15) {
+                    _closePanel();
+                  }
+                },
+                child: _PullDownPanel(
+                  labels: _tabLabels,
+                  activeTab: _contentTab,
+                  onTabSelect: (i) {
+                    _selectTab(i);
+                    _closePanel();
+                  },
+                ),
+              ),
+            ),
+  
+            // TopBar ثابت فوق كل شيء
+            SafeArea(
+              child: _TopBar(
+                panelOpen: _panelOpen,
+                onSetRizeTap: _togglePanel,
+                onMenuTap: _showMenuSheet,
+                onSearchTap: () => Navigator.push(
+                  context,
+                  CupertinoPageRoute(builder: (_) => const SearchScreen()),
+                ),
+                recentSearches: _recentSearches, // لاستخدامها في long press
+              ),
+            ),
+  
+            // شريط المؤشر السفلي (Home Indicator) بنمط iOS
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: AnimatedOpacity(
+                  opacity: _panelOpen ? 0.0 : 1.0,
+                  duration: const Duration(milliseconds: 200),
                   child: Container(
-                    color: Colors.black.withOpacity(0.35 * _panelAnim.value),
+                    width: 140,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
                   ),
                 ),
               ),
             ),
-
-          // ── 3. البانل المنسدل مع إمكانية السحب للإغلاق ──
-          Positioned(
-            top: -320 + (320 * _panelAnim.value),
-            left: 0,
-            right: 0,
-            child: GestureDetector(
-              // ✅ السحب العمودي للإغلاق (Drag to Close)
-              onVerticalDragUpdate: (details) {
-                if (details.primaryDelta! > 15) {
-                  _closePanel();
-                }
-              },
-              child: _PullDownPanel(
-                labels: _tabLabels,
-                activeTab: _contentTab,
-                onTabSelect: (i) {
-                  _selectTab(i);
-                  _closePanel();
-                },
-              ),
-            ),
+          ]),
+  
+          bottomNavigationBar: _BottomNav(
+            onTap: _onNavTap,
+            showAlertBadge: true, // ✅ تفعيل شارة الإشعارات
           ),
-
-          // ── 4. TopBar ثابت فوق كل شيء ──
-          SafeArea(
-            child: _TopBar(
-              panelOpen: _panelOpen,
-              onSetRizeTap: _togglePanel,
-              onMenuTap: _showMenuSheet,
-              onSearchTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SearchScreen())),
-            ),
-          ),
-
-        ]),
-
-        bottomNavigationBar: _BottomNav(onTap: _onNavTap),
+        ),
       ),
     );
   }
@@ -306,12 +412,14 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onSetRizeTap;
   final VoidCallback onMenuTap;
   final VoidCallback onSearchTap;
+  final List<String> recentSearches; // لاستخدامها في الضغط المطول
 
   const _TopBar({
     required this.panelOpen,
     required this.onSetRizeTap,
     required this.onMenuTap,
     required this.onSearchTap,
+    required this.recentSearches,
   });
 
   @override
@@ -325,41 +433,103 @@ class _TopBar extends StatelessWidget {
             child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: onSetRizeTap,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Text(
-                'SetRize',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
+          // تأثير ديناميكي عند فتح/إغلاق البانل (مثل Dynamic Island)
+          AnimatedScale(
+            scale: panelOpen ? 0.95 : 1.0,
+            duration: const Duration(milliseconds: 260),
+            child: GestureDetector(
+              onTap: onSetRizeTap,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Text(
+                  'SetRize',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              AnimatedRotation(
-                turns: panelOpen ? 0.5 : 0,
-                duration: const Duration(milliseconds: 260),
-                child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white, size: 20),
-              ),
-            ]),
+                const SizedBox(width: 2),
+                AnimatedRotation(
+                  turns: panelOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 260),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white, size: 20),
+                ),
+              ]),
+            ),
           ),
           const Spacer(),
+          // أيقونة البحث مع دعم الضغط المطول (Long Press)
           GestureDetector(
             onTap: onSearchTap,
+            onLongPress: () {
+              HapticFeedback.heavyImpact();
+              _showRecentSearchesMenu(context);
+            },
             child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
           ),
         ],
       ),
     );
   }
+
+  void _showRecentSearchesMenu(BuildContext context) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromLTWH(overlay.size.width - 120, 60, 0, 0),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      color: const Color(0xFF1C1C1E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      items: [
+        for (final search in recentSearches)
+          PopupMenuItem<String>(
+            value: search,
+            child: Row(
+              children: [
+                const Icon(Icons.history, size: 18, color: Colors.white54),
+                const SizedBox(width: 12),
+                Text(search, style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'clear',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+              SizedBox(width: 12),
+              Text('مسح السجل', style: TextStyle(color: Colors.redAccent)),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'clear') {
+        // هنا يمكن مسح السجل
+        HapticFeedback.lightImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم مسح سجل البحث'), duration: Duration(seconds: 1)),
+        );
+      } else if (value != null) {
+        // تنفيذ البحث السريع
+        Navigator.push(
+          context,
+          CupertinoPageRoute(builder: (_) => SearchScreen(initialQuery: value)),
+        );
+      }
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PULL-DOWN PANEL
-// ✅ تمت إضافة قسم الستوريات (Stories) داخل البانل
 // ══════════════════════════════════════════════════════════════════════════════
 class _PullDownPanel extends StatelessWidget {
   final List<String> labels;
@@ -371,12 +541,6 @@ class _PullDownPanel extends StatelessWidget {
     required this.activeTab,
     required this.onTabSelect,
   });
-
-  // بيانات وهمية للقصص
-  static const _storyColors = [
-    AppColors.electricBlue, AppColors.neonGreen, AppColors.neonYellow,
-    AppColors.cyan, AppColors.neonRed, AppColors.live,
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -434,53 +598,8 @@ class _PullDownPanel extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ✅ قسم الستوريات (Stories) الجديد
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: 8,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final color = _storyColors[index % _storyColors.length];
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 68,
-                        height: 68,
-                        padding: const EdgeInsets.all(2.5),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [color, color.withOpacity(0.6)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.grey[850],
-                          child: Icon(
-                            Icons.person,
-                            color: color,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'user_$index',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+            // ✅ مساحة محجوزة للستوريات (جاهزة للإضافة لاحقاً)
+            const SizedBox(height: 100),
 
             const SizedBox(height: 40), // فراغ قبل المقبض
 
@@ -507,7 +626,9 @@ class _PullDownPanel extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
-  const _BottomNav({required this.onTap});
+  final bool showAlertBadge;
+
+  const _BottomNav({required this.onTap, this.showAlertBadge = false});
 
   @override
   Widget build(BuildContext context) {
@@ -526,7 +647,7 @@ class _BottomNav extends StatelessWidget {
               _navItem(0, Icons.person_rounded, 'Profile'),
               _navItem(1, Icons.chat_bubble_rounded, 'Messages'),
               _createButton(),
-              _navItem(3, Icons.notifications_rounded, 'Alerts'),
+              _navItem(3, Icons.notifications_rounded, 'Alerts', showBadge: showAlertBadge),
               _navItem(4, Icons.home_rounded, 'Home'),
             ],
           ),
@@ -535,14 +656,38 @@ class _BottomNav extends StatelessWidget {
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label) {
+  Widget _navItem(int index, IconData icon, String label, {bool showBadge = false}) {
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: AppColors.grey2, size: 26),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: AppColors.grey2, size: 26),
+              if (showBadge)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '3', // يمكن جعله ديناميكي
+                        style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(color: AppColors.grey2, fontSize: 10)),
         ]),
@@ -559,6 +704,13 @@ class _BottomNav extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.white.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: const Center(
           child: Text(
@@ -580,6 +732,8 @@ class _BottomNav extends StatelessWidget {
 // CREATE SHEET
 // ══════════════════════════════════════════════════════════════════════════════
 class _CreateSheet extends StatelessWidget {
+  const _CreateSheet();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -605,7 +759,10 @@ class _CreateSheet extends StatelessWidget {
 
   Widget _item(BuildContext ctx, IconData icon, String title, String sub, Color color) {
     return GestureDetector(
-      onTap: () => Navigator.pop(ctx),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.pop(ctx);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
