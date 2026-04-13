@@ -512,16 +512,18 @@ class _TopBar extends StatelessWidget {
       ],
     ).then((value) {
       if (value == 'clear') {
-        // هنا يمكن مسح السجل
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم مسح سجل البحث'), duration: Duration(seconds: 1)),
         );
       } else if (value != null) {
-        // تنفيذ البحث السريع
+        // ✅ الإصلاح: تمرير البحث عبر RouteSettings بدلاً من معامل في المُنشئ
         Navigator.push(
           context,
-          CupertinoPageRoute(builder: (_) => SearchScreen(initialQuery: value)),
+          CupertinoPageRoute(
+            builder: (_) => const SearchScreen(),
+            settings: RouteSettings(arguments: value), // يتم استقبالها في SearchScreen عبر ModalRoute
+          ),
         );
       }
     });
