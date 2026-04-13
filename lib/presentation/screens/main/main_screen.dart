@@ -1,5 +1,6 @@
 // lib/presentation/screens/main/main_screen.dart
 
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -23,20 +24,37 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
-
+  
+  // ---------- الحالة الأساسية ----------
   int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music
   bool _panelOpen = false;
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
-
+  
+  // ✅ (1) نظام القفل / Safe Run
+  bool _isProcessing = false;
+  
+  // ✅ (2) سرعة الأنيميشن التكيفية
+  DateTime _lastInteractionTime = DateTime.now();
+  static const Duration _normalDuration = Duration(milliseconds: 260);
+  static const Duration _fastDuration = Duration(milliseconds: 150);
+  
+  // ✅ (3) PageView Controller
+  late PageController _pageController;
+  
   static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
 
   @override
   void initState() {
     super.initState();
+    
+    // تهيئة PageController
+    _pageController = PageController(initialPage: _contentTab);
+    
+    // تهيئة AnimationController مع المدة الافتراضية
     _panelCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: _normalDuration,
     );
     _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.addListener(() => setState(() {}));
@@ -45,51 +63,138 @@ class _MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     _panelCtrl.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
+  // ✅ (4) دالة آمنة لتنفيذ الأوامر (Safe Run)
+  Future<void> _safeRun(Future<void> Function() action) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    try {
+      await action();
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  // ✅ (5) تحديث سرعة الأنيميشن بناءً على وقت آخر تفاعل
+  void _updateAnimationSpeed() {
+    final now = DateTime.now();
+    final diff = now.difference(_lastInteractionTime);
+    final isFast = diff.inMilliseconds < 200;
+    
+    _panelCtrl.duration = isFast ? _fastDuration : _normalDuration;
+    _lastInteractionTime = now;
+  }
+
+  // ✅ (6) فتح/إغلاق البانل مع تأثير زجاجي وسرعة متكيفة
   void _togglePanel() {
-    HapticFeedback.lightImpact();
-    _panelOpen ? _panelCtrl.reverse() : _panelCtrl.forward();
-    setState(() => _panelOpen = !_panelOpen);
+    _safeRun(() async {
+      _updateAnimationSpeed();
+      HapticFeedback.lightImpact();
+      if (_panelOpen) {
+        await _panelCtrl.reverse();
+      } else {
+        await _panelCtrl.forward();
+      }
+      setState(() => _panelOpen = !_panelOpen);
+    });
   }
 
   void _closePanel() {
     if (!_panelOpen) return;
-    _panelCtrl.reverse();
-    setState(() => _panelOpen = false);
+    _safeRun(() async {
+      _updateAnimationSpeed();
+      await _panelCtrl.reverse();
+      setState(() => _panelOpen = false);
+    });
   }
 
+  // ✅ (7) بناء المحتوى الرئيسي باستخدام PageView مع إيماءة السحب
   Widget _buildContent() {
-    switch (_contentTab) {
-      case 0: return const SetScreen();
-      case 1: return const RizeScreen();
-      case 2: return const ShopScreen();
-      case 3: return const DatingScreen();
-      case 4: return const LiveScreen();
-      case 5: return const MusicScreen();
-      default: return const SetScreen();
-    }
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        if (_contentTab != index) {
+          setState(() => _contentTab = index);
+        }
+        // ✅ إغلاق البانل تلقائياً عند تغيير الصفحة (Panel Conflict Fix)
+        _closePanel();
+      },
+      children: const [
+        SetScreen(),
+        RizeScreen(),
+        ShopScreen(),
+        DatingScreen(),
+        LiveScreen(),
+        MusicScreen(),
+      ],
+    );
   }
 
+  // ✅ (8) التنقل بين التبويبات مع مزامنة PageView
+  void _selectTab(int index) {
+    _safeRun(() async {
+      if (_contentTab == index) return;
+      _updateAnimationSpeed();
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      setState(() => _contentTab = index);
+    });
+  }
+
+  // ✅ (9) معالجة النقر على الـ Bottom Navigation Bar
   void _onNavTap(int i) {
-    _closePanel();
-    if (i == 2) { _showCreateSheet(); return; }
+    _safeRun(() async {
+      _closePanel(); // إغلاق البانل أولاً (Panel Conflict Fix)
+      
+      if (i == 2) {
+        _showCreateSheet();
+        return;
+      }
 
-    // ✅ index 4 = Home (بدل Search)
-    if (i == 4) {
-      setState(() => _contentTab = 0);
-      return;
-    }
+      // ✅ زر Home (i == 4) يفتح/يغلق البانل بدلاً من العودة لـ Set
+      if (i == 4) {
+        _togglePanel();
+        return;
+      }
 
-    final screens = [
-      const ProfileScreen(),
-      const MessagesScreen(),
-      null,
-      const AlertsScreen(),
-    ];
-    final s = i < screens.length ? screens[i] : null;
-    if (s != null) Navigator.push(context, MaterialPageRoute(builder: (_) => s));
+      final screens = [
+        const ProfileScreen(),
+        const MessagesScreen(),
+        null,
+        const AlertsScreen(),
+      ];
+      final s = i < screens.length ? screens[i] : null;
+      if (s != null) {
+        // ✅ استخدام انتقال مخصص (Page Transition Controller)
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => s,
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 0.03);
+              const end = Offset.zero;
+              const curve = Curves.easeOutCubic;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                ),
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 280),
+          ),
+        );
+      }
+    });
   }
 
   void _showCreateSheet() {
@@ -123,38 +228,53 @@ class _MainScreenState extends State<MainScreen>
     return WillPopScope(
       onWillPop: () async {
         if (_panelOpen) { _closePanel(); return false; }
-        if (_contentTab != 0) { setState(() => _contentTab = 0); return false; }
+        if (_contentTab != 0) { _selectTab(0); return false; }
         return false;
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: Stack(children: [
 
-          // ── 1. المحتوى الكامل ──
+          // ── 1. المحتوى (PageView مع السحب) ──
           _buildContent(),
 
-          // ── 2. تعتيم الخلفية عند فتح البانل ──
+          // ── 2. تأثير الزجاج (Glass/Blur) + تعتيم الخلفية ──
           if (_panelAnim.value > 0)
             Positioned.fill(
               child: GestureDetector(
                 onTap: _closePanel,
-                child: Container(
-                    color: Colors.black.withOpacity(0.45 * _panelAnim.value)),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(
+                    sigmaX: 8.0 * _panelAnim.value,
+                    sigmaY: 8.0 * _panelAnim.value,
+                  ),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.35 * _panelAnim.value),
+                  ),
+                ),
               ),
             ),
 
-          // ── 3. البانل ينزل من أعلى الشاشة ──
+          // ── 3. البانل المنسدل مع إمكانية السحب للإغلاق ──
           Positioned(
             top: -320 + (320 * _panelAnim.value),
             left: 0,
             right: 0,
-            child: _PullDownPanel(
-              labels: _tabLabels,
-              activeTab: _contentTab,
-              onTabSelect: (i) {
-                setState(() => _contentTab = i);
-                _closePanel();
+            child: GestureDetector(
+              // ✅ السحب العمودي للإغلاق (Drag to Close)
+              onVerticalDragUpdate: (details) {
+                if (details.primaryDelta! > 15) {
+                  _closePanel();
+                }
               },
+              child: _PullDownPanel(
+                labels: _tabLabels,
+                activeTab: _contentTab,
+                onTabSelect: (i) {
+                  _selectTab(i);
+                  _closePanel();
+                },
+              ),
             ),
           ),
 
@@ -170,10 +290,8 @@ class _MainScreenState extends State<MainScreen>
             ),
           ),
 
-
         ]),
 
-        // ✅ Home بدل Search
         bottomNavigationBar: _BottomNav(onTap: _onNavTap),
       ),
     );
@@ -181,7 +299,7 @@ class _MainScreenState extends State<MainScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOP BAR — ☰ SetRize ˅  (يسار) | 🔍 (يمين) — كما هو بالضبط
+// TOP BAR — ☰ SetRize ˅  (يسار) | 🔍 (يمين)
 // ══════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final bool panelOpen;
@@ -202,16 +320,11 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
         children: [
-
-          // ☰
           GestureDetector(
             onTap: onMenuTap,
             child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
-
           const SizedBox(width: 8),
-
-          // SetRize ˅
           GestureDetector(
             onTap: onSetRizeTap,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -233,15 +346,11 @@ class _TopBar extends StatelessWidget {
               ),
             ]),
           ),
-
           const Spacer(),
-
-          // 🔍
           GestureDetector(
             onTap: onSearchTap,
             child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
           ),
-
         ],
       ),
     );
@@ -250,15 +359,7 @@ class _TopBar extends StatelessWidget {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PULL-DOWN PANEL
-//
-// الهيكل لما يفتح:
-//   ┌─────────────────────────────┐
-//   │  [10px ~ 1سنتمتر فراغ]     │
-//   │  Set Rize Shop Date Live   │
-//   │        Music               │
-//   │  [190px ~ 5سنتمتر فراغ]    │  ← مكان الستوريات
-//   │       ── handle ──         │
-//   └─────────────────────────────┘
+// ✅ تمت إضافة قسم الستوريات (Stories) داخل البانل
 // ══════════════════════════════════════════════════════════════════════════════
 class _PullDownPanel extends StatelessWidget {
   final List<String> labels;
@@ -271,6 +372,12 @@ class _PullDownPanel extends StatelessWidget {
     required this.onTabSelect,
   });
 
+  // بيانات وهمية للقصص
+  static const _storyColors = [
+    AppColors.electricBlue, AppColors.neonGreen, AppColors.neonYellow,
+    AppColors.cyan, AppColors.neonRed, AppColors.live,
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -280,11 +387,9 @@ class _PullDownPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            // TopBar height (34px) + 1cm gap (10px)
             const SizedBox(height: 44),
 
-            // ✅ صف التبويبات
+            // صف التبويبات
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -305,9 +410,7 @@ class _PullDownPanel extends StatelessWidget {
                             style: TextStyle(
                               color: active ? Colors.white : Colors.white54,
                               fontSize: active ? 16 : 15,
-                              fontWeight: active
-                                  ? FontWeight.w800
-                                  : FontWeight.w400,
+                              fontWeight: active ? FontWeight.w800 : FontWeight.w400,
                               letterSpacing: 0.2,
                             ),
                           ),
@@ -329,10 +432,59 @@ class _PullDownPanel extends StatelessWidget {
               ),
             ),
 
-            // ✅ ~5 سنتمتر فراغ للستوريات
-            const SizedBox(height: 190),
+            const SizedBox(height: 16),
 
-            // drag handle
+            // ✅ قسم الستوريات (Stories) الجديد
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: 8,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final color = _storyColors[index % _storyColors.length];
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 68,
+                        height: 68,
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [color, color.withOpacity(0.6)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.grey[850],
+                          child: Icon(
+                            Icons.person,
+                            color: color,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'user_$index',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 40), // فراغ قبل المقبض
+
+            // مقبض السحب (Drag Handle)
             Container(
               width: 32,
               height: 3,
@@ -351,7 +503,7 @@ class _PullDownPanel extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTTOM NAV — Profile | Messages | + | Alerts | Home ✅
+// BOTTOM NAV — Profile | Messages | + | Alerts | Home
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
@@ -375,7 +527,6 @@ class _BottomNav extends StatelessWidget {
               _navItem(1, Icons.chat_bubble_rounded, 'Messages'),
               _createButton(),
               _navItem(3, Icons.notifications_rounded, 'Alerts'),
-              // ✅ Home بدل Search
               _navItem(4, Icons.home_rounded, 'Home'),
             ],
           ),
