@@ -12,6 +12,7 @@ import '../shop/shop_screen.dart';
 import '../dating/dating_screen.dart';
 import '../live/live_screen.dart';
 import '../music/music_screen.dart';
+import '../map/map_screen.dart';            // ✅ استيراد شاشة الخريطة
 import '../profile/profile_screen.dart';
 import '../messages/messages_screen.dart';
 import '../search/search_screen.dart';
@@ -24,33 +25,43 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
+// ===== بيانات الفلترة (من النموذج الأولي) =====
+const Map<String, List<String>> kRegions = {
+  '🔥 Trending': ['🇩🇿 Algeria','🇺🇸 USA','🇧🇷 Brazil','🇯🇵 Japan','🇫🇷 France','🇸🇦 Saudi Arabia'],
+  '🌍 Africa': ['🇩🇿 Algeria','🇹🇳 Tunisia','🇪🇬 Egypt','🇲🇦 Morocco','🇳🇬 Nigeria','🇰🇪 Kenya','🇿🇦 South Africa','🇬🇭 Ghana','🇸🇳 Senegal','🇪🇹 Ethiopia','🇹🇿 Tanzania','🇺🇬 Uganda','🇨🇲 Cameroon','🇨🇮 Ivory Coast','🇱🇾 Libya','🇸🇩 Sudan','🇲🇿 Mozambique','🇦🇴 Angola'],
+  '🇪🇺 Europe': ['🇫🇷 France','🇩🇪 Germany','🇬🇧 UK','🇮🇹 Italy','🇪🇸 Spain','🇳🇱 Netherlands','🇵🇹 Portugal','🇷🇺 Russia','🇧🇪 Belgium','🇨🇭 Switzerland','🇸🇪 Sweden','🇳🇴 Norway','🇩🇰 Denmark','🇵🇱 Poland','🇺🇦 Ukraine','🇬🇷 Greece','🇦🇹 Austria','🇨🇿 Czech Republic','🇷🇴 Romania','🇭🇺 Hungary','🇫🇮 Finland'],
+  '🌎 Americas': ['🇺🇸 USA','🇧🇷 Brazil','🇲🇽 Mexico','🇨🇦 Canada','🇦🇷 Argentina','🇨🇴 Colombia','🇨🇱 Chile','🇵🇪 Peru','🇻🇪 Venezuela','🇨🇺 Cuba','🇩🇴 Dominican Republic','🇵🇦 Panama','🇪🇨 Ecuador','🇧🇴 Bolivia','🇺🇾 Uruguay','🇵🇾 Paraguay','🇬🇹 Guatemala','🇭🇳 Honduras'],
+  '🌏 Asia': ['🇸🇦 Saudi Arabia','🇦🇪 UAE','🇯🇵 Japan','🇰🇷 South Korea','🇨🇳 China','🇮🇳 India','🇹🇷 Turkey','🇮🇩 Indonesia','🇵🇰 Pakistan','🇧🇩 Bangladesh','🇹🇭 Thailand','🇻🇳 Vietnam','🇲🇾 Malaysia','🇵🇭 Philippines','🇮🇶 Iraq','🇸🇾 Syria','🇱🇧 Lebanon','🇯🇴 Jordan','🇮🇷 Iran','🇰🇼 Kuwait','🇶🇦 Qatar','🇧🇭 Bahrain','🇴🇲 Oman','🇾🇪 Yemen','🇦🇫 Afghanistan','🇰🇿 Kazakhstan','🇺🇿 Uzbekistan'],
+  '🌊 Oceania': ['🇦🇺 Australia','🇳🇿 New Zealand','🇫🇯 Fiji','🇵🇬 Papua New Guinea','🇸🇧 Solomon Islands','🇼🇸 Samoa'],
+};
+
+const List<String> kCategories = ['💻 Technology','🏛️ Politics','🎬 Movies','🎵 Music','📖 Stories','💰 Business','🎓 Education','😂 Comedy','🍳 Cooking','🎭 Adventure','❤️ Dating','🛍️ Shop','🔴 Live','🌿 Nature','✈️ Travel','🎨 Art'];
+const List<String> kSports     = ['⚽ Football','🏀 Basketball','🎾 Tennis','🏋️ Fitness','🥊 Boxing','🏊 Swimming','🏃 Running','🚴 Cycling','🎯 E-Sports','🏈 American Football','🏐 Volleyball','⚾ Baseball','🏒 Hockey','🎱 Billiards','🥋 Martial Arts'];
+const List<String> kMoods      = ['😴 Chill','😤 Hyped','😞 Sad','🧘 Focus','💪 Motivated'];
+
+class FilterState {
+  static String? mood, category, sport, region, country;
+  static void reset() => mood = category = sport = region = country = null;
+}
+
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   
-  // ---------- الحالة الأساسية ----------
-  int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music
+  int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music 6=Map
   bool _panelOpen = false;
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
   
-  // ✅ (1) نظام القفل / Safe Run
   bool _isProcessing = false;
-  
-  // ✅ (2) سرعة الأنيميشن التكيفية (Adaptive Animation Speed)
   DateTime _lastInteractionTime = DateTime.now();
   static const Duration _normalDuration = Duration(milliseconds: 260);
   static const Duration _fastDuration = Duration(milliseconds: 150);
   
-  // ✅ (3) PageView Controller (سحب أفقي بين التبويبات)
   late PageController _pageController;
-  
-  // ✅ (4) التحكم بحالة شريط الحالة (Smart Status Bar)
   Brightness _statusBarBrightness = Brightness.light;
   
-  // ✅ (5) قائمة آخر البحوث (محاكاة)
   static final List<String> _recentSearches = ['Flutter UI', 'iOS Animations', 'Dark Mode'];
-  
-  static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
+  static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music', 'Map']; // ✅ تمت إضافة Map
 
   @override
   void initState() {
@@ -66,7 +77,6 @@ class _MainScreenState extends State<MainScreen>
     _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.addListener(() => setState(() {}));
     
-    // تحديث شريط الحالة بعد بناء الواجهة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateStatusBar();
     });
@@ -86,7 +96,6 @@ class _MainScreenState extends State<MainScreen>
     _updateStatusBar();
   }
 
-  // تحديث شريط الحالة بناءً على فتح البانل
   void _updateStatusBar() {
     final brightness = _panelOpen ? Brightness.dark : Brightness.light;
     if (_statusBarBrightness != brightness) {
@@ -103,7 +112,6 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  // ✅ تنفيذ آمن للأوامر (يمنع التداخل)
   Future<void> _safeRun(Future<void> Function() action) async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -114,7 +122,6 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  // ✅ تحديث سرعة الأنيميشن بناءً على وتيرة المستخدم
   void _updateAnimationSpeed() {
     final now = DateTime.now();
     final diff = now.difference(_lastInteractionTime);
@@ -124,11 +131,10 @@ class _MainScreenState extends State<MainScreen>
     _lastInteractionTime = now;
   }
 
-  // ✅ فتح/إغلاق البانل المنسدل مع Haptic
   void _togglePanel() {
     _safeRun(() async {
       _updateAnimationSpeed();
-      HapticFeedback.mediumImpact(); // أقوى من lightImpact
+      HapticFeedback.mediumImpact();
       if (_panelOpen) {
         await _panelCtrl.reverse();
       } else {
@@ -141,7 +147,6 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
-  // ✅ إغلاق البانل فقط
   void _closePanel() {
     if (!_panelOpen) return;
     _safeRun(() async {
@@ -154,7 +159,6 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
-  // ✅ المحتوى الرئيسي: PageView مع سحب أفقي (Bouncy Physics) + تأثير Parallax بسيط
   Widget _buildContent() {
     return PageView.builder(
       controller: _pageController,
@@ -167,9 +171,8 @@ class _MainScreenState extends State<MainScreen>
         }
         _closePanel();
       },
-      itemCount: 6,
+      itemCount: 7, // ✅ تم التحديث إلى 7 تبويبات
       itemBuilder: (context, index) {
-        // تأثير Parallax: العنصر يتحرك أبطأ قليلاً مع السحب
         return AnimatedBuilder(
           animation: _pageController,
           builder: (context, child) {
@@ -178,7 +181,7 @@ class _MainScreenState extends State<MainScreen>
               pageOffset = _pageController.page! - index;
             }
             return Transform.translate(
-              offset: Offset(pageOffset * 20, 0), // حركة خفيفة
+              offset: Offset(pageOffset * 20, 0),
               child: child,
             );
           },
@@ -196,11 +199,11 @@ class _MainScreenState extends State<MainScreen>
       case 3: return const DatingScreen();
       case 4: return const LiveScreen();
       case 5: return const MusicScreen();
+      case 6: return const MapScreen(); // ✅ تبويب الخريطة الجديد
       default: return const SetScreen();
     }
   }
 
-  // ✅ اختيار تبويب مع أنيميشن سلس
   void _selectTab(int index) {
     _safeRun(() async {
       if (_contentTab == index) return;
@@ -214,7 +217,6 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
-  // ✅ النقر على الـ Bottom Navigation Bar
   void _onNavTap(int i) {
     _safeRun(() async {
       _closePanel();
@@ -224,7 +226,6 @@ class _MainScreenState extends State<MainScreen>
         return;
       }
 
-      // ✅ زر Home الذكي (المحسن)
       if (i == 4) {
         if (_contentTab == 0) {
           _togglePanel();
@@ -243,7 +244,6 @@ class _MainScreenState extends State<MainScreen>
       ];
       final s = i < screens.length ? screens[i] : null;
       if (s != null) {
-        // ✅ استخدام CupertinoPageRoute لدعم إيماءة الرجوع من اليسار (iOS Swipe Back)
         Navigator.push(
           context,
           CupertinoPageRoute(
@@ -273,16 +273,14 @@ class _MainScreenState extends State<MainScreen>
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _MenuSheet(
-        onProfile:  () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const ProfileScreen())); },
-        onMessages: () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const MessagesScreen())); },
-        onAlerts:   () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const AlertsScreen())); },
-        onSearch:   () { Navigator.pop(context); Navigator.push(context, CupertinoPageRoute(builder: (_) => const SearchScreen())); },
-      ),
+      builder: (_) => _FilterSheet(onApply: () {
+        setState(() {});
+      }),
     );
   }
 
@@ -320,7 +318,6 @@ class _MainScreenState extends State<MainScreen>
           body: Stack(children: [
             _buildContent(),
   
-            // تأثير الزجاج (Glass/Blur) مع تعتيم الخلفية
             if (_panelAnim.value > 0)
               Positioned.fill(
                 child: GestureDetector(
@@ -337,7 +334,6 @@ class _MainScreenState extends State<MainScreen>
                 ),
               ),
   
-            // البانل المنسدل مع إمكانية السحب للإغلاق
             Positioned(
               top: -340 + (340 * _panelAnim.value),
               left: 0,
@@ -359,7 +355,6 @@ class _MainScreenState extends State<MainScreen>
               ),
             ),
   
-            // TopBar ثابت فوق كل شيء
             SafeArea(
               child: _TopBar(
                 panelOpen: _panelOpen,
@@ -369,11 +364,10 @@ class _MainScreenState extends State<MainScreen>
                   context,
                   CupertinoPageRoute(builder: (_) => const SearchScreen()),
                 ),
-                recentSearches: _recentSearches, // لاستخدامها في long press
+                recentSearches: _recentSearches,
               ),
             ),
   
-            // شريط المؤشر السفلي (Home Indicator) بنمط iOS
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -396,7 +390,7 @@ class _MainScreenState extends State<MainScreen>
   
           bottomNavigationBar: _BottomNav(
             onTap: _onNavTap,
-            showAlertBadge: true, // ✅ تفعيل شارة الإشعارات
+            showAlertBadge: true,
           ),
         ),
       ),
@@ -412,7 +406,7 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onSetRizeTap;
   final VoidCallback onMenuTap;
   final VoidCallback onSearchTap;
-  final List<String> recentSearches; // لاستخدامها في الضغط المطول
+  final List<String> recentSearches;
 
   const _TopBar({
     required this.panelOpen,
@@ -433,7 +427,6 @@ class _TopBar extends StatelessWidget {
             child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 8),
-          // تأثير ديناميكي عند فتح/إغلاق البانل (مثل Dynamic Island)
           AnimatedScale(
             scale: panelOpen ? 0.95 : 1.0,
             duration: const Duration(milliseconds: 260),
@@ -460,7 +453,6 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          // أيقونة البحث مع دعم الضغط المطول (Long Press)
           GestureDetector(
             onTap: onSearchTap,
             onLongPress: () {
@@ -517,12 +509,11 @@ class _TopBar extends StatelessWidget {
           const SnackBar(content: Text('تم مسح سجل البحث'), duration: Duration(seconds: 1)),
         );
       } else if (value != null) {
-        // ✅ الإصلاح: تمرير البحث عبر RouteSettings بدلاً من معامل في المُنشئ
         Navigator.push(
           context,
           CupertinoPageRoute(
             builder: (_) => const SearchScreen(),
-            settings: RouteSettings(arguments: value), // يتم استقبالها في SearchScreen عبر ModalRoute
+            settings: RouteSettings(arguments: value),
           ),
         );
       }
@@ -554,8 +545,6 @@ class _PullDownPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 44),
-
-            // صف التبويبات
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -597,15 +586,9 @@ class _PullDownPanel extends StatelessWidget {
                 }),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // ✅ مساحة محجوزة للستوريات (جاهزة للإضافة لاحقاً)
-            const SizedBox(height: 100),
-
-            const SizedBox(height: 40), // فراغ قبل المقبض
-
-            // مقبض السحب (Drag Handle)
+            const SizedBox(height: 100), // مساحة الستوريات
+            const SizedBox(height: 40),
             Container(
               width: 32,
               height: 3,
@@ -614,7 +597,6 @@ class _PullDownPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
             const SizedBox(height: 8),
           ],
         ),
@@ -624,7 +606,7 @@ class _PullDownPanel extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTTOM NAV — Profile | Messages | + | Alerts | Home
+// BOTTOM NAV
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
@@ -682,7 +664,7 @@ class _BottomNav extends StatelessWidget {
                     ),
                     child: const Center(
                       child: Text(
-                        '3', // يمكن جعله ديناميكي
+                        '3',
                         style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -797,56 +779,154 @@ class _CreateSheet extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MENU SHEET
+// FILTER SHEET
 // ══════════════════════════════════════════════════════════════════════════════
-class _MenuSheet extends StatelessWidget {
-  final VoidCallback onProfile, onMessages, onAlerts, onSearch;
-  const _MenuSheet({
-    required this.onProfile,
-    required this.onMessages,
-    required this.onAlerts,
-    required this.onSearch,
-  });
+class _FilterSheet extends StatefulWidget {
+  final VoidCallback onApply;
+  const _FilterSheet({required this.onApply});
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  String? _mood, _category, _sport, _region, _country;
+  bool _showCountries = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mood     = FilterState.mood;
+    _category = FilterState.category;
+    _sport    = FilterState.sport;
+    _region   = FilterState.region;
+    _country  = FilterState.country;
+    _showCountries = _region != null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 40, height: 4,
-          decoration: BoxDecoration(
-              color: AppColors.grey, borderRadius: BorderRadius.circular(2)),
-        ),
-        const SizedBox(height: 20),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-          _item(Icons.person_rounded, 'Profile', AppColors.electricBlue, onProfile),
-          _item(Icons.chat_bubble_rounded, 'Messages', AppColors.neonGreen, onMessages),
-          _item(Icons.notifications_rounded, 'Alerts', AppColors.neonYellow, onAlerts),
-          _item(Icons.search_rounded, 'Search', AppColors.cyan, onSearch),
+    return Container(
+      color: Colors.white,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+
+          _title('😊 Mood'),
+          const SizedBox(height: 8),
+          _chips(kMoods, _mood, (v) => setState(() => _mood = v)),
+          const SizedBox(height: 16),
+
+          _title('🎯 Category'),
+          const SizedBox(height: 8),
+          _chips(kCategories, _category, (v) => setState(() => _category = v)),
+          const SizedBox(height: 16),
+
+          _title('🏆 Sports'),
+          const SizedBox(height: 8),
+          _chips(kSports, _sport, (v) => setState(() => _sport = v)),
+          const SizedBox(height: 16),
+
+          _title('🌍 Region & Country'),
+          const SizedBox(height: 8),
+          _chips(kRegions.keys.toList(), _region, (v) {
+            setState(() { _region = v; _country = null; _showCountries = true; });
+          }),
+
+          if (_showCountries && _region != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('🗺️ $_region', style: const TextStyle(
+                    color: Colors.black, fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                _chips(kRegions[_region] ?? [], _country,
+                        (v) => setState(() => _country = v)),
+              ]),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _mood = _category = _sport = _region = _country = null;
+                  _showCountries = false;
+                });
+                FilterState.reset();
+              },
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black, width: 1.5),
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Center(child: Text('Reset All',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
+              ),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: GestureDetector(
+              onTap: () {
+                FilterState.mood     = _mood;
+                FilterState.category = _category;
+                FilterState.sport    = _sport;
+                FilterState.region   = _region;
+                FilterState.country  = _country;
+                widget.onApply();
+                Navigator.pop(context);
+              },
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                    color: Colors.black, borderRadius: BorderRadius.circular(12)),
+                child: const Center(child: Text('Apply',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+              ),
+            )),
+          ]),
         ]),
-        const SizedBox(height: 16),
-      ]),
+      ),
     );
   }
 
-  Widget _item(IconData icon, String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(children: [
-        Container(
-          width: 60, height: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.28)),
+  Widget _title(String t) => Text(t,
+      style: const TextStyle(color: Colors.black, fontSize: 14,
+          fontWeight: FontWeight.bold));
+
+  Widget _chips(List<String> items, String? selected, Function(String) onTap) {
+    return Wrap(
+      spacing: 6, runSpacing: 6,
+      children: items.map((item) {
+        final isSel = selected == item;
+        return GestureDetector(
+          onTap: () => onTap(item),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+                color: isSel ? Colors.black : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: isSel ? Colors.black : Colors.grey.shade300)),
+            child: Text(item, style: TextStyle(
+                color: isSel ? Colors.white : Colors.black,
+                fontSize: 12, fontWeight: FontWeight.w500)),
           ),
-          child: Icon(icon, color: color, size: 28),
-        ),
-        const SizedBox(height: 8),
-        Text(label,
-            style: AppTextStyles.labelSmall.copyWith(color: AppColors.white)),
-      ]),
+        );
+      }).toList(),
     );
   }
 }
