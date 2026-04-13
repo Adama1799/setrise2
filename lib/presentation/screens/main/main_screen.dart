@@ -29,14 +29,6 @@ class _MainScreenState extends State<MainScreen>
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
 
-
-
-
-
-
-
-
-
   static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music'];
 
   @override
@@ -83,14 +75,20 @@ class _MainScreenState extends State<MainScreen>
   void _onNavTap(int i) {
     _closePanel();
     if (i == 2) { _showCreateSheet(); return; }
+
+    // ✅ index 4 = Home (بدل Search)
+    if (i == 4) {
+      setState(() => _contentTab = 0);
+      return;
+    }
+
     final screens = [
       const ProfileScreen(),
       const MessagesScreen(),
       null,
       const AlertsScreen(),
-      const SearchScreen(),
     ];
-    final s = screens[i];
+    final s = i < screens.length ? screens[i] : null;
     if (s != null) Navigator.push(context, MaterialPageRoute(builder: (_) => s));
   }
 
@@ -122,8 +120,13 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Panel height: text tabs only
-    const panelH = 90.0;
+    // ✅ الارتفاع الكلي للبانل:
+    // 10px  (~1سم) فراغ بعد SetRize
+    // 40px  التبويبات
+    // 190px (~5سم) فراغ الستوريات
+    // 20px  drag handle + padding
+    // = 260px
+    const panelH = 260.0;
 
     return WillPopScope(
       onWillPop: () async {
@@ -135,22 +138,24 @@ class _MainScreenState extends State<MainScreen>
         backgroundColor: AppColors.background,
         body: Stack(children: [
 
-          // 1. Content
+          // ── 1. المحتوى ──
           _buildContent(),
 
-          // 2. Dark overlay when panel open
+          // ── 2. تعتيم الخلفية عند فتح البانل ──
           if (_panelAnim.value > 0)
             Positioned.fill(
               child: GestureDetector(
                 onTap: _closePanel,
-                child: Container(color: Colors.black.withOpacity(0.45 * _panelAnim.value)),
+                child: Container(
+                    color: Colors.black.withOpacity(0.45 * _panelAnim.value)),
               ),
             ),
 
-          // 3. Pull-down panel — text words only, no icons
+          // ── 3. البانل (ينزل من تحت TopBar مباشرة) ──
           Positioned(
             top: -panelH + (panelH * _panelAnim.value),
-            left: 0, right: 0,
+            left: 0,
+            right: 0,
             child: _PullDownPanel(
               labels: _tabLabels,
               activeTab: _contentTab,
@@ -161,18 +166,21 @@ class _MainScreenState extends State<MainScreen>
             ),
           ),
 
-          // 4. Top bar — pushed to very top
+          // ── 4. الشريط العلوي الثابت ──
           SafeArea(
             child: _TopBar(
               panelOpen: _panelOpen,
               onSetRizeTap: _togglePanel,
               onMenuTap: _showMenuSheet,
               onSearchTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen())),
             ),
           ),
 
         ]),
+
+        // ✅ Home بدل Search
         bottomNavigationBar: _BottomNav(onTap: _onNavTap),
       ),
     );
@@ -180,7 +188,7 @@ class _MainScreenState extends State<MainScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOP BAR — ☰ SetRize (far left together) | 🔍 (far right)
+// TOP BAR — ☰ SetRize ˅  (يسار) | 🔍 (يمين) — كما هو بالضبط
 // ══════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final bool panelOpen;
@@ -198,26 +206,25 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Push to very top — minimal vertical padding
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
         children: [
 
-          // ☰ — far left
+          // ☰
           GestureDetector(
-            onTap: _showMenuSheet(context),
+            onTap: onMenuTap,
             child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
 
           const SizedBox(width: 8),
 
-          // SetRize ˅ — right next to ☰
+          // SetRize ˅
           GestureDetector(
             onTap: onSetRizeTap,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(
+              const Text(
                 'SetRize',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -236,7 +243,7 @@ class _TopBar extends StatelessWidget {
 
           const Spacer(),
 
-          // 🔍 — far right
+          // 🔍
           GestureDetector(
             onTap: onSearchTap,
             child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
@@ -246,13 +253,19 @@ class _TopBar extends StatelessWidget {
       ),
     );
   }
-
-  // Returns a no-op tap handler; menu is handled in parent via onMenuTap
-  VoidCallback _showMenuSheet(BuildContext context) => onMenuTap;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PULL-DOWN PANEL — plain text words, 10px gap, TikTok style
+// PULL-DOWN PANEL
+//
+// الهيكل لما يفتح:
+//   ┌─────────────────────────────┐
+//   │  [10px ~ 1سنتمتر فراغ]     │
+//   │  Set Rize Shop Date Live   │
+//   │        Music               │
+//   │  [190px ~ 5سنتمتر فراغ]    │  ← مكان الستوريات
+//   │       ── handle ──         │
+//   └─────────────────────────────┘
 // ══════════════════════════════════════════════════════════════════════════════
 class _PullDownPanel extends StatelessWidget {
   final List<String> labels;
@@ -268,16 +281,17 @@ class _PullDownPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
       color: Colors.black.withOpacity(0.92),
       child: SafeArea(
         bottom: false,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 6),
 
-            // Text-only tab row — like TikTok
+            // ✅ ~1 سنتمتر بين SetRize والتبويبات
+            const SizedBox(height: 10),
+
+            // ✅ صف التبويبات
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -287,7 +301,6 @@ class _PullDownPanel extends StatelessWidget {
                   return GestureDetector(
                     onTap: () => onTabSelect(i),
                     child: Padding(
-                      // 10px gap between words
                       padding: EdgeInsets.only(
                         right: i < labels.length - 1 ? 10 : 0,
                       ),
@@ -299,12 +312,13 @@ class _PullDownPanel extends StatelessWidget {
                             style: TextStyle(
                               color: active ? Colors.white : Colors.white54,
                               fontSize: active ? 16 : 15,
-                              fontWeight: active ? FontWeight.w800 : FontWeight.w400,
+                              fontWeight: active
+                                  ? FontWeight.w800
+                                  : FontWeight.w400,
                               letterSpacing: 0.2,
                             ),
                           ),
                           const SizedBox(height: 3),
-                          // Active underline — like TikTok
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             height: 2,
@@ -322,18 +336,20 @@ class _PullDownPanel extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 6),
+            // ✅ ~5 سنتمتر فراغ للستوريات
+            const SizedBox(height: 190),
 
-            // Drag handle
+            // drag handle
             Container(
-              width: 32, height: 3,
+              width: 32,
+              height: 3,
               decoration: BoxDecoration(
                 color: Colors.white24,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -342,19 +358,11 @@ class _PullDownPanel extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTTOM NAV
+// BOTTOM NAV — Profile | Messages | + | Alerts | Home ✅
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
   const _BottomNav({required this.onTap});
-
-  static const _items = [
-    {'icon': Icons.person_rounded,        'label': 'Profile'},
-    {'icon': Icons.chat_bubble_rounded,   'label': 'Messages'},
-    {'icon': null,                        'label': 'Create'},
-    {'icon': Icons.notifications_rounded, 'label': 'Alerts'},
-    {'icon': Icons.search_rounded,        'label': 'Search'},
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -369,40 +377,54 @@ class _BottomNav extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_items.length, (i) {
-              final item = _items[i];
-              final isCreate = item['icon'] == null;
+            children: [
+              _navItem(0, Icons.person_rounded, 'Profile'),
+              _navItem(1, Icons.chat_bubble_rounded, 'Messages'),
+              _createButton(),
+              _navItem(3, Icons.notifications_rounded, 'Alerts'),
+              // ✅ Home بدل Search
+              _navItem(4, Icons.home_rounded, 'Home'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-              if (isCreate) {
-                return GestureDetector(
-                  onTap: () => onTap(i),
-                  child: Container(
-                    width: 52, height: 34,
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Center(child: Text('+',
-                      style: TextStyle(color: AppColors.black,
-                          fontSize: 24, fontWeight: FontWeight.bold, height: 1.1))),
-                  ),
-                );
-              }
+  Widget _navItem(int index, IconData icon, String label) {
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: AppColors.grey2, size: 26),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(color: AppColors.grey2, fontSize: 10)),
+        ]),
+      ),
+    );
+  }
 
-              return GestureDetector(
-                onTap: () => onTap(i),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(item['icon'] as IconData, color: AppColors.grey2, size: 26),
-                    const SizedBox(height: 2),
-                    Text(item['label'] as String,
-                      style: TextStyle(color: AppColors.grey2, fontSize: 10)),
-                  ]),
-                ),
-              );
-            }),
+  Widget _createButton() {
+    return GestureDetector(
+      onTap: () => onTap(2),
+      child: Container(
+        width: 52,
+        height: 34,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Center(
+          child: Text(
+            '+',
+            style: TextStyle(
+              color: AppColors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              height: 1.1,
+            ),
           ),
         ),
       ),
@@ -419,16 +441,20 @@ class _CreateSheet extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4,
-          decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(2))),
+        Container(
+          width: 40, height: 4,
+          decoration: BoxDecoration(
+              color: AppColors.grey, borderRadius: BorderRadius.circular(2)),
+        ),
         const SizedBox(height: 20),
-        Text('Create', style: AppTextStyles.h5.copyWith(
-            color: AppColors.white, fontWeight: FontWeight.w900)),
+        Text('Create',
+            style: AppTextStyles.h5
+                .copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 20),
-        _item(context, Icons.videocam_rounded,  'Video',      'Post a short video',   AppColors.live),
-        _item(context, Icons.image_rounded,     'Photo',      'Share a photo',        AppColors.electricBlue),
-        _item(context, Icons.mic_rounded,       'Voice Rize', 'Start a voice post',   AppColors.neonGreen),
-        _item(context, Icons.live_tv_rounded,   'Go Live',    'Start a live stream',  AppColors.neonRed),
+        _item(context, Icons.videocam_rounded, 'Video', 'Post a short video', AppColors.live),
+        _item(context, Icons.image_rounded, 'Photo', 'Share a photo', AppColors.electricBlue),
+        _item(context, Icons.mic_rounded, 'Voice Rize', 'Start a voice post', AppColors.neonGreen),
+        _item(context, Icons.live_tv_rounded, 'Go Live', 'Start a live stream', AppColors.neonRed),
       ]),
     );
   }
@@ -445,14 +471,19 @@ class _CreateSheet extends StatelessWidget {
           border: Border.all(color: color.withOpacity(0.22)),
         ),
         child: Row(children: [
-          Container(width: 42, height: 42,
-            decoration: BoxDecoration(color: color.withOpacity(0.14), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 22)),
+          Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.14), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 22),
+          ),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.white, fontWeight: FontWeight.bold)),
-            Text(sub, style: AppTextStyles.labelSmall.copyWith(color: AppColors.grey2)),
+            Text(title,
+                style: AppTextStyles.labelLarge
+                    .copyWith(color: AppColors.white, fontWeight: FontWeight.bold)),
+            Text(sub,
+                style: AppTextStyles.labelSmall.copyWith(color: AppColors.grey2)),
           ]),
           const Spacer(),
           Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 20),
@@ -468,8 +499,10 @@ class _CreateSheet extends StatelessWidget {
 class _MenuSheet extends StatelessWidget {
   final VoidCallback onProfile, onMessages, onAlerts, onSearch;
   const _MenuSheet({
-    required this.onProfile, required this.onMessages,
-    required this.onAlerts, required this.onSearch,
+    required this.onProfile,
+    required this.onMessages,
+    required this.onAlerts,
+    required this.onSearch,
   });
 
   @override
@@ -477,14 +510,17 @@ class _MenuSheet extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4,
-          decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(2))),
+        Container(
+          width: 40, height: 4,
+          decoration: BoxDecoration(
+              color: AppColors.grey, borderRadius: BorderRadius.circular(2)),
+        ),
         const SizedBox(height: 20),
         Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-          _item(Icons.person_rounded,        'Profile',  AppColors.electricBlue, onProfile),
-          _item(Icons.chat_bubble_rounded,   'Messages', AppColors.neonGreen,    onMessages),
-          _item(Icons.notifications_rounded, 'Alerts',   AppColors.neonYellow,   onAlerts),
-          _item(Icons.search_rounded,        'Search',   AppColors.cyan,         onSearch),
+          _item(Icons.person_rounded, 'Profile', AppColors.electricBlue, onProfile),
+          _item(Icons.chat_bubble_rounded, 'Messages', AppColors.neonGreen, onMessages),
+          _item(Icons.notifications_rounded, 'Alerts', AppColors.neonYellow, onAlerts),
+          _item(Icons.search_rounded, 'Search', AppColors.cyan, onSearch),
         ]),
         const SizedBox(height: 16),
       ]),
@@ -505,7 +541,8 @@ class _MenuSheet extends StatelessWidget {
           child: Icon(icon, color: color, size: 28),
         ),
         const SizedBox(height: 8),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.white)),
+        Text(label,
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.white)),
       ]),
     );
   }
