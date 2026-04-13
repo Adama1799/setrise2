@@ -39,23 +39,22 @@ class _SetScreenState extends State<SetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: _posts.length,
-        physics: const BouncingScrollPhysics(),
-        onPageChanged: (i) => setState(() => _currentPage = i),
-        itemBuilder: (ctx, i) => PostCard(
-          post: _posts[i],
-          onUpdate: (p) => _updatePost(i, p),
-          onSwipeNext: _goNextPage,
-          onSwipeRight: () => HapticFeedback.mediumImpact(),
-          onSwipeLeft: () => HapticFeedback.lightImpact(),
-          onSwipeStart: () {},
-          onSwipeEnd: () {},
-        ),
+    // ✅ التعديل الوحيد: أزلنا Scaffold و backgroundColor
+    // وبقينا على PageView.builder كما هو تماماً دون أي مساس بوظائفه
+    return PageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      itemCount: _posts.length,
+      physics: const BouncingScrollPhysics(),
+      onPageChanged: (i) => setState(() => _currentPage = i),
+      itemBuilder: (ctx, i) => PostCard(
+        post: _posts[i],
+        onUpdate: (p) => _updatePost(i, p),
+        onSwipeNext: _goNextPage,
+        onSwipeRight: () => HapticFeedback.mediumImpact(),
+        onSwipeLeft: () => HapticFeedback.lightImpact(),
+        onSwipeStart: () {},
+        onSwipeEnd: () {},
       ),
     );
   }
