@@ -43,47 +43,184 @@ class _MainScreenState extends State<MainScreen>
   static const Duration _normalDuration = Duration(milliseconds: 260);
   static const Duration _fastDuration = Duration(milliseconds: 150);
   
-  late PageController _pageController;
   Brightness _statusBarBrightness = Brightness.light;
   
   static const _tabLabels = ['SetRize', 'News', 'Shop', 'Date', 'Live', 'Music', 'Map'];
+
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(
+    7,
+    (_) => GlobalKey<NavigatorState>(),
+  );
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pageController = PageController(initialPage: _contentTab);
-    _panelCtrl = AnimationController(vsync: this, duration: _normalDuration);
+    
+    _panelCtrl = AnimationController(
+      vsync: this,
+      duration: _normalDuration,
+    );
     _panelAnim = CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic);
     _panelCtrl.addListener(() => setState(() {}));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateStatusBar());
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateStatusBar();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _panelCtrl.dispose();
-    _pageController.dispose();
     super.dispose();
   }
 
-  void _updateStatusBar() { /* ... بدون تغيير ... */ }
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _updateStatusBar();
+  }
 
-  Future<void> _safeRun(Future<void> Function() action) async { /* ... بدون تغيير ... */ }
+  void _updateStatusBar() {
+    final brightness = _panelOpen ? Brightness.dark : Brightness.light;
+    if (_statusBarBrightness != brightness) {
+      _statusBarBrightness = brightness;
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: _panelOpen ? Brightness.light : Brightness.dark,
+          statusBarBrightness: _panelOpen ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: Colors.black,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+      );
+    }
+  }
 
-  void _updateAnimationSpeed() { /* ... بدون تغيير ... */ }
+  Future<void> _safeRun(Future<void> Function() action) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    try {
+      await action();
+    } finally {
+      _isProcessing = false;
+    }
+  }
 
-  void _togglePanel() { /* ... بدون تغيير ... */ }
+  void _updateAnimationSpeed() {
+    final now = DateTime.now();
+    final diff = now.difference(_lastInteractionTime);
+    final isFast = diff.inMilliseconds < 200;
+    
+    _panelCtrl.duration = isFast ? _fastDuration : _normalDuration;
+    _lastInteractionTime = now;
+  }
 
-  void _closePanel() { /* ... بدون تغيير ... */ }
+  void _togglePanel() {
+    _safeRun(() async {
+      _updateAnimationSpeed();
+      HapticFeedback.mediumImpact();
+      if (_panelOpen) {
+        await _panelCtrl.reverse();
+      } else {
+        await _panelCtrl.forward();
+      }
+      setState(() {
+        _panelOpen = !_panelOpen;
+        _updateStatusBar();
+      });
+    });
+  }
 
-  Widget _buildContent() { /* ... بدون تغيير ... */ }
+  void _closePanel() {
+    if (!_panelOpen) return;
+    _safeRun(() async {
+      _updateAnimationSpeed();
+      await _panelCtrl.reverse();
+      setState(() {
+        _panelOpen = false;
+        _updateStatusBar();
+      });
+    });
+  }
 
-  Widget _getPageByIndex(int index) { /* ... بدون تغيير ... */ }
+  Widget _buildTabNavigator(int index) {
+    return Navigator(
+      key: _navigatorKeys[index],
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => _getPageByIndex(index),
+        );
+      },
+    );
+  }
 
-  void _selectTab(int index) { /* ... بدون تغيير ... */ }
+  Widget _buildContent() {
+    return IndexedStack(
+      index: _contentTab,
+      children: List.generate(7, (index) => _buildTabNavigator(index)),
+    );
+  }
 
-  void _onNavTap(int i) { /* ... بدون تغيير ... */ }
+  Widget _getPageByIndex(int index) {
+    switch (index) {
+      case 0: return const SetScreen();
+      case 1: return const RizeScreen();
+      case 2: return const ShopScreen();
+      case 3: return const DatingScreen();
+      case 4: return const LiveScreen();
+      case 5: return const MusicScreen();
+      case 6: return const MapScreen();
+      default: return const SetScreen();
+    }
+  }
+
+  void _selectTab(int index) {
+    _safeRun(() async {
+      if (_contentTab == index) return;
+      _closePanel();
+      setState(() => _contentTab = index);
+      _updateStatusBar();
+    });
+  }
+
+  void _onNavTap(int i) {
+    _safeRun(() async {
+      _closePanel();
+      
+      if (i == 2) {
+        _showCreateSheet();
+        return;
+      }
+
+      if (i == 0) {
+        if (_contentTab == 0) {
+          _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
+          _togglePanel();
+        } else {
+          HapticFeedback.selectionClick();
+          _selectTab(0);
+        }
+        return;
+      }
+
+      if (i == 1) {
+        Navigator.of(context, rootNavigator: true).push(
+          CupertinoPageRoute(builder: (_) => const SearchScreen()),
+        );
+        return;
+      }
+
+      final screens = [null, null, null, const AlertsScreen(), const MessagesScreen()];
+      final s = i < screens.length ? screens[i] : null;
+      if (s != null) {
+        Navigator.of(context, rootNavigator: true).push(
+          CupertinoPageRoute(builder: (_) => s),
+        );
+      }
+    });
+  }
 
   void _showCreateSheet() {
     HapticFeedback.mediumImpact();
@@ -91,7 +228,9 @@ class _MainScreenState extends State<MainScreen>
       context: context,
       backgroundColor: const Color(0xFF0D0D0D),
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (_) => const CreateSheet(),
     );
   }
@@ -103,11 +242,15 @@ class _MainScreenState extends State<MainScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) => ProfileMenuSheet(
         onViewProfile: () {
           Navigator.pop(context);
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ProfileScreen()));
+          Navigator.of(context, rootNavigator: true).push(
+            CupertinoPageRoute(builder: (_) => const ProfileScreen()),
+          );
         },
         onFilter: () {
           Navigator.pop(context);
@@ -122,8 +265,12 @@ class _MainScreenState extends State<MainScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => FilterSheet(onApply: () => setState(() {})),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => FilterSheet(onApply: () {
+        setState(() {});
+      }),
     );
   }
 
@@ -138,7 +285,27 @@ class _MainScreenState extends State<MainScreen>
         systemNavigationBarIconBrightness: Brightness.light,
       ),
       child: WillPopScope(
-        onWillPop: () async { /* ... بدون تغيير ... */ },
+        onWillPop: () async {
+          if (_panelOpen) { _closePanel(); return false; }
+          final currentNavigator = _navigatorKeys[_contentTab].currentState;
+          if (currentNavigator != null && currentNavigator.canPop()) {
+            currentNavigator.pop();
+            return false;
+          }
+          if (_contentTab != 0) { _selectTab(0); return false; }
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: const Text('خروج'),
+              content: const Text('هل تريد الخروج من التطبيق؟'),
+              actions: [
+                CupertinoDialogAction(child: const Text('لا'), onPressed: () => Navigator.pop(ctx, false)),
+                CupertinoDialogAction(isDestructiveAction: true, child: const Text('نعم'), onPressed: () => Navigator.pop(ctx, true)),
+              ],
+            ),
+          );
+          return shouldExit ?? false;
+        },
         child: Scaffold(
           backgroundColor: AppColors.background,
           extendBodyBehindAppBar: true,
@@ -150,8 +317,13 @@ class _MainScreenState extends State<MainScreen>
                 child: GestureDetector(
                   onTap: _closePanel,
                   child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 12.0 * _panelAnim.value, sigmaY: 12.0 * _panelAnim.value),
-                    child: Container(color: Colors.black.withOpacity(0.4 * _panelAnim.value)),
+                    filter: ui.ImageFilter.blur(
+                      sigmaX: 12.0 * _panelAnim.value,
+                      sigmaY: 12.0 * _panelAnim.value,
+                    ),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.4 * _panelAnim.value),
+                    ),
                   ),
                 ),
               ),
@@ -159,7 +331,9 @@ class _MainScreenState extends State<MainScreen>
               top: -340 + (340 * _panelAnim.value),
               left: 0, right: 0,
               child: GestureDetector(
-                onVerticalDragUpdate: (details) { if (details.primaryDelta! > 15) _closePanel(); },
+                onVerticalDragUpdate: (details) {
+                  if (details.primaryDelta! > 15) _closePanel();
+                },
                 child: PullDownPanel(
                   labels: _tabLabels,
                   activeTab: _contentTab,
@@ -182,12 +356,21 @@ class _MainScreenState extends State<MainScreen>
                 child: AnimatedOpacity(
                   opacity: _panelOpen ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 200),
-                  child: Container(width: 140, height: 5, decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(100))),
+                  child: Container(
+                    width: 140, height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
                 ),
               ),
             ),
           ]),
-          bottomNavigationBar: BottomNav(onTap: _onNavTap, showAlertBadge: true),
+          bottomNavigationBar: BottomNav(
+            onTap: _onNavTap,
+            showAlertBadge: true,
+          ),
         ),
       ),
     );
