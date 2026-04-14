@@ -33,7 +33,6 @@ class _LiveScreenState extends State<LiveScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // زر Go Live
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(children: [
@@ -46,7 +45,6 @@ class _LiveScreenState extends State<LiveScreen> {
               ])),
           ]),
         ),
-        // CATEGORIES
         SizedBox(height: 40,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
@@ -71,7 +69,6 @@ class _LiveScreenState extends State<LiveScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        // ROOMS GRID
         Expanded(child: GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -132,4 +129,105 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 }
 
-// _LiveRoomScreen تبقى كما هي
+// ===== LIVE ROOM SCREEN =====
+class _LiveRoomScreen extends StatefulWidget {
+  final Map room;
+  const _LiveRoomScreen({required this.room});
+  @override
+  State<_LiveRoomScreen> createState() => _LiveRoomScreenState();
+}
+
+class _LiveRoomScreenState extends State<_LiveRoomScreen> {
+  final _chatCtrl = TextEditingController();
+  bool _isLiked = false;
+  int _likes = 8400;
+  final List<Map<String, dynamic>> _chat = [
+    {'user':'ahmed_99','msg':'This is 🔥🔥🔥','color':AppColors.neonRed},
+    {'user':'sara_x','msg':'Love this content!','color':AppColors.music},
+    {'user':'nora_m','msg':'❤️❤️','color':AppColors.dating},
+    {'user':'user1234','msg':'Been watching for 2 hours 😭','color':AppColors.neonGreen},
+  ];
+
+  @override
+  void dispose() { _chatCtrl.dispose(); super.dispose(); }
+
+  void _sendMsg() {
+    if (_chatCtrl.text.trim().isEmpty) return;
+    setState(() { _chat.add({'user':'me','msg':_chatCtrl.text.trim(),'color':AppColors.white}); _chatCtrl.clear(); });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final room = widget.room;
+    return Scaffold(
+      backgroundColor: room['color'] as Color,
+      body: Stack(children: [
+        Container(decoration: BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [(room['color'] as Color), Colors.black]))),
+        SafeArea(child: Column(children: [
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(children: [
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(6)),
+                child: const Row(children: [Icon(Icons.circle, color: AppColors.white, size: 6), SizedBox(width: 4), Text('LIVE', style: TextStyle(color: AppColors.white, fontSize: 10, fontWeight: FontWeight.bold))])),
+              const SizedBox(width: 8),
+              Row(children: [const Icon(Icons.person, color: AppColors.white, size: 14), const SizedBox(width: 4), Text(Formatters.formatCount(room['viewers'] as int), style: const TextStyle(color: AppColors.white, fontSize: 12, ))]),
+              const Spacer(),
+              GestureDetector(onTap: () => Navigator.pop(context),
+                child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), shape: BoxShape.circle),
+                  child: const Icon(Icons.close, color: AppColors.white, size: 18))),
+            ])),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(children: [
+              CircleAvatar(radius: 20, backgroundColor: AppColors.grey, child: const Icon(Icons.person, color: AppColors.white, size: 22)),
+              const SizedBox(width: 10),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('@${room['host']}', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 14, )),
+                Text(room['title'], style: const TextStyle(color: AppColors.grey2, fontSize: 11, )),
+              ]),
+              const Spacer(),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(border: Border.all(color: AppColors.white, width: 1.5), borderRadius: BorderRadius.circular(20)),
+                child: const Text('Follow', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold, ))),
+            ])),
+          const Spacer(),
+          SizedBox(height: 200,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              itemCount: _chat.length,
+              itemBuilder: (_, i) {
+                final msg = _chat[i];
+                return Padding(padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    Text('@${msg['user']} ', style: TextStyle(color: msg['color'] as Color, fontSize: 12, fontWeight: FontWeight.bold, )),
+                    Flexible(child: Text(msg['msg'], style: const TextStyle(color: AppColors.white, fontSize: 12, ))),
+                  ]));
+              },
+            )),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(children: [
+              Expanded(child: Container(
+                height: 42,
+                decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), borderRadius: BorderRadius.circular(21), border: Border.all(color: AppColors.grey.withOpacity(0.4))),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(controller: _chatCtrl, style: const TextStyle(color: AppColors.white, ),
+                  decoration: const InputDecoration(hintText: 'Say something...', hintStyle: TextStyle(color: AppColors.grey2, ), border: InputBorder.none)),
+              )),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => setState(() { _isLiked = !_isLiked; _likes += _isLiked ? 1 : -1; }),
+                child: Column(children: [
+                  Icon(Icons.favorite, color: _isLiked ? AppColors.neonRed : AppColors.white, size: 28),
+                  Text(Formatters.formatCount(_likes), style: const TextStyle(color: AppColors.white, fontSize: 10, )),
+                ])),
+              const SizedBox(width: 10),
+              GestureDetector(onTap: _sendMsg,
+                child: Container(width: 40, height: 40, decoration: const BoxDecoration(color: AppColors.live, shape: BoxShape.circle),
+                  child: const Icon(Icons.send, color: AppColors.white, size: 18))),
+            ])),
+        ])),
+      ]),
+    );
+  }
+}
