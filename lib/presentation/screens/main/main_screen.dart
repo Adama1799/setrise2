@@ -20,7 +20,6 @@ import 'widgets/top_bar.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/pull_down_panel.dart';
 import 'widgets/create_sheet.dart';
-import 'widgets/profile_menu_sheet.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/filter_state.dart';
 
@@ -33,7 +32,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   
-  int _contentTab = 0;
+  int _contentTab = 0; // 0=SetRize 1=News 2=Shop 3=Date 4=Live 5=Music 6=Map
   bool _panelOpen = false;
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
@@ -189,13 +188,13 @@ class _MainScreenState extends State<MainScreen>
     _safeRun(() async {
       _closePanel();
       
-      // 2: زر الإضافة (+) - لم يتغير
+      // 2: زر الإضافة (+)
       if (i == 2) {
         _showCreateSheet();
         return;
       }
 
-      // 4: Home - يرجع للتبويب الرئيسي أو يفتح البانل
+      // 4: Home
       if (i == 4) {
         if (_contentTab == 0) {
           _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
@@ -207,10 +206,10 @@ class _MainScreenState extends State<MainScreen>
         return;
       }
 
-      // 3: Search - يفتح شاشة البحث
+      // 3: Profile
       if (i == 3) {
         Navigator.of(context, rootNavigator: true).push(
-          CupertinoPageRoute(builder: (_) => const SearchScreen()),
+          CupertinoPageRoute(builder: (_) => const ProfileScreen()),
         );
         return;
       }
@@ -221,7 +220,7 @@ class _MainScreenState extends State<MainScreen>
         const MessagesScreen(),  // index 0
         const AlertsScreen(),    // index 1
         null,                   // index 2 (Create)
-        null,                   // index 3 (Search)
+        null,                   // index 3 (Profile)
         null,                   // index 4 (Home)
       ];
       
@@ -244,31 +243,6 @@ class _MainScreenState extends State<MainScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => const CreateSheet(),
-    );
-  }
-
-  void _showProfileMenuSheet() {
-    _closePanel();
-    HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => ProfileMenuSheet(
-        onViewProfile: () {
-          Navigator.pop(context);
-          Navigator.of(context, rootNavigator: true).push(
-            CupertinoPageRoute(builder: (_) => const ProfileScreen()),
-          );
-        },
-        onFilter: () {
-          Navigator.pop(context);
-          _showFilterSheet();
-        },
-      ),
     );
   }
 
@@ -357,8 +331,14 @@ class _MainScreenState extends State<MainScreen>
               child: TopBar(
                 panelOpen: _panelOpen,
                 onSetRizeTap: _togglePanel,
-                onProfileTap: _showProfileMenuSheet,
+                onMenuTap: _showFilterSheet,
                 activeTabName: _tabLabels[_contentTab],
+                showSearchIcon: _contentTab == 0,
+                onSearchTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                    CupertinoPageRoute(builder: (_) => const SearchScreen()),
+                  );
+                },
               ),
             ),
             Align(
