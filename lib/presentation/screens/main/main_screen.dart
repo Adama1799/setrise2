@@ -193,7 +193,7 @@ class _MainScreenState extends State<MainScreen>
   Widget _getPageByIndex(int index) {
     switch (index) {
       case 0: return const SetScreen();
-      case 1: return const RizeScreen();   // News
+      case 1: return const RizeScreen();
       case 2: return const ShopScreen();
       case 3: return const DatingScreen();
       case 4: return const LiveScreen();
@@ -215,14 +215,12 @@ class _MainScreenState extends State<MainScreen>
       setState(() => _contentTab = index);
     });
   }
-}
 
-  // ✅ تابع _MainScreenState
   void _onNavTap(int i) {
     _safeRun(() async {
       _closePanel();
       
-      if (i == 2) { // زر الإضافة (+)
+      if (i == 2) { // Create (+)
         _showCreateSheet();
         return;
       }
@@ -251,8 +249,8 @@ class _MainScreenState extends State<MainScreen>
         null, // Home
         null, // Search
         null, // Create
-        const AlertsScreen(),    // index 3
-        const MessagesScreen(),  // index 4
+        const AlertsScreen(),
+        const MessagesScreen(),
       ];
       final s = i < screens.length ? screens[i] : null;
       if (s != null) {
