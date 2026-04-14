@@ -23,15 +23,15 @@ class BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // 0: Messages (كان Home)
+              // 0: Messages
               _navItem(0, Icons.chat_bubble_rounded, 'Messages'),
-              // 1: Notifications (كان Search)
+              // 1: Notifications
               _navItem(1, Icons.notifications_rounded, 'Notifications', showBadge: showAlertBadge),
               // 2: Create (+)
               _createButton(),
-              // 3: Search (كان Notifications)
-              _navItem(3, Icons.search_rounded, 'Search'),
-              // 4: Home (كان Messages)
+              // 3: Profile
+              _navItem(3, Icons.person_rounded, 'Profile'),
+              // 4: Home
               _navItem(4, Icons.home_rounded, 'Home'),
             ],
           ),
@@ -109,5 +109,7 @@ class BottomNav extends StatelessWidget {
         ),
       ),
     );
+  }
+}    );
   }
 }
