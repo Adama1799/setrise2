@@ -5,15 +5,19 @@ import 'package:flutter/material.dart';
 class TopBar extends StatelessWidget {
   final bool panelOpen;
   final VoidCallback onSetRizeTap;
-  final VoidCallback onProfileTap;
+  final VoidCallback onMenuTap;
   final String activeTabName;
+  final bool showSearchIcon;
+  final VoidCallback? onSearchTap;
 
   const TopBar({
     super.key,
     required this.panelOpen,
     required this.onSetRizeTap,
-    required this.onProfileTap,
+    required this.onMenuTap,
     required this.activeTabName,
+    this.showSearchIcon = false,
+    this.onSearchTap,
   });
 
   @override
@@ -26,19 +30,13 @@ class TopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
         children: [
+          // أقصى اليسار: ☰ (يفتح الفلترة)
           GestureDetector(
-            onTap: onProfileTap,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 20),
-            ),
+            onTap: onMenuTap,
+            child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 8),
+          // SetRize + سهم
           AnimatedScale(
             scale: panelOpen ? 0.95 : 1.0,
             duration: const Duration(milliseconds: 260),
@@ -65,6 +63,12 @@ class TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          // أيقونة البحث تظهر فقط في تبويب SetRize
+          if (showSearchIcon && onSearchTap != null)
+            GestureDetector(
+              onTap: onSearchTap,
+              child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
+            ),
         ],
       ),
     );
