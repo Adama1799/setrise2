@@ -41,7 +41,6 @@ class _ShopScreenState extends State<ShopScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // شريط البحث (محلي، لا يحتوي على SetRize)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(children: [
@@ -65,7 +64,6 @@ class _ShopScreenState extends State<ShopScreen> with SingleTickerProviderStateM
             ]),
           ]),
         ),
-        // TABS
         TabBar(
           controller: _tabCtrl,
           indicatorColor: AppColors.shop,
@@ -75,7 +73,6 @@ class _ShopScreenState extends State<ShopScreen> with SingleTickerProviderStateM
           tabs: const [Tab(text: 'For You'), Tab(text: 'Following')],
         ),
         const SizedBox(height: 8),
-        // CATEGORIES
         SizedBox(
           height: 40,
           child: ListView.builder(
@@ -102,7 +99,6 @@ class _ShopScreenState extends State<ShopScreen> with SingleTickerProviderStateM
           ),
         ),
         const SizedBox(height: 10),
-        // PRODUCTS
         Expanded(child: GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -170,4 +166,140 @@ class _ShopScreenState extends State<ShopScreen> with SingleTickerProviderStateM
   }
 }
 
-// _ProductPage تبقى كما هي بدون تغيير
+// ===== PRODUCT DETAIL PAGE =====
+class _ProductPage extends StatefulWidget {
+  final Map product;
+  final int idx;
+  final bool inCart;
+  final VoidCallback onCart;
+  const _ProductPage({required this.product, required this.idx, required this.inCart, required this.onCart});
+  @override
+  State<_ProductPage> createState() => _ProductPageState();
+}
+
+class _ProductPageState extends State<_ProductPage> {
+  int _qty = 1;
+  bool _inCart = false;
+
+  @override
+  void initState() { super.initState(); _inCart = widget.inCart; }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.product;
+    final hasDiscount = p['oldPrice'] != null;
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(slivers: [
+        SliverAppBar(
+          backgroundColor: AppColors.background,
+          leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.white, size: 20), onPressed: () => Navigator.pop(context)),
+          actions: [
+            IconButton(icon: const Icon(Icons.share_outlined, color: AppColors.white), onPressed: () {}),
+            Stack(children: [
+              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.white), onPressed: () {}),
+              if (_inCart) Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.shop, shape: BoxShape.circle))),
+            ]),
+          ],
+          expandedHeight: 320,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              color: p['color'] as Color,
+              child: Center(child: Icon(Icons.inventory_2_outlined, color: AppColors.white.withOpacity(0.2), size: 120)),
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (p['isHot'] as bool) ...[
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.neonRed, borderRadius: BorderRadius.circular(6)),
+                child: const Text('🔥 HOT DEAL', style: TextStyle(color: AppColors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+              const SizedBox(height: 8),
+            ],
+            Text(p['name'], style: const TextStyle(color: AppColors.white, fontSize: 22, fontWeight: FontWeight.bold, )),
+            Text(p['brand'], style: const TextStyle(color: AppColors.grey2, fontSize: 14, )),
+            const SizedBox(height: 12),
+            Row(children: [
+              ...List.generate(5, (i) => Icon(Icons.star, color: i < (p['rating'] as double).floor() ? AppColors.neonYellow : AppColors.grey, size: 18)),
+              const SizedBox(width: 8),
+              Text('${p['rating']} · ${Formatters.formatCount(p['sold'] as int)} sold', style: const TextStyle(color: AppColors.grey2, fontSize: 13, )),
+            ]),
+            const SizedBox(height: 16),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('\$${p['price']}', style: const TextStyle(color: AppColors.shop, fontSize: 30, fontWeight: FontWeight.bold, )),
+              if (hasDiscount) ...[
+                const SizedBox(width: 12),
+                Text('\$${p['oldPrice']}', style: const TextStyle(color: AppColors.grey2, fontSize: 18, decoration: TextDecoration.lineThrough)),
+                const SizedBox(width: 8),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: AppColors.neonRed.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                  child: Text(
+                    'Save ${(((p['oldPrice'] as double) - (p['price'] as double))).toStringAsFixed(0)}\$',
+                    style: const TextStyle(color: AppColors.neonRed, fontSize: 12, fontWeight: FontWeight.bold))),
+              ],
+            ]),
+            const SizedBox(height: 16),
+            Row(children: [
+              const Text('Quantity:', style: TextStyle(color: AppColors.white, fontSize: 14, )),
+              const SizedBox(width: 12),
+              Row(children: [
+                GestureDetector(onTap: () { if (_qty > 1) setState(() => _qty--); },
+                  child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.remove, color: AppColors.white, size: 18))),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('$_qty', style: const TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold, ))),
+                GestureDetector(onTap: () => setState(() => _qty++),
+                  child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.add, color: AppColors.white, size: 18))),
+              ]),
+            ]),
+            const SizedBox(height: 20),
+            Container(padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: AppColors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.grey.withOpacity(0.4))),
+              child: Row(children: [
+                CircleAvatar(radius: 22, backgroundColor: p['color'] as Color, child: const Icon(Icons.store, color: AppColors.white, size: 22)),
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p['brand'], style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 14, )),
+                  const Text('Official Store · ⭐ 4.9', style: TextStyle(color: AppColors.grey2, fontSize: 12, )),
+                ]),
+                const Spacer(),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(border: Border.all(color: AppColors.shop), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('Visit', style: TextStyle(color: AppColors.shop, fontSize: 12, ))),
+              ]),
+            ),
+            const SizedBox(height: 16),
+            const Text('Description', style: TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold, )),
+            const SizedBox(height: 8),
+            Text('High-quality ${p['name']} from ${p['brand']}. Rated ${p['rating']}/5 by ${Formatters.formatCount(p['sold'] as int)} customers. Free shipping on orders over \$50.',
+              style: const TextStyle(color: AppColors.grey2, fontSize: 14, height: 1.5, )),
+            const SizedBox(height: 100),
+          ]),
+        )),
+      ]),
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12, left: 16, right: 16),
+        decoration: BoxDecoration(color: AppColors.background, border: Border(top: BorderSide(color: AppColors.grey.withOpacity(0.4)))),
+        child: Row(children: [
+          GestureDetector(
+            onTap: () { setState(() => _inCart = !_inCart); widget.onCart(); },
+            child: Container(
+              height: 52, width: 100,
+              decoration: BoxDecoration(border: Border.all(color: AppColors.shop, width: 1.5), borderRadius: BorderRadius.circular(14)),
+              child: Center(child: Text(_inCart ? '✓ Cart' : 'Add Cart',
+                style: TextStyle(color: _inCart ? AppColors.shop : AppColors.white, fontSize: 13, fontWeight: FontWeight.bold, ))),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Container(height: 52,
+            decoration: BoxDecoration(color: AppColors.shop, borderRadius: BorderRadius.circular(14)),
+            child: Center(child: Text('Buy Now · \$${((p['price'] as double) * _qty).toStringAsFixed(2)}',
+              style: const TextStyle(color: AppColors.black, fontSize: 15, fontWeight: FontWeight.bold, ))))),
+        ]),
+      ),
+    );
+  }
+}
