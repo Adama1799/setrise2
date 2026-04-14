@@ -23,11 +23,16 @@ class BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, Icons.home_rounded, 'Home'),
-              _navItem(1, Icons.search_rounded, 'Search'),
+              // 0: Messages (كان Home)
+              _navItem(0, Icons.chat_bubble_rounded, 'Messages'),
+              // 1: Notifications (كان Search)
+              _navItem(1, Icons.notifications_rounded, 'Notifications', showBadge: showAlertBadge),
+              // 2: Create (+)
               _createButton(),
-              _navItem(3, Icons.notifications_rounded, 'Notifications', showBadge: showAlertBadge),
-              _navItem(4, Icons.chat_bubble_rounded, 'Messages'),
+              // 3: Search (كان Notifications)
+              _navItem(3, Icons.search_rounded, 'Search'),
+              // 4: Home (كان Messages)
+              _navItem(4, Icons.home_rounded, 'Home'),
             ],
           ),
         ),
