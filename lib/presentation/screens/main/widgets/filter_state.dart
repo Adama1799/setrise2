@@ -1,7 +1,5 @@
 // lib/presentation/screens/main/widgets/filter_state.dart
 
-import 'package:flutter/material.dart';
-
 const Map<String, List<String>> kRegions = {
   '🔥 Trending': ['🇩🇿 Algeria','🇺🇸 USA','🇧🇷 Brazil','🇯🇵 Japan','🇫🇷 France','🇸🇦 Saudi Arabia'],
   '🌍 Africa': ['🇩🇿 Algeria','🇹🇳 Tunisia','🇪🇬 Egypt','🇲🇦 Morocco','🇳🇬 Nigeria','🇰🇪 Kenya','🇿🇦 South Africa','🇬🇭 Ghana','🇸🇳 Senegal','🇪🇹 Ethiopia','🇹🇿 Tanzania','🇺🇬 Uganda','🇨🇲 Cameroon','🇨🇮 Ivory Coast','🇱🇾 Libya','🇸🇩 Sudan','🇲🇿 Mozambique','🇦🇴 Angola'],
