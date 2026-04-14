@@ -12,7 +12,7 @@ import '../shop/shop_screen.dart';
 import '../dating/dating_screen.dart';
 import '../live/live_screen.dart';
 import '../music/music_screen.dart';
-import '../map/map_screen.dart';            // ✅ استيراد شاشة الخريطة
+import '../map/map_screen.dart';
 import '../profile/profile_screen.dart';
 import '../messages/messages_screen.dart';
 import '../search/search_screen.dart';
@@ -25,7 +25,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-// ===== بيانات الفلترة (من النموذج الأولي) =====
+// ===== بيانات الفلترة =====
 const Map<String, List<String>> kRegions = {
   '🔥 Trending': ['🇩🇿 Algeria','🇺🇸 USA','🇧🇷 Brazil','🇯🇵 Japan','🇫🇷 France','🇸🇦 Saudi Arabia'],
   '🌍 Africa': ['🇩🇿 Algeria','🇹🇳 Tunisia','🇪🇬 Egypt','🇲🇦 Morocco','🇳🇬 Nigeria','🇰🇪 Kenya','🇿🇦 South Africa','🇬🇭 Ghana','🇸🇳 Senegal','🇪🇹 Ethiopia','🇹🇿 Tanzania','🇺🇬 Uganda','🇨🇲 Cameroon','🇨🇮 Ivory Coast','🇱🇾 Libya','🇸🇩 Sudan','🇲🇿 Mozambique','🇦🇴 Angola'],
@@ -47,7 +47,7 @@ class FilterState {
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   
-  int _contentTab = 0; // 0=Set 1=Rize 2=Shop 3=Date 4=Live 5=Music 6=Map
+  int _contentTab = 0; // 0=SetRize 1=News 2=Shop 3=Date 4=Live 5=Music 6=Map
   bool _panelOpen = false;
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
@@ -60,8 +60,7 @@ class _MainScreenState extends State<MainScreen>
   late PageController _pageController;
   Brightness _statusBarBrightness = Brightness.light;
   
-  static final List<String> _recentSearches = ['Flutter UI', 'iOS Animations', 'Dark Mode'];
-  static const _tabLabels = ['Set', 'Rize', 'Shop', 'Date', 'Live', 'Music', 'Map']; // ✅ تمت إضافة Map
+  static const _tabLabels = ['SetRize', 'News', 'Shop', 'Date', 'Live', 'Music', 'Map'];
 
   @override
   void initState() {
@@ -171,7 +170,7 @@ class _MainScreenState extends State<MainScreen>
         }
         _closePanel();
       },
-      itemCount: 7, // ✅ تم التحديث إلى 7 تبويبات
+      itemCount: 7,
       itemBuilder: (context, index) {
         return AnimatedBuilder(
           animation: _pageController,
@@ -194,12 +193,12 @@ class _MainScreenState extends State<MainScreen>
   Widget _getPageByIndex(int index) {
     switch (index) {
       case 0: return const SetScreen();
-      case 1: return const RizeScreen();
+      case 1: return const RizeScreen();   // News
       case 2: return const ShopScreen();
       case 3: return const DatingScreen();
       case 4: return const LiveScreen();
       case 5: return const MusicScreen();
-      case 6: return const MapScreen(); // ✅ تبويب الخريطة الجديد
+      case 6: return const MapScreen();
       default: return const SetScreen();
     }
   }
@@ -216,17 +215,19 @@ class _MainScreenState extends State<MainScreen>
       setState(() => _contentTab = index);
     });
   }
+}
 
+  // ✅ تابع _MainScreenState
   void _onNavTap(int i) {
     _safeRun(() async {
       _closePanel();
       
-      if (i == 2) {
+      if (i == 2) { // زر الإضافة (+)
         _showCreateSheet();
         return;
       }
 
-      if (i == 4) {
+      if (i == 0) { // Home
         if (_contentTab == 0) {
           _togglePanel();
         } else {
@@ -236,20 +237,28 @@ class _MainScreenState extends State<MainScreen>
         return;
       }
 
+      if (i == 1) { // Search
+        Navigator.push(
+          context,
+          CupertinoPageRoute(builder: (_) => const SearchScreen()),
+        );
+        return;
+      }
+
+      // i == 3 -> Notifications (Alerts)
+      // i == 4 -> Messages
       final screens = [
-        const ProfileScreen(),
-        const MessagesScreen(),
-        null,
-        const AlertsScreen(),
+        null, // Home
+        null, // Search
+        null, // Create
+        const AlertsScreen(),    // index 3
+        const MessagesScreen(),  // index 4
       ];
       final s = i < screens.length ? screens[i] : null;
       if (s != null) {
         Navigator.push(
           context,
-          CupertinoPageRoute(
-            builder: (_) => s,
-            title: '',
-          ),
+          CupertinoPageRoute(builder: (_) => s),
         );
       }
     });
@@ -268,9 +277,33 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  void _showMenuSheet() {
+  void _showProfileMenuSheet() {
     _closePanel();
     HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _ProfileMenuSheet(
+        onViewProfile: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            CupertinoPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        },
+        onFilter: () {
+          Navigator.pop(context);
+          _showFilterSheet();
+        },
+      ),
+    );
+  }
+
+  void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -359,12 +392,7 @@ class _MainScreenState extends State<MainScreen>
               child: _TopBar(
                 panelOpen: _panelOpen,
                 onSetRizeTap: _togglePanel,
-                onMenuTap: _showMenuSheet,
-                onSearchTap: () => Navigator.push(
-                  context,
-                  CupertinoPageRoute(builder: (_) => const SearchScreen()),
-                ),
-                recentSearches: _recentSearches,
+                onProfileTap: _showProfileMenuSheet,
               ),
             ),
   
@@ -399,21 +427,17 @@ class _MainScreenState extends State<MainScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOP BAR — ☰ SetRize ˅  (يسار) | 🔍 (يمين)
+// TOP BAR — 🧑 SetRize ˅  |  (يمين فارغ)
 // ══════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final bool panelOpen;
   final VoidCallback onSetRizeTap;
-  final VoidCallback onMenuTap;
-  final VoidCallback onSearchTap;
-  final List<String> recentSearches;
+  final VoidCallback onProfileTap;
 
   const _TopBar({
     required this.panelOpen,
     required this.onSetRizeTap,
-    required this.onMenuTap,
-    required this.onSearchTap,
-    required this.recentSearches,
+    required this.onProfileTap,
   });
 
   @override
@@ -422,11 +446,21 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
         children: [
+          // أقصى اليسار: دائرة بروفايل
           GestureDetector(
-            onTap: onMenuTap,
-            child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+            onTap: onProfileTap,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 20),
+            ),
           ),
           const SizedBox(width: 8),
+          // SetRize + سهم
           AnimatedScale(
             scale: panelOpen ? 0.95 : 1.0,
             duration: const Duration(milliseconds: 260),
@@ -453,71 +487,10 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: onSearchTap,
-            onLongPress: () {
-              HapticFeedback.heavyImpact();
-              _showRecentSearchesMenu(context);
-            },
-            child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
-          ),
+          // أقصى اليمين: فارغ تماماً
         ],
       ),
     );
-  }
-
-  void _showRecentSearchesMenu(BuildContext context) {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromLTWH(overlay.size.width - 120, 60, 0, 0),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu<String>(
-      context: context,
-      position: position,
-      color: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      items: [
-        for (final search in recentSearches)
-          PopupMenuItem<String>(
-            value: search,
-            child: Row(
-              children: [
-                const Icon(Icons.history, size: 18, color: Colors.white54),
-                const SizedBox(width: 12),
-                Text(search, style: const TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: 'clear',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-              SizedBox(width: 12),
-              Text('مسح السجل', style: TextStyle(color: Colors.redAccent)),
-            ],
-          ),
-        ),
-      ],
-    ).then((value) {
-      if (value == 'clear') {
-        HapticFeedback.lightImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم مسح سجل البحث'), duration: Duration(seconds: 1)),
-        );
-      } else if (value != null) {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const SearchScreen(),
-            settings: RouteSettings(arguments: value),
-          ),
-        );
-      }
-    });
   }
 }
 
@@ -606,7 +579,7 @@ class _PullDownPanel extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTTOM NAV
+// BOTTOM NAV — Home | Search | + | Notifications | Messages
 // ══════════════════════════════════════════════════════════════════════════════
 class _BottomNav extends StatelessWidget {
   final Function(int) onTap;
@@ -628,11 +601,11 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, Icons.person_rounded, 'Profile'),
-              _navItem(1, Icons.chat_bubble_rounded, 'Messages'),
+              _navItem(0, Icons.home_rounded, 'Home'),
+              _navItem(1, Icons.search_rounded, 'Search'),
               _createButton(),
-              _navItem(3, Icons.notifications_rounded, 'Alerts', showBadge: showAlertBadge),
-              _navItem(4, Icons.home_rounded, 'Home'),
+              _navItem(3, Icons.notifications_rounded, 'Notifications', showBadge: showAlertBadge),
+              _navItem(4, Icons.chat_bubble_rounded, 'Messages'),
             ],
           ),
         ),
@@ -773,6 +746,69 @@ class _CreateSheet extends StatelessWidget {
           const Spacer(),
           Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 20),
         ]),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROFILE MENU SHEET (بروفايل + فلترة)
+// ══════════════════════════════════════════════════════════════════════════════
+class _ProfileMenuSheet extends StatelessWidget {
+  final VoidCallback onViewProfile;
+  final VoidCallback onFilter;
+
+  const _ProfileMenuSheet({
+    required this.onViewProfile,
+    required this.onFilter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ListTile(
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.electricBlue.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person, color: AppColors.electricBlue, size: 28),
+            ),
+            title: const Text('View Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('See your posts and activity'),
+            onTap: onViewProfile,
+          ),
+          const Divider(height: 32),
+          ListTile(
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.neonGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.filter_list, color: AppColors.neonGreen, size: 28),
+            ),
+            title: const Text('Content Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Filter by mood, region, and more'),
+            onTap: onFilter,
+          ),
+        ],
       ),
     );
   }
