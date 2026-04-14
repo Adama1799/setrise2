@@ -189,12 +189,14 @@ class _MainScreenState extends State<MainScreen>
     _safeRun(() async {
       _closePanel();
       
+      // 2: زر الإضافة (+) - لم يتغير
       if (i == 2) {
         _showCreateSheet();
         return;
       }
 
-      if (i == 0) {
+      // 4: Home - يرجع للتبويب الرئيسي أو يفتح البانل
+      if (i == 4) {
         if (_contentTab == 0) {
           _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
           _togglePanel();
@@ -205,14 +207,24 @@ class _MainScreenState extends State<MainScreen>
         return;
       }
 
-      if (i == 1) {
+      // 3: Search - يفتح شاشة البحث
+      if (i == 3) {
         Navigator.of(context, rootNavigator: true).push(
           CupertinoPageRoute(builder: (_) => const SearchScreen()),
         );
         return;
       }
 
-      final screens = [null, null, null, const AlertsScreen(), const MessagesScreen()];
+      // 0: Messages
+      // 1: Notifications (Alerts)
+      final screens = [
+        const MessagesScreen(),  // index 0
+        const AlertsScreen(),    // index 1
+        null,                   // index 2 (Create)
+        null,                   // index 3 (Search)
+        null,                   // index 4 (Home)
+      ];
+      
       final s = i < screens.length ? screens[i] : null;
       if (s != null) {
         Navigator.of(context, rootNavigator: true).push(
