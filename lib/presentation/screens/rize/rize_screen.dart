@@ -117,6 +117,7 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
   final List<RizePostModel> _posts = RizePostModel.getMockPosts();
   final _scrollCtrl = ScrollController();
   final ValueNotifier<bool> _fabVisible = ValueNotifier<bool>(true);
+  double _lastScrollOffset = 0.0;
 
   @override
   void initState() {
@@ -126,11 +127,15 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.userScrollDirection == ScrollDirection.reverse) {
+    final offset = _scrollCtrl.offset;
+    if (offset > _lastScrollOffset && offset > 50) {
+      // Scrolling down
       _fabVisible.value = false;
     } else {
+      // Scrolling up
       _fabVisible.value = true;
     }
+    _lastScrollOffset = offset;
   }
 
   @override
@@ -746,6 +751,13 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 نهاية الجزء الأول 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 بداية الجزء الثاني 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Comments Sheet ────────────────────────────────────────────────────────
 class _CommentsSheet extends StatefulWidget {
