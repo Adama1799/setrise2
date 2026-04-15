@@ -6,40 +6,83 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/rize_model.dart';
+import 'widgets/media_fullscreen.dart';
 
-// Mock comment model
+// ─── نموذج التعليق (محسّن) ─────────────────────────────────────────────────
 class RizeCommentModel {
   final String id;
+  final String userId;
   final String username;
   final String name;
   final String text;
   int likes;
   bool isLiked;
   final DateTime createdAt;
+  final List<RizeCommentModel> replies; // دعم الردود المتداخلة
 
   RizeCommentModel({
     required this.id,
+    required this.userId,
     required this.username,
     required this.name,
     required this.text,
     required this.likes,
     required this.isLiked,
     required this.createdAt,
+    this.replies = const [],
   });
+
+  RizeCommentModel copyWith({
+    String? id,
+    String? userId,
+    String? username,
+    String? name,
+    String? text,
+    int? likes,
+    bool? isLiked,
+    DateTime? createdAt,
+    List<RizeCommentModel>? replies,
+  }) {
+    return RizeCommentModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      name: name ?? this.name,
+      text: text ?? this.text,
+      likes: likes ?? this.likes,
+      isLiked: isLiked ?? this.isLiked,
+      createdAt: createdAt ?? this.createdAt,
+      replies: replies ?? this.replies,
+    );
+  }
 
   static List<RizeCommentModel> getMockComments() {
     return [
       RizeCommentModel(
         id: '1',
+        userId: 'user1',
         username: '@ahmed_codes',
         name: 'Ahmed',
         text: 'This is exactly what I was looking for! Great breakdown.',
         likes: 24,
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        replies: [
+          RizeCommentModel(
+            id: '1-1',
+            userId: 'user2',
+            username: '@flutter_dev',
+            name: 'Flutter Dev',
+            text: 'Totally agree! The new features are 🔥',
+            likes: 8,
+            isLiked: true,
+            createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+          ),
+        ],
       ),
       RizeCommentModel(
         id: '2',
+        userId: 'user2',
         username: '@flutter_dev',
         name: 'Flutter Dev',
         text: 'Thanks for sharing this insight. Very helpful for beginners.',
@@ -49,15 +92,29 @@ class RizeCommentModel {
       ),
       RizeCommentModel(
         id: '3',
+        userId: 'user3',
         username: '@ui_designer',
         name: 'Sarah',
         text: 'The design patterns you mentioned are spot on.',
         likes: 8,
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        replies: [
+          RizeCommentModel(
+            id: '3-1',
+            userId: 'user1',
+            username: '@ahmed_codes',
+            name: 'Ahmed',
+            text: 'Glad you liked it!',
+            likes: 2,
+            isLiked: false,
+            createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
+          ),
+        ],
       ),
       RizeCommentModel(
         id: '4',
+        userId: 'user4',
         username: '@meta_fan',
         name: 'Khalid',
         text: 'Feels like Threads indeed! Love the clean UI.',
@@ -65,46 +122,11 @@ class RizeCommentModel {
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
-      RizeCommentModel(
-        id: '5',
-        username: '@mobile_guru',
-        name: 'Fatima',
-        text: 'Smooth animations make such a difference. Great work!',
-        likes: 31,
-        isLiked: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-      RizeCommentModel(
-        id: '6',
-        username: '@dart_lover',
-        name: 'Omar',
-        text: 'The state management here is clean and efficient.',
-        likes: 7,
-        isLiked: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      RizeCommentModel(
-        id: '7',
-        username: '@social_app',
-        name: 'Layla',
-        text: 'This could easily become my go-to social app.',
-        likes: 19,
-        isLiked: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-      ),
-      RizeCommentModel(
-        id: '8',
-        username: '@threads_clone',
-        name: 'Ali',
-        text: 'Perfect clone! The attention to detail is impressive.',
-        likes: 42,
-        isLiked: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-      ),
     ];
   }
 }
 
+// ─── RizeScreen الرئيسية ────────────────────────────────────────────────────
 class RizeScreen extends StatefulWidget {
   const RizeScreen({super.key});
 
@@ -112,11 +134,12 @@ class RizeScreen extends StatefulWidget {
   State<RizeScreen> createState() => _RizeScreenState();
 }
 
-class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateMixin {
+class _RizeScreenState extends State<RizeScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   final List<RizePostModel> _posts = RizePostModel.getMockPosts();
-  final _scrollCtrl = ScrollController();
-  final ValueNotifier<bool> _fabVisible = ValueNotifier<bool>(true);
+  final ScrollController _scrollCtrl = ScrollController();
+  final ValueNotifier<bool> _showTopBar = ValueNotifier<bool>(true);
   double _lastScrollOffset = 0.0;
 
   @override
@@ -128,12 +151,11 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
 
   void _onScroll() {
     final offset = _scrollCtrl.offset;
-    if (offset > _lastScrollOffset && offset > 50) {
-      // Scrolling down
-      _fabVisible.value = false;
+    // إخفاء الشريط العلوي عند التمرير للأسفل بمسافة كافية
+    if (offset > _lastScrollOffset && offset > 80) {
+      _showTopBar.value = false;
     } else {
-      // Scrolling up
-      _fabVisible.value = true;
+      _showTopBar.value = true;
     }
     _lastScrollOffset = offset;
   }
@@ -142,7 +164,7 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabCtrl.dispose();
     _scrollCtrl.dispose();
-    _fabVisible.dispose();
+    _showTopBar.dispose();
     super.dispose();
   }
 
@@ -153,92 +175,88 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false, // handled by MainScreen
+      onWillPop: () async => false,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white, // خلفية بيضاء
         body: SafeArea(
           child: Column(
             children: [
-              // Top bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: Row(
-                  children: [
-                    Text(
-                      'Rize',
-                      style: AppTextStyles.h4.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.search_rounded,
-                      color: AppColors.grey2,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 16),
-                    const Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.grey2,
-                      size: 22,
-                    ),
-                  ],
+              // شريط علوي متحرك
+              ValueListenableBuilder<bool>(
+                valueListenable: _showTopBar,
+                builder: (context, visible, _) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  height: visible ? 56 : 0,
+                  child: visible
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Rize',
+                                style: AppTextStyles.h4.copyWith(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(
+                                Icons.search_rounded,
+                                color: Colors.black54,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 16),
+                              const Icon(
+                                Icons.notifications_none_rounded,
+                                color: Colors.black54,
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ),
-              // Tabs
+              // تبويبات For You / Following
               TabBar(
                 controller: _tabCtrl,
-                indicatorColor: AppColors.white,
+                indicatorColor: Colors.black87,
                 indicatorWeight: 2,
-                labelColor: AppColors.white,
-                unselectedLabelColor: AppColors.grey2,
+                labelColor: Colors.black87,
+                unselectedLabelColor: Colors.black45,
                 labelStyle: AppTextStyles.labelLarge.copyWith(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
                 tabs: const [
                   Tab(text: 'For You'),
                   Tab(text: 'Following'),
                 ],
               ),
-              // Feed
+              // المحتوى الرئيسي
               Expanded(
                 child: TabBarView(
                   controller: _tabCtrl,
                   children: [
-                    _RizeFeed(posts: _posts, onUpdate: _updatePost),
-                    _RizeFeed(posts: _posts.reversed.toList(), onUpdate: (i, p) {}),
+                    _RizeFeed(
+                      posts: _posts,
+                      onUpdate: _updatePost,
+                      scrollController: _scrollCtrl,
+                    ),
+                    _RizeFeed(
+                      posts: _posts.reversed.toList(),
+                      onUpdate: (i, p) {},
+                      scrollController: ScrollController(),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
         ),
-        floatingActionButton: ValueListenableBuilder<bool>(
-          valueListenable: _fabVisible,
-          builder: (context, visible, _) => AnimatedOpacity(
-            opacity: visible ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: AnimatedScale(
-              scale: visible ? 1.0 : 0.8,
-              duration: const Duration(milliseconds: 200),
-              child: FloatingActionButton.extended(
-                onPressed: () => _showCreateSheet(context),
-                backgroundColor: AppColors.electricBlue,
-                icon: const Icon(
-                  Icons.add_rounded,
-                  color: AppColors.white,
-                ),
-                label: Text(
-                  'Rize',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showCreateSheet(context),
+          backgroundColor: AppColors.electricBlue,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
         ),
       ),
     );
@@ -248,7 +266,7 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -257,19 +275,23 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
   }
 }
 
-// ─── Rize Feed ────────────────────────────────────────────────────────────────
+// ─── RizeFeed (قائمة المنشورات) ─────────────────────────────────────────────
 class _RizeFeed extends StatefulWidget {
   final List<RizePostModel> posts;
   final Function(int, RizePostModel) onUpdate;
+  final ScrollController scrollController;
 
-  const _RizeFeed({required this.posts, required this.onUpdate});
+  const _RizeFeed({
+    required this.posts,
+    required this.onUpdate,
+    required this.scrollController,
+  });
 
   @override
   State<_RizeFeed> createState() => _RizeFeedState();
 }
 
 class _RizeFeedState extends State<_RizeFeed> {
-  final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   late List<RizePostModel> _localPosts;
 
@@ -277,12 +299,6 @@ class _RizeFeedState extends State<_RizeFeed> {
   void initState() {
     super.initState();
     _localPosts = List.from(widget.posts);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _loadMore() async {
@@ -308,9 +324,7 @@ class _RizeFeedState extends State<_RizeFeed> {
     return RefreshIndicator(
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
-        setState(() {
-          _localPosts = List.from(widget.posts);
-        });
+        setState(() => _localPosts = List.from(widget.posts));
       },
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
@@ -322,13 +336,10 @@ class _RizeFeedState extends State<_RizeFeed> {
           return false;
         },
         child: ListView.separated(
-          controller: _scrollController,
+          controller: widget.scrollController,
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: _localPosts.length + (_isLoading ? 1 : 0),
-          separatorBuilder: (_, __) => Divider(
-            color: AppColors.grey.withOpacity(0.15),
-            height: 1,
-          ),
+          separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
           itemBuilder: (ctx, i) {
             if (i >= _localPosts.length) {
               return const Padding(
@@ -339,15 +350,6 @@ class _RizeFeedState extends State<_RizeFeed> {
             return _RizeCard(
               post: _localPosts[i],
               onUpdate: (p) => _updateLocalPost(i, p),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => _RizeDetailScreen(
-                    post: _localPosts[i],
-                    onUpdate: (updated) => _updateLocalPost(i, updated),
-                  ),
-                ),
-              ),
             );
           },
         ),
@@ -356,16 +358,21 @@ class _RizeFeedState extends State<_RizeFeed> {
   }
 }
 
-// ─── Rize Card (Threads style) ─────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 نهاية الجزء الأول (تابع الجزء الثاني) 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 بداية الجزء الثاني 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── RizeCard (بطاقة المنشور) ────────────────────────────────────────────────
 class _RizeCard extends StatefulWidget {
   final RizePostModel post;
   final Function(RizePostModel) onUpdate;
-  final VoidCallback onTap;
 
   const _RizeCard({
     required this.post,
     required this.onUpdate,
-    required this.onTap,
   });
 
   @override
@@ -373,252 +380,331 @@ class _RizeCard extends StatefulWidget {
 }
 
 class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _likeAnimCtrl;
+  late Animation<double> _likeScaleAnim;
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _likeAnimCtrl = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    _likeScaleAnim = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _likeAnimCtrl, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _likeAnimCtrl.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.grey,
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: AppColors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.post.name,
-                        style: AppTextStyles.labelLarge.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${widget.post.username} · ${Formatters.timeAgo(widget.post.createdAt)}',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.grey2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showPostMenu(context),
-                  child: const Icon(
-                    Icons.more_horiz_rounded,
-                    color: AppColors.grey2,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Title
-            Text(
-              widget.post.title,
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Body
-            Text(
-              widget.post.body,
-              style: AppTextStyles.body2.copyWith(
-                color: Colors.white70,
-                height: 1.45,
-              ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // Media
-            if (widget.post.hasMedia) ...[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: double.infinity,
-                  height: (MediaQuery.of(context).size.width - 32) * 0.8,
-                  constraints: const BoxConstraints(maxHeight: 350),
-                  color: AppColors.grey,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const Icon(
-                        Icons.play_circle_outline_rounded,
-                        color: Colors.white24,
-                        size: 64,
-                      ),
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            '0:24',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            // Actions
-            Row(
-              children: [
-                _likeBtn(),
-                const SizedBox(width: 16),
-                _actionBtn(
-                  Icons.chat_bubble_outline_rounded,
-                  Formatters.formatCount(widget.post.comments),
-                  AppColors.grey2,
-                  () => _showCommentsSheet(context),
-                ),
-                const SizedBox(width: 16),
-                _actionBtn(
-                  Icons.repeat_rounded,
-                  Formatters.formatCount(widget.post.shares),
-                  AppColors.grey2,
-                  () => _showRepostSheet(context),
-                ),
-                const Spacer(),
-                _actionBtn(
-                  widget.post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                  '',
-                  widget.post.isBookmarked ? AppColors.white : AppColors.grey2,
-                  () => widget.onUpdate(widget.post.copyWith(
-                    isBookmarked: !widget.post.isBookmarked,
-                  )),
-                ),
-              ],
-            ),
-          ],
+  void _openMediaFullScreen(BuildContext context, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MediaFullScreen(
+          mediaUrls: widget.post.mediaUrls,
+          initialIndex: initialIndex,
+          heroTag: 'media_${widget.post.id}_$initialIndex',
         ),
       ),
     );
   }
 
-  Widget _likeBtn() {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return GestureDetector(
-          onTapDown: (_) => _animationController.forward(),
-          onTapUp: (_) => _animationController.reverse(),
-          onTapCancel: () => _animationController.reverse(),
-          onTap: () {
-            widget.onUpdate(widget.post.copyWith(
-              isUpvoted: !widget.post.isUpvoted,
-              upvotes: widget.post.isUpvoted ? widget.post.upvotes - 1 : widget.post.upvotes + 1,
-            ));
-          },
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: AppTextStyles.labelSmall.copyWith(
-                color: widget.post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
-                fontWeight: FontWeight.w600,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    widget.post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: widget.post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 4),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Text(
-                      Formatters.formatCount(widget.post.upvotes),
-                      key: ValueKey<int>(widget.post.upvotes),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+  void _navigateToProfile(BuildContext context) {
+    Navigator.pushNamed(
+      context,
+      '/profile/${widget.post.userId}',
+      arguments: {'username': widget.post.username},
     );
   }
 
-  Widget _actionBtn(
-    IconData icon,
-    String label,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
+  @override
+  Widget build(BuildContext context) {
+    final post = widget.post;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          if (label.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(color: color),
+          // رأس البطاقة
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => _navigateToProfile(context),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: post.userAvatar.isNotEmpty
+                      ? NetworkImage(post.userAvatar)
+                      : null,
+                  child: post.userAvatar.isEmpty
+                      ? const Icon(Icons.person_rounded, color: Colors.black54, size: 24)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _navigateToProfile(context),
+                          child: Text(
+                            post.name,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          post.username,
+                          style: const TextStyle(
+                            color: Colors.black45,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (!post.isFollowing)
+                          GestureDetector(
+                            onTap: () => widget.onUpdate(post.copyWith(isFollowing: true)),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black38),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Text(
+                                'Follow',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        GestureDetector(
+                          onTap: () => _showPostMenu(context),
+                          child: const Icon(Icons.more_horiz_rounded, color: Colors.black38, size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${Formatters.timeAgo(post.createdAt)} · ${post.views} views',
+                      style: const TextStyle(color: Colors.black38, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // عنوان المنشور
+          if (post.title.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                post.title,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
             ),
+          // نص المنشور
+          Text(
+            post.body,
+            style: const TextStyle(color: Colors.black87, fontSize: 15, height: 1.4),
+          ),
+          // الوسائط (صور أو فيديوهات)
+          if (post.mediaUrls.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildMediaGallery(context),
           ],
+          const SizedBox(height: 12),
+          // أزرار التفاعل
+          Row(
+            children: [
+              _buildActionButton(
+                icon: post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                label: Formatters.formatCount(post.upvotes),
+                color: post.isUpvoted ? Colors.redAccent : Colors.black45,
+                onTap: () {
+                  _likeAnimCtrl.forward().then((_) => _likeAnimCtrl.reverse());
+                  widget.onUpdate(post.copyWith(
+                    isUpvoted: !post.isUpvoted,
+                    upvotes: post.isUpvoted ? post.upvotes - 1 : post.upvotes + 1,
+                  ));
+                },
+                animationController: _likeAnimCtrl,
+                scaleAnimation: _likeScaleAnim,
+              ),
+              const SizedBox(width: 24),
+              _buildActionButton(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: Formatters.formatCount(post.comments),
+                color: Colors.black45,
+                onTap: () => _showCommentsSheet(context),
+              ),
+              const SizedBox(width: 24),
+              _buildActionButton(
+                icon: Icons.share_outlined,
+                label: Formatters.formatCount(post.shares),
+                color: Colors.black45,
+                onTap: () => _showRepostSheet(context),
+              ),
+              const Spacer(),
+              _buildActionButton(
+                icon: post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                label: '',
+                color: Colors.black45,
+                onTap: () => widget.onUpdate(post.copyWith(isBookmarked: !post.isBookmarked)),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMediaGallery(BuildContext context) {
+    final mediaUrls = widget.post.mediaUrls;
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () => _openMediaFullScreen(context, _currentImageIndex),
+          child: Hero(
+            tag: 'media_${widget.post.id}_$_currentImageIndex',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                height: 400,
+                width: double.infinity,
+                color: Colors.grey[200],
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      mediaUrls[_currentImageIndex],
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image, size: 48, color: Colors.black26),
+                      ),
+                    ),
+                    if (widget.post.mediaType == 'video')
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
+                      ),
+                    if (mediaUrls.length > 1)
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_currentImageIndex + 1}/${mediaUrls.length}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (mediaUrls.length > 1) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(mediaUrls.length, (index) {
+              return Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentImageIndex == index ? Colors.black87 : Colors.black12,
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    AnimationController? animationController,
+    Animation<double>? scaleAnimation,
+  }) {
+    Widget child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 22),
+        if (label.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ],
+    );
+
+    if (animationController != null && scaleAnimation != null) {
+      child = AnimatedBuilder(
+        animation: animationController,
+        builder: (context, _) => Transform.scale(
+          scale: scaleAnimation.value,
+          child: child,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: child,
     );
   }
 
   void _showPostMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -628,20 +714,13 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.grey,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
-            _menuOption(Icons.volume_off_rounded, 'Mute @${widget.post.username}', () {}),
-            _menuOption(Icons.block_rounded, 'Block @${widget.post.username}', () {}),
-            _menuOption(Icons.flag_rounded, 'Report', () {}),
-            _menuOption(Icons.link_rounded, 'Copy link', () {}),
-            _menuOption(Icons.do_not_disturb_on_rounded, 'Not interested in this', () {}),
+            _menuOption(Icons.volume_off_outlined, 'Mute @${widget.post.username}', () {}),
+            _menuOption(Icons.block_outlined, 'Block @${widget.post.username}', () {}),
+            _menuOption(Icons.flag_outlined, 'Report', () {}),
+            _menuOption(Icons.link, 'Copy link', () {}),
+            _menuOption(Icons.do_not_disturb_on, 'Not interested', () {}),
             const SizedBox(height: 20),
           ],
         ),
@@ -651,11 +730,8 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
 
   Widget _menuOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.grey2),
-      title: Text(
-        label,
-        style: AppTextStyles.body2.copyWith(color: AppColors.white),
-      ),
+      leading: Icon(icon, color: Colors.black54),
+      title: Text(label, style: const TextStyle(color: Colors.black87, fontSize: 16)),
       onTap: () {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(label)));
@@ -666,7 +742,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   void _showRepostSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -676,17 +752,11 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.grey,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             _repostOption(Icons.repeat_rounded, 'Repost', () {
               Navigator.pop(context);
+              widget.onUpdate(widget.post.copyWith(shares: widget.post.shares + 1));
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reposted!')));
             }),
             _repostOption(Icons.edit_note_rounded, 'Quote Rize', () {
@@ -702,11 +772,8 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
 
   Widget _repostOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.grey2),
-      title: Text(
-        label,
-        style: AppTextStyles.body2.copyWith(color: AppColors.white),
-      ),
+      leading: Icon(icon, color: Colors.black54),
+      title: Text(label, style: const TextStyle(color: Colors.black87, fontSize: 16)),
       onTap: onTap,
     );
   }
@@ -715,7 +782,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -727,7 +794,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -740,10 +807,8 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
           return _CommentsSheet(
             post: widget.post,
             scrollController: scrollController,
-            onCommentAdded: (comment) {
-              widget.onUpdate(widget.post.copyWith(
-                comments: widget.post.comments + 1,
-              ));
+            onCommentAdded: () {
+              widget.onUpdate(widget.post.copyWith(comments: widget.post.comments + 1));
             },
           );
         },
@@ -752,23 +817,16 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 نهاية الجزء الأول 🔹
-// ═══════════════════════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 بداية الجزء الثاني 🔹
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ─── Comments Sheet ────────────────────────────────────────────────────────
+// ─── CommentsSheet (ورقة التعليقات) ──────────────────────────────────────────
 class _CommentsSheet extends StatefulWidget {
   final RizePostModel post;
   final ScrollController scrollController;
-  final Function(RizeCommentModel)? onCommentAdded;
+  final VoidCallback onCommentAdded;
 
   const _CommentsSheet({
     required this.post,
     required this.scrollController,
-    this.onCommentAdded,
+    required this.onCommentAdded,
   });
 
   @override
@@ -779,14 +837,13 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<RizeCommentModel> _comments = [];
+  String? _replyingToId;
 
   @override
   void initState() {
     super.initState();
     _comments = RizeCommentModel.getMockComments();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
   @override
@@ -800,6 +857,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     if (_textController.text.trim().isEmpty) return;
     final newComment = RizeCommentModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: 'current_user',
       username: '@you',
       name: 'You',
       text: _textController.text.trim(),
@@ -807,745 +865,245 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       isLiked: false,
       createdAt: DateTime.now(),
     );
+
     setState(() {
-      _comments.insert(0, newComment);
+      if (_replyingToId != null) {
+        _addReplyToComment(_comments, _replyingToId!, newComment);
+      } else {
+        _comments.insert(0, newComment);
+      }
       _textController.clear();
+      _replyingToId = null;
     });
-    if (widget.onCommentAdded != null) {
-      widget.onCommentAdded!(newComment);
+    widget.onCommentAdded();
+  }
+
+  bool _addReplyToComment(List<RizeCommentModel> comments, String parentId, RizeCommentModel reply) {
+    for (var i = 0; i < comments.length; i++) {
+      if (comments[i].id == parentId) {
+        comments[i] = comments[i].copyWith(replies: [...comments[i].replies, reply]);
+        return true;
+      }
+      if (_addReplyToComment(comments[i].replies, parentId, reply)) return true;
     }
+    return false;
+  }
+
+  void _deleteComment(String commentId) {
+    setState(() {
+      _comments.removeWhere((c) => c.id == commentId);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0D0D0D),
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
           const SizedBox(height: 8),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.grey,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Text(
-                  'Replies',
-                  style: AppTextStyles.h5.copyWith(color: AppColors.white),
-                ),
+                Text('Replies', style: AppTextStyles.h5.copyWith(color: Colors.black87)),
                 const SizedBox(width: 8),
-                Text(
-                  '(${_comments.length})',
-                  style: AppTextStyles.body2.copyWith(
-                    color: AppColors.grey2,
-                  ),
-                ),
+                Text('(${_comments.length})', style: TextStyle(color: Colors.black45)),
                 const Spacer(),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.grey),
+          const Divider(height: 1, thickness: 0.5),
           Expanded(
             child: ListView.builder(
               controller: widget.scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _comments.length,
-              itemBuilder: (context, index) {
-                final comment = _comments[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: AppColors.grey,
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: AppColors.white,
-                          size: 15,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  comment.username,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '· ${Formatters.timeAgo(comment.createdAt)}',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.grey2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              comment.text,
-                              style: AppTextStyles.body2.copyWith(
-                                color: Colors.white70,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      comment.isLiked = !comment.isLiked;
-                                      comment.likes += comment.isLiked ? 1 : -1;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                        color: comment.isLiked ? AppColors.neonRed : AppColors.grey2,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        Formatters.formatCount(comment.likes),
-                                        style: AppTextStyles.labelSmall.copyWith(
-                                          color: AppColors.grey2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF0D0D0D),
-              border: Border(
-                top: BorderSide(color: AppColors.grey, width: 0.5),
+              itemBuilder: (context, index) => _CommentTile(
+                comment: _comments[index],
+                onReply: (id) => setState(() => _replyingToId = id),
+                onDelete: (id) => _deleteComment(id),
+                onLike: (id) {
+                  setState(() {
+                    final comment = _findCommentById(_comments, id);
+                    if (comment != null) {
+                      comment.isLiked = !comment.isLiked;
+                      comment.likes += comment.isLiked ? 1 : -1;
+                    }
+                  });
+                },
+                depth: 0,
               ),
             ),
-            child: SafeArea(
-              top: false,
+          ),
+          if (_replyingToId != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey[100],
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 15,
-                    backgroundColor: AppColors.grey,
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: AppColors.white,
-                      size: 15,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.grey,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TextField(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.white,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Reply to @${widget.post.username}...',
-                          hintStyle: AppTextStyles.body2.copyWith(
-                            color: AppColors.grey2,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                        maxLines: null,
-                      ),
+                    child: Text(
+                      'Replying to @${_findCommentById(_comments, _replyingToId!)?.username ?? ''}',
+                      style: const TextStyle(color: Colors.black54, fontSize: 13),
                     ),
                   ),
-                  const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: _textController.text.trim().isNotEmpty ? _sendComment : null,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _textController.text.trim().isNotEmpty
-                            ? AppColors.electricBlue
-                            : AppColors.grey,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.send,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
+                    onTap: () => setState(() => _replyingToId = null),
+                    child: const Icon(Icons.close, color: Colors.black45, size: 18),
                   ),
                 ],
               ),
             ),
-          ),
+          _buildReplyBar(),
         ],
       ),
     );
   }
+
+  Widget _buildReplyBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            const CircleAvatar(radius: 15, backgroundColor: Colors.black12, child: Icon(Icons.person, color: Colors.black54, size: 18)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                style: const TextStyle(color: Colors.black87, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: _replyingToId != null ? 'Write a reply...' : 'Add a comment...',
+                  hintStyle: const TextStyle(color: Colors.black38),
+                  border: InputBorder.none,
+                ),
+                maxLines: null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _textController.text.trim().isNotEmpty ? _sendComment : null,
+              child: Icon(Icons.send_rounded, color: _textController.text.trim().isNotEmpty ? Colors.blue : Colors.black26, size: 24),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  RizeCommentModel? _findCommentById(List<RizeCommentModel> comments, String id) {
+    for (final comment in comments) {
+      if (comment.id == id) return comment;
+      final found = _findCommentById(comment.replies, id);
+      if (found != null) return found;
+    }
+    return null;
+  }
 }
 
-// ─── Rize Detail Screen ────────────────────────────────────────────
-class _RizeDetailScreen extends StatefulWidget {
-  final RizePostModel post;
-  final Function(RizePostModel) onUpdate;
+// ─── CommentTile (عرض تعليق مع الردود) ──────────────────────────────────────
+class _CommentTile extends StatelessWidget {
+  final RizeCommentModel comment;
+  final Function(String) onReply;
+  final Function(String) onDelete;
+  final Function(String) onLike;
+  final int depth;
 
-  const _RizeDetailScreen({
-    required this.post,
-    required this.onUpdate,
+  const _CommentTile({
+    required this.comment,
+    required this.onReply,
+    required this.onDelete,
+    required this.onLike,
+    required this.depth,
   });
 
   @override
-  State<_RizeDetailScreen> createState() => _RizeDetailScreenState();
-}
-
-class _RizeDetailScreenState extends State<_RizeDetailScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _progressController;
-  late Animation<double> _progressAnimation;
-  bool _isPlaying = false;
-  late RizePostModel _post;
-
-  @override
-  void initState() {
-    super.initState();
-    _post = widget.post;
-    _progressController = AnimationController(
-      duration: const Duration(seconds: 24),
-      vsync: this,
-    );
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_progressController);
-  }
-
-  @override
-  void dispose() {
-    _progressController.dispose();
-    super.dispose();
-  }
-
-  void _updatePost(RizePostModel updated) {
-    setState(() => _post = updated);
-    widget.onUpdate(updated);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      resizeToAvoidBottomInset: true,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            backgroundColor: Colors.black,
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(
-                  Icons.more_horiz_rounded,
-                  color: Colors.white,
-                ),
-                onPressed: () {},
-              ),
+    final isOwnComment = comment.userId == 'current_user';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (depth > 0) ...[
+              SizedBox(width: 20.0 * depth),
+              Container(width: 2, height: 30, color: Colors.black12, margin: const EdgeInsets.only(right: 12)),
             ],
-            pinned: true,
-            expandedHeight: size.height * 0.4,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _post.hasMedia
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Container(
-                          color: AppColors.grey,
-                          child: const Center(
-                            child: Icon(
-                              Icons.play_circle_outline_rounded,
-                              color: Colors.white24,
-                              size: 64,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              '0:24',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: AnimatedBuilder(
-                            animation: _progressAnimation,
-                            builder: (context, child) => LinearProgressIndicator(
-                              value: _progressAnimation.value,
-                              backgroundColor: Colors.transparent,
-                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Container(color: Colors.black),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            CircleAvatar(radius: 14, backgroundColor: Colors.black12, child: const Icon(Icons.person, color: Colors.black54, size: 16)),
+            const SizedBox(width: 10),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.grey,
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _post.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                      Text(comment.username, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13)),
+                      const SizedBox(width: 6),
+                      Text(Formatters.timeAgo(comment.createdAt), style: const TextStyle(color: Colors.black38, fontSize: 11)),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
+                      if (isOwnComment)
+                        GestureDetector(
+                          onTap: () => onDelete(comment.id),
+                          child: const Icon(Icons.delete_outline, color: Colors.black26, size: 16),
                         ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Follow',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _post.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _post.body,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Action row
+                  Text(comment.text, style: const TextStyle(color: Colors.black87, fontSize: 14)),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      _likeBtn(),
-                      const SizedBox(width: 16),
-                      _actionBtn(
-                        Icons.chat_bubble_outline_rounded,
-                        Formatters.formatCount(_post.comments),
-                        AppColors.grey2,
-                        () => _showCommentsSheet(context),
+                      GestureDetector(
+                        onTap: () => onLike(comment.id),
+                        child: Row(
+                          children: [
+                            Icon(comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: comment.isLiked ? Colors.redAccent : Colors.black45, size: 14),
+                            const SizedBox(width: 4),
+                            Text(Formatters.formatCount(comment.likes), style: TextStyle(color: Colors.black45, fontSize: 12)),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 16),
-                      _actionBtn(
-                        Icons.repeat_rounded,
-                        Formatters.formatCount(_post.shares),
-                        AppColors.grey2,
-                        () => _showRepostSheet(context),
-                      ),
-                      const Spacer(),
-                      _actionBtn(
-                        _post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                        '',
-                        _post.isBookmarked ? AppColors.white : AppColors.grey2,
-                        () => _updatePost(_post.copyWith(
-                          isBookmarked: !_post.isBookmarked,
-                        )),
+                      GestureDetector(
+                        onTap: () => onReply(comment.id),
+                        child: const Text('Reply', style: TextStyle(color: Colors.black45, fontSize: 12)),
                       ),
                     ],
-                  ),
-                  const Divider(height: 16, color: AppColors.grey),
-                  // Comments section
-                  Text(
-                    '${Formatters.formatCount(_post.comments)} replies',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.grey2,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Comments list
-                  ...RizeCommentModel.getMockComments().take(5).map(
-                    (comment) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 15,
-                            backgroundColor: AppColors.grey,
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: AppColors.white,
-                              size: 15,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      comment.username,
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '· ${Formatters.timeAgo(comment.createdAt)}',
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        color: AppColors.grey2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  comment.text,
-                                  style: AppTextStyles.body2.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          comment.isLiked = !comment.isLiked;
-                                          comment.likes += comment.isLiked ? 1 : -1;
-                                        });
-                                      },
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                            color: comment.isLiked ? AppColors.neonRed : AppColors.grey2,
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            Formatters.formatCount(comment.likes),
-                                            style: AppTextStyles.labelSmall.copyWith(
-                                              color: AppColors.grey2,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          border: Border(
-            top: BorderSide(color: AppColors.grey, width: 0.5),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: AppColors.grey,
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.white,
-                  size: 15,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.grey,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.white,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Reply to @${_post.username}...',
-                      hintStyle: AppTextStyles.body2.copyWith(
-                        color: AppColors.grey2,
-                      ),
-                      border: InputBorder.none,
-                    ),
-                    maxLines: null,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: AppColors.electricBlue,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _likeBtn() {
-    return GestureDetector(
-      onTap: () => _updatePost(_post.copyWith(
-        isUpvoted: !_post.isUpvoted,
-        upvotes: _post.isUpvoted ? _post.upvotes - 1 : _post.upvotes + 1,
-      )),
-      child: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 200),
-        style: AppTextStyles.labelSmall.copyWith(
-          color: _post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
-          fontWeight: FontWeight.w600,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              _post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: _post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
-              size: 20,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              Formatters.formatCount(_post.upvotes),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _actionBtn(
-    IconData icon,
-    String label,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          if (label.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(color: color),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showCommentsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.6,
-        maxChildSize: 0.95,
-        minChildSize: 0.4,
-        builder: (context, scrollController) {
-          return _CommentsSheet(
-            post: _post,
-            scrollController: scrollController,
-            onCommentAdded: (comment) {
-              _updatePost(_post.copyWith(comments: _post.comments + 1));
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  void _showRepostSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.grey,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            _repostOption(Icons.repeat_rounded, 'Repost', () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reposted!')));
-            }),
-            _repostOption(Icons.edit_note_rounded, 'Quote Rize', () {
-              Navigator.pop(context);
-              _showCreateSheetWithQuote(context);
-            }),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _repostOption(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.grey2),
-      title: Text(
-        label,
-        style: AppTextStyles.body2.copyWith(color: AppColors.white),
-      ),
-      onTap: onTap,
-    );
-  }
-
-  void _showCreateSheetWithQuote(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => _CreateRizeSheet(quotedPost: _post),
+        if (comment.replies.isNotEmpty)
+          ...comment.replies.map((reply) => _CommentTile(
+                comment: reply,
+                onReply: onReply,
+                onDelete: onDelete,
+                onLike: onLike,
+                depth: depth + 1,
+              )),
+      ],
     );
   }
 }
 
-// ─── Create Rize Sheet ────────────────────────────────────────────────────────
+// ─── CreateRizeSheet (ورقة إنشاء منشور) ──────────────────────────────────────
 class _CreateRizeSheet extends StatefulWidget {
   final RizePostModel? quotedPost;
-
   const _CreateRizeSheet({this.quotedPost});
 
   @override
@@ -1555,34 +1113,18 @@ class _CreateRizeSheet extends StatefulWidget {
 class _CreateRizeSheetState extends State<_CreateRizeSheet> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  bool _hasPoll = false;
-  final TextEditingController _pollOption1Ctrl = TextEditingController();
-  final TextEditingController _pollOption2Ctrl = TextEditingController();
-  final List<TextEditingController> _extraOptionsCtrls = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _focusNode.dispose();
-    _pollOption1Ctrl.dispose();
-    _pollOption2Ctrl.dispose();
-    for (var ctrl in _extraOptionsCtrls) {
-      ctrl.dispose();
-    }
     super.dispose();
-  }
-
-  void _addPollOption() {
-    _extraOptionsCtrls.add(TextEditingController());
-    setState(() {});
   }
 
   void _submitRize() {
@@ -1594,45 +1136,25 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.grey,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.grey,
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
+              const CircleAvatar(radius: 20, backgroundColor: Colors.black12, child: Icon(Icons.person, color: Colors.black54)),
+              const SizedBox(width: 12),
               Expanded(
                 child: TextField(
                   controller: _textController,
                   focusNode: _focusNode,
-                  style: AppTextStyles.body1.copyWith(color: AppColors.white),
+                  style: const TextStyle(color: Colors.black87, fontSize: 16),
                   maxLines: null,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'What\'s on your mind?',
-                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+                    hintStyle: TextStyle(color: Colors.black38),
                     border: InputBorder.none,
                   ),
                 ),
@@ -1640,122 +1162,28 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
             ],
           ),
           if (widget.quotedPost != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.quotedPost!.name,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.quotedPost!.title,
-                    style: AppTextStyles.body2.copyWith(
-                      color: Colors.white70,
-                    ),
-                  ),
+                  Text(widget.quotedPost!.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                  Text(widget.quotedPost!.body, style: const TextStyle(color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
           ],
-          if (_hasPoll) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: _pollOption1Ctrl,
-              style: AppTextStyles.body1.copyWith(color: AppColors.white),
-              decoration: InputDecoration(
-                hintText: 'Choice 1',
-                hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
-                filled: true,
-                fillColor: AppColors.grey,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _pollOption2Ctrl,
-              style: AppTextStyles.body1.copyWith(color: AppColors.white),
-              decoration: InputDecoration(
-                hintText: 'Choice 2',
-                hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
-                filled: true,
-                fillColor: AppColors.grey,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            ..._extraOptionsCtrls.asMap().entries.map((entry) {
-              final index = entry.key;
-              final controller = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: TextField(
-                  controller: controller,
-                  style: AppTextStyles.body1.copyWith(color: AppColors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Choice ${index + 3}',
-                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
-                    filled: true,
-                    fillColor: AppColors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: _addPollOption,
-                child: Text(
-                  '+ Add option',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          const Divider(height: 1, color: AppColors.grey),
+          const Divider(height: 24),
           Row(
             children: [
-              _mediaBtn(Icons.image_rounded, 'Photo', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
-              const SizedBox(width: 8),
-              _mediaBtn(Icons.videocam_rounded, 'Video', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
-              const SizedBox(width: 8),
-              _mediaBtn(Icons.poll_rounded, 'Poll', () {
-                setState(() {
-                  _hasPoll = !_hasPoll;
-                });
-              }),
-              const SizedBox(width: 8),
-              _mediaBtn(Icons.link_rounded, 'Link', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
+              _mediaBtn(Icons.image_rounded, () {}),
+              const SizedBox(width: 12),
+              _mediaBtn(Icons.videocam_rounded, () {}),
               const Spacer(),
               if (_textController.text.length > 400)
-                Text(
-                  '${_textController.text.length}/500',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: _textController.text.length > 500 ? Colors.red : AppColors.grey2,
-                  ),
-                ),
+                Text('${_textController.text.length}/500', style: TextStyle(color: _textController.text.length > 500 ? Colors.red : Colors.black45)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1764,21 +1192,12 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
             child: GestureDetector(
               onTap: _textController.text.trim().isNotEmpty ? _submitRize : null,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: _textController.text.trim().isNotEmpty ? AppColors.electricBlue : AppColors.grey,
-                  borderRadius: BorderRadius.circular(12),
+                  color: _textController.text.trim().isNotEmpty ? AppColors.electricBlue : Colors.black12,
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Text(
-                  'Post',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: _textController.text.trim().isNotEmpty ? AppColors.white : AppColors.grey2,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('Post', style: TextStyle(color: _textController.text.trim().isNotEmpty ? Colors.white : Colors.black38, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -1788,34 +1207,13 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
     );
   }
 
-  Widget _mediaBtn(IconData icon, String label, VoidCallback onTap) {
+  Widget _mediaBtn(IconData icon, VoidCallback onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.grey,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: AppColors.grey2,
-              size: 18,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.grey2,
-              ),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: Colors.black54, size: 20),
       ),
     );
   }
