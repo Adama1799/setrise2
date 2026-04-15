@@ -1,3 +1,5 @@
+// lib/presentation/screens/rize/rize_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -11,8 +13,8 @@ class RizeCommentModel {
   final String username;
   final String name;
   final String text;
-  final int likes;
-  final bool isLiked;
+  int likes;
+  bool isLiked;
   final DateTime createdAt;
 
   RizeCommentModel({
@@ -24,26 +26,6 @@ class RizeCommentModel {
     required this.isLiked,
     required this.createdAt,
   });
-
-  RizeCommentModel copyWith({
-    String? id,
-    String? username,
-    String? name,
-    String? text,
-    int? likes,
-    bool? isLiked,
-    DateTime? createdAt,
-  }) {
-    return RizeCommentModel(
-      id: id ?? this.id,
-      username: username ?? this.username,
-      name: name ?? this.name,
-      text: text ?? this.text,
-      likes: likes ?? this.likes,
-      isLiked: isLiked ?? this.isLiked,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
 
   static List<RizeCommentModel> getMockComments() {
     return [
@@ -168,11 +150,11 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
     return WillPopScope(
       onWillPop: () async => false, // handled by MainScreen
       child: Scaffold(
-        backgroundColor: Colors.black, // Pure black background
+        backgroundColor: Colors.black,
         body: SafeArea(
           child: Column(
             children: [
-              // Top bar - Clean & minimal like Threads
+              // Top bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 child: Row(
@@ -199,7 +181,7 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
                   ],
                 ),
               ),
-              // Tabs — For You / Following
+              // Tabs
               TabBar(
                 controller: _tabCtrl,
                 indicatorColor: AppColors.white,
@@ -265,12 +247,12 @@ class _RizeScreenState extends State<RizeScreen> with SingleTickerProviderStateM
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => _CreateRizeSheet(),
+      builder: (_) => const _CreateRizeSheet(),
     );
   }
 }
 
-// ─── Rize Feed - Cleaner spacing like Threads ────────────────────────────────────────────────────────────────
+// ─── Rize Feed ────────────────────────────────────────────────────────────────
 class _RizeFeed extends StatefulWidget {
   final List<RizePostModel> posts;
   final Function(int, RizePostModel) onUpdate;
@@ -284,6 +266,13 @@ class _RizeFeed extends StatefulWidget {
 class _RizeFeedState extends State<_RizeFeed> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  late List<RizePostModel> _localPosts;
+
+  @override
+  void initState() {
+    super.initState();
+    _localPosts = List.from(widget.posts);
+  }
 
   @override
   void dispose() {
@@ -294,12 +283,19 @@ class _RizeFeedState extends State<_RizeFeed> {
   void _loadMore() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate loading
-    final newPosts = RizePostModel.getMockPosts().map((e) => e.copyWith(id: '${DateTime.now().millisecondsSinceEpoch}${e.id}')).toList();
+    await Future.delayed(const Duration(seconds: 1));
+    final newPosts = RizePostModel.getMockPosts()
+        .map((e) => e.copyWith(id: '${DateTime.now().millisecondsSinceEpoch}${e.id}'))
+        .toList();
     setState(() {
-      widget.posts.addAll(newPosts);
+      _localPosts.addAll(newPosts);
       _isLoading = false;
     });
+  }
+
+  void _updateLocalPost(int index, RizePostModel updated) {
+    setState(() => _localPosts[index] = updated);
+    widget.onUpdate(index, updated);
   }
 
   @override
@@ -307,11 +303,15 @@ class _RizeFeedState extends State<_RizeFeed> {
     return RefreshIndicator(
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
-        setState(() {});
+        setState(() {
+          _localPosts = List.from(widget.posts);
+        });
       },
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 500 && !_isLoading) {
+          if (notification.metrics.pixels >=
+                  notification.metrics.maxScrollExtent - 500 &&
+              !_isLoading) {
             _loadMore();
           }
           return false;
@@ -319,25 +319,28 @@ class _RizeFeedState extends State<_RizeFeed> {
         child: ListView.separated(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: widget.posts.length + (_isLoading ? 1 : 0),
+          itemCount: _localPosts.length + (_isLoading ? 1 : 0),
           separatorBuilder: (_, __) => Divider(
             color: AppColors.grey.withOpacity(0.15),
             height: 1,
           ),
           itemBuilder: (ctx, i) {
-            if (i >= widget.posts.length) {
+            if (i >= _localPosts.length) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: Center(child: CircularProgressIndicator()),
               );
             }
             return _RizeCard(
-              post: widget.posts[i],
-              onUpdate: (p) => widget.onUpdate(i, p),
+              post: _localPosts[i],
+              onUpdate: (p) => _updateLocalPost(i, p),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => _RizeDetailScreen(post: widget.posts[i]),
+                  builder: (_) => _RizeDetailScreen(
+                    post: _localPosts[i],
+                    onUpdate: (updated) => _updateLocalPost(i, updated),
+                  ),
                 ),
               ),
             );
@@ -348,7 +351,7 @@ class _RizeFeedState extends State<_RizeFeed> {
   }
 }
 
-// ─── Rize Card (Threads style) — Cleaner layout ─────────────────────────────
+// ─── Rize Card (Threads style) ─────────────────────────────
 class _RizeCard extends StatefulWidget {
   final RizePostModel post;
   final Function(RizePostModel) onUpdate;
@@ -448,7 +451,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
               ),
             ),
             const SizedBox(height: 4),
-            // Body (truncated)
+            // Body
             Text(
               widget.post.body,
               style: AppTextStyles.body2.copyWith(
@@ -458,14 +461,13 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
             ),
-            // Media — Slightly smaller and less dominant
+            // Media
             if (widget.post.hasMedia) ...[
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   width: double.infinity,
-                  // aspect ratio 4:5 = 0.8
                   height: (MediaQuery.of(context).size.width - 32) * 0.8,
                   constraints: const BoxConstraints(maxHeight: 350),
                   color: AppColors.grey,
@@ -504,7 +506,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
               ),
             ],
             const SizedBox(height: 8),
-            // Actions — More subtle, aligned like Threads
+            // Actions
             Row(
               children: [
                 _likeBtn(),
@@ -898,10 +900,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _comments[index] = comment.copyWith(
-                                        isLiked: !comment.isLiked,
-                                        likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
-                                      );
+                                      comment.isLiked = !comment.isLiked;
+                                      comment.likes += comment.isLiked ? 1 : -1;
                                     });
                                   },
                                   child: Row(
@@ -1007,26 +1007,33 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 }
 
-// ─── Rize Detail (Threads-like detail view) ────────────────────────────
+// ─── Rize Detail Screen ────────────────────────────────────────────
 class _RizeDetailScreen extends StatefulWidget {
   final RizePostModel post;
+  final Function(RizePostModel) onUpdate;
 
-  const _RizeDetailScreen({required this.post});
+  const _RizeDetailScreen({
+    required this.post,
+    required this.onUpdate,
+  });
 
   @override
   State<_RizeDetailScreen> createState() => _RizeDetailScreenState();
 }
 
-class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProviderStateMixin {
+class _RizeDetailScreenState extends State<_RizeDetailScreen>
+    with TickerProviderStateMixin {
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
   bool _isPlaying = false;
+  late RizePostModel _post;
 
   @override
   void initState() {
     super.initState();
+    _post = widget.post;
     _progressController = AnimationController(
-      duration: const Duration(seconds: 24), // 24 seconds for video
+      duration: const Duration(seconds: 24),
       vsync: this,
     );
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_progressController);
@@ -1036,6 +1043,11 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
   void dispose() {
     _progressController.dispose();
     super.dispose();
+  }
+
+  void _updatePost(RizePostModel updated) {
+    setState(() => _post = updated);
+    widget.onUpdate(updated);
   }
 
   @override
@@ -1067,7 +1079,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
             pinned: true,
             expandedHeight: size.height * 0.4,
             flexibleSpace: FlexibleSpaceBar(
-              background: widget.post.hasMedia
+              background: _post.hasMedia
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
@@ -1139,7 +1151,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.post.name,
+                        _post.name,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -1172,7 +1184,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.post.title,
+                    _post.title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -1181,7 +1193,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.post.body,
+                    _post.body,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -1195,32 +1207,32 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                       const SizedBox(width: 16),
                       _actionBtn(
                         Icons.chat_bubble_outline_rounded,
-                        Formatters.formatCount(widget.post.comments),
+                        Formatters.formatCount(_post.comments),
                         AppColors.grey2,
                         () => _showCommentsSheet(context),
                       ),
                       const SizedBox(width: 16),
                       _actionBtn(
                         Icons.repeat_rounded,
-                        Formatters.formatCount(widget.post.shares),
+                        Formatters.formatCount(_post.shares),
                         AppColors.grey2,
                         () => _showRepostSheet(context),
                       ),
                       const Spacer(),
                       _actionBtn(
-                        widget.post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                        _post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
                         '',
-                        widget.post.isBookmarked ? AppColors.white : AppColors.grey2,
-                        () => setState(() {
-                          widget.post.isBookmarked = !widget.post.isBookmarked;
-                        }),
+                        _post.isBookmarked ? AppColors.white : AppColors.grey2,
+                        () => _updatePost(_post.copyWith(
+                          isBookmarked: !_post.isBookmarked,
+                        )),
                       ),
                     ],
                   ),
                   const Divider(height: 16, color: AppColors.grey),
                   // Comments section
                   Text(
-                    '${Formatters.formatCount(widget.post.comments)} replies',
+                    '${Formatters.formatCount(_post.comments)} replies',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.grey2,
                     ),
@@ -1279,7 +1291,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                                       onTap: () {
                                         setState(() {
                                           comment.isLiked = !comment.isLiked;
-                                          comment.likes = comment.isLiked ? comment.likes + 1 : comment.likes - 1;
+                                          comment.likes += comment.isLiked ? 1 : -1;
                                         });
                                       },
                                       child: Row(
@@ -1348,7 +1360,7 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
                       color: AppColors.white,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Reply to @${widget.post.username}...',
+                      hintText: 'Reply to @${_post.username}...',
                       hintStyle: AppTextStyles.body2.copyWith(
                         color: AppColors.grey2,
                       ),
@@ -1381,26 +1393,26 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
 
   Widget _likeBtn() {
     return GestureDetector(
-      onTap: () => setState(() {
-        widget.post.isUpvoted = !widget.post.isUpvoted;
-        widget.post.upvotes = widget.post.isUpvoted ? widget.post.upvotes + 1 : widget.post.upvotes - 1;
-      }),
+      onTap: () => _updatePost(_post.copyWith(
+        isUpvoted: !_post.isUpvoted,
+        upvotes: _post.isUpvoted ? _post.upvotes - 1 : _post.upvotes + 1,
+      )),
       child: AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 200),
         style: AppTextStyles.labelSmall.copyWith(
-          color: widget.post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
+          color: _post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
           fontWeight: FontWeight.w600,
         ),
         child: Row(
           children: [
             Icon(
-              widget.post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: widget.post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
+              _post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              color: _post.isUpvoted ? AppColors.neonRed : AppColors.grey2,
               size: 20,
             ),
             const SizedBox(width: 4),
             Text(
-              Formatters.formatCount(widget.post.upvotes),
+              Formatters.formatCount(_post.upvotes),
             ),
           ],
         ),
@@ -1444,4 +1456,355 @@ class _RizeDetailScreenState extends State<_RizeDetailScreen> with TickerProvide
         initialChildSize: 0.6,
         maxChildSize: 0.95,
         minChildSize: 0.4,
-        builder: (context, sc
+        builder: (context, scrollController) {
+          return _CommentsSheet(
+            post: _post,
+            scrollController: scrollController,
+            onCommentAdded: (comment) {
+              _updatePost(_post.copyWith(comments: _post.comments + 1));
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showRepostSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0D0D0D),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _repostOption(Icons.repeat_rounded, 'Repost', () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reposted!')));
+            }),
+            _repostOption(Icons.edit_note_rounded, 'Quote Rize', () {
+              Navigator.pop(context);
+              _showCreateSheetWithQuote(context);
+            }),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _repostOption(IconData icon, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.grey2),
+      title: Text(
+        label,
+        style: AppTextStyles.body2.copyWith(color: AppColors.white),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  void _showCreateSheetWithQuote(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0D0D0D),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => _CreateRizeSheet(quotedPost: _post),
+    );
+  }
+}
+
+// ─── Create Rize Sheet ────────────────────────────────────────────────────────
+class _CreateRizeSheet extends StatefulWidget {
+  final RizePostModel? quotedPost;
+
+  const _CreateRizeSheet({this.quotedPost});
+
+  @override
+  State<_CreateRizeSheet> createState() => _CreateRizeSheetState();
+}
+
+class _CreateRizeSheetState extends State<_CreateRizeSheet> {
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  bool _hasPoll = false;
+  final TextEditingController _pollOption1Ctrl = TextEditingController();
+  final TextEditingController _pollOption2Ctrl = TextEditingController();
+  final List<TextEditingController> _extraOptionsCtrls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
+    _pollOption1Ctrl.dispose();
+    _pollOption2Ctrl.dispose();
+    for (var ctrl in _extraOptionsCtrls) {
+      ctrl.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addPollOption() {
+    _extraOptionsCtrls.add(TextEditingController());
+    setState(() {});
+  }
+
+  void _submitRize() {
+    if (_textController.text.trim().isEmpty) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rize posted!')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.grey,
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: AppColors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  style: AppTextStyles.body1.copyWith(color: AppColors.white),
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: 'What\'s on your mind?',
+                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (widget.quotedPost != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.grey.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.quotedPost!.name,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.quotedPost!.title,
+                    style: AppTextStyles.body2.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (_hasPoll) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _pollOption1Ctrl,
+              style: AppTextStyles.body1.copyWith(color: AppColors.white),
+              decoration: InputDecoration(
+                hintText: 'Choice 1',
+                hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+                filled: true,
+                fillColor: AppColors.grey,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _pollOption2Ctrl,
+              style: AppTextStyles.body1.copyWith(color: AppColors.white),
+              decoration: InputDecoration(
+                hintText: 'Choice 2',
+                hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+                filled: true,
+                fillColor: AppColors.grey,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            ..._extraOptionsCtrls.asMap().entries.map((entry) {
+              final index = entry.key;
+              final controller = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: TextField(
+                  controller: controller,
+                  style: AppTextStyles.body1.copyWith(color: AppColors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Choice ${index + 3}',
+                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+                    filled: true,
+                    fillColor: AppColors.grey,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _addPollOption,
+                child: Text(
+                  '+ Add option',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.grey2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          const Divider(height: 1, color: AppColors.grey),
+          Row(
+            children: [
+              _mediaBtn(Icons.image_rounded, 'Photo', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
+              const SizedBox(width: 8),
+              _mediaBtn(Icons.videocam_rounded, 'Video', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
+              const SizedBox(width: 8),
+              _mediaBtn(Icons.poll_rounded, 'Poll', () {
+                setState(() {
+                  _hasPoll = !_hasPoll;
+                });
+              }),
+              const SizedBox(width: 8),
+              _mediaBtn(Icons.link_rounded, 'Link', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')))),
+              const Spacer(),
+              if (_textController.text.length > 400)
+                Text(
+                  '${_textController.text.length}/500',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: _textController.text.length > 500 ? Colors.red : AppColors.grey2,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: _textController.text.trim().isNotEmpty ? _submitRize : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: _textController.text.trim().isNotEmpty ? AppColors.electricBlue : AppColors.grey,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Post',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: _textController.text.trim().isNotEmpty ? AppColors.white : AppColors.grey2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _mediaBtn(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.grey,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: AppColors.grey2,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.grey2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
