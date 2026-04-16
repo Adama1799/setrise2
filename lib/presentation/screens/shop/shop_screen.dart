@@ -5,6 +5,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
+import 'product_detail_screen.dart';
+import 'cart_screen.dart';
+import 'marketplace_screen.dart';
+import 'auction_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -15,7 +19,7 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategoryId = '1'; // Electronics as default
+  String _selectedCategoryId = '1';
 
   late List<ProductModel> _featuredProducts;
   late List<ProductModel> _popularProducts;
@@ -43,11 +47,12 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        // Header with search bar and cart icon
-        SliverToBoxAdapter(
-          child: Padding(
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          // Header with search bar and cart icon
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
               children: [
@@ -89,7 +94,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   child: IconButton(
                     onPressed: () {
-                      // TODO: Navigate to CartScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                      );
                     },
                     icon: const Icon(
                       Icons.shopping_cart_outlined,
@@ -101,8 +109,39 @@ class _ShopScreenState extends State<ShopScreen> {
               ],
             ),
           ),
-        ),
+          // Tabs
+          TabBar(
+            indicatorColor: AppColors.shop,
+            indicatorWeight: 2,
+            labelColor: AppColors.shop,
+            unselectedLabelColor: AppColors.grey2,
+            labelStyle: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            tabs: const [
+              Tab(text: 'Shop'),
+              Tab(text: 'Marketplace'),
+              Tab(text: 'Auctions'),
+            ],
+          ),
+          // Tab content
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildShopContent(),
+                const MarketplaceScreen(),
+                const AuctionScreen(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildShopContent() {
+    return CustomScrollView(
+      slivers: [
         // Promo banners carousel
         SliverToBoxAdapter(
           child: SizedBox(
@@ -126,7 +165,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Categories title
         SliverToBoxAdapter(
           child: Padding(
@@ -142,9 +180,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to All Categories
-                  },
+                  onPressed: () {},
                   child: Text(
                     'See All',
                     style: AppTextStyles.labelMedium.copyWith(
@@ -156,7 +192,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Categories horizontal list
         SliverToBoxAdapter(
           child: SizedBox(
@@ -218,7 +253,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Featured Products title
         SliverToBoxAdapter(
           child: Padding(
@@ -234,9 +268,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to All Products
-                  },
+                  onPressed: () {},
                   child: Text(
                     'See All',
                     style: AppTextStyles.labelMedium.copyWith(
@@ -248,7 +280,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Featured Products Grid
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -268,7 +299,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Popular Products title
         SliverToBoxAdapter(
           child: Padding(
@@ -284,9 +314,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to All Products
-                  },
+                  onPressed: () {},
                   child: Text(
                     'See All',
                     style: AppTextStyles.labelMedium.copyWith(
@@ -298,7 +326,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
         // Popular Products Grid
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -318,8 +345,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-
-        // Bottom spacing
         const SliverToBoxAdapter(
           child: SizedBox(height: 24),
         ),
@@ -354,7 +379,12 @@ class _ProductCardState extends State<_ProductCard> {
 
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to ProductDetailScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(product: product),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -364,7 +394,6 @@ class _ProductCardState extends State<_ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
             Expanded(
               flex: 6,
               child: Stack(
@@ -390,7 +419,6 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                     ),
                   ),
-                  // Discount Badge
                   if (hasDiscount)
                     Positioned(
                       top: 8,
@@ -413,7 +441,6 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                     ),
-                  // Favorite Button
                   Positioned(
                     top: 8,
                     right: 8,
@@ -445,7 +472,6 @@ class _ProductCardState extends State<_ProductCard> {
                 ],
               ),
             ),
-            // Product Details
             Expanded(
               flex: 4,
               child: Padding(
@@ -493,10 +519,9 @@ class _ProductCardState extends State<_ProductCard> {
                               ),
                           ],
                         ),
-                        // Add to Cart Button
                         GestureDetector(
                           onTap: () {
-                            // TODO: Add to cart
+                            // Add to cart
                           },
                           child: Container(
                             width: 36,
@@ -514,7 +539,6 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ],
                     ),
-                    // Rating
                     Row(
                       children: [
                         const Icon(
