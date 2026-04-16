@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/models/category_model.dart'; // ✅ استيراد CategoryModel
 import 'product_detail_screen.dart';
 
 class CategoryProductsScreen extends StatelessWidget {
