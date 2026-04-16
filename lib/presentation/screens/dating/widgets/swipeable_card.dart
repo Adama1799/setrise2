@@ -8,6 +8,7 @@ class SwipeableCard extends StatefulWidget {
   final DatingProfileModel profile;
   final VoidCallback? onSwipeLeft;
   final VoidCallback? onSwipeRight;
+  final VoidCallback? onTap;
   final bool isBackground;
 
   const SwipeableCard({
@@ -15,6 +16,7 @@ class SwipeableCard extends StatefulWidget {
     required this.profile,
     this.onSwipeLeft,
     this.onSwipeRight,
+    this.onTap,
     this.isBackground = false,
   });
 
@@ -42,9 +44,7 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
 
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
     if (widget.isBackground) return;
-    setState(() {
-      _dragX += details.delta.dx;
-    });
+    setState(() => _dragX += details.delta.dx);
   }
 
   void _onHorizontalDragEnd(DragEndDetails details) {
@@ -58,14 +58,22 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
     }
   }
 
+  int _sharedInterestsCount() {
+    // محاكاة اهتمامات المستخدم الحالي
+    const myInterests = ['Travel', 'Music', 'Tech', 'Photography'];
+    return widget.profile.interests.where((i) => myInterests.contains(i)).length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRight = _dragX > 40;
     final isLeft = _dragX < -40;
-    
+    final sharedCount = _sharedInterestsCount();
+
     return GestureDetector(
       onHorizontalDragUpdate: _onHorizontalDragUpdate,
       onHorizontalDragEnd: _onHorizontalDragEnd,
+      onTap: widget.onTap,
       child: Transform.translate(
         offset: Offset(_dragX, 0),
         child: Transform.rotate(
@@ -75,6 +83,7 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
             decoration: BoxDecoration(
               color: const Color(0xFF1A1A2E),
               borderRadius: BorderRadius.circular(24),
+              border: widget.profile.isBoosted ? Border.all(color: Colors.purpleAccent, width: 3) : null,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.3),
@@ -87,23 +96,52 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // معرض الصور
                 PageView.builder(
                   controller: _imageController,
                   onPageChanged: (index) => setState(() => _currentImageIndex = index),
                   itemCount: widget.profile.imageUrls.length,
                   itemBuilder: (context, index) {
-                    return Image.network(
-                      widget.profile.imageUrls[index],
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.grey,
-                        child: const Icon(Icons.person, color: Colors.white54, size: 80),
-                      ),
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          widget.profile.imageUrls[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppColors.grey,
+                            child: const Icon(Icons.person, color: Colors.white54, size: 80),
+                          ),
+                        ),
+                        if (widget.profile.isLocked)
+                          Container(
+                            color: Colors.black.withOpacity(0.6),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.lock_rounded, color: Colors.white, size: 48),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Locked Profile',
+                                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.dating,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text('Tap to unlock', style: TextStyle(color: Colors.black)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
                 ),
-                // مؤشر الصور (نقاط)
                 if (widget.profile.imageUrls.length > 1)
                   Positioned(
                     top: 16,
@@ -125,7 +163,6 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
                       ),
                     ),
                   ),
-                // طبقة التدرج السفلية
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -141,7 +178,6 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
                     ),
                   ),
                 ),
-                // علامة الإعجاب/التجاهل
                 if (isRight && !widget.isBackground)
                   Positioned(
                     top: 40,
@@ -180,7 +216,25 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
                       ),
                     ),
                   ),
-                // معلومات الملف الشخصي
+                if (widget.profile.isBoosted && !widget.isBackground)
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 16),
+                          const SizedBox(width: 4),
+                          Text('BOOSTED', style: AppTextStyles.labelSmall.copyWith(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -213,10 +267,33 @@ class _SwipeableCardState extends State<SwipeableCard> with SingleTickerProvider
                             ),
                           ],
                         ),
+                        if (sharedCount > 0) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.dating.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.favorite_rounded, color: AppColors.dating, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$sharedCount shared interest${sharedCount > 1 ? 's' : ''}',
+                                  style: TextStyle(color: AppColors.dating, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         Text(
                           widget.profile.bio,
                           style: const TextStyle(color: Colors.white, fontSize: 14),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 10),
                         Wrap(
