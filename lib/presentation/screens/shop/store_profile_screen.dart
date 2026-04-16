@@ -16,7 +16,7 @@ class StoreProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = ShopMockData.getFeaturedProducts().take(6).toList();
+    final List<ProductModel> products = ShopMockData.getFeaturedProducts().take(6).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
