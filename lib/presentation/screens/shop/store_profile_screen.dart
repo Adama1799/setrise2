@@ -8,6 +8,8 @@ import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
 import 'product_detail_screen.dart';
 import 'chat_screen.dart';
+import '../../../data/models/product_model.dart';
+import '../../../data/mock_data/shop_mock_data.dart'; 
 
 class StoreProfileScreen extends StatelessWidget {
   final Store store;
