@@ -6,10 +6,9 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/models/store_model.dart'; // ✅ استيراد Store
 import 'product_detail_screen.dart';
 import 'chat_screen.dart';
-import '../../../data/models/product_model.dart';
-import '../../../data/mock_data/shop_mock_data.dart'; 
 
 class StoreProfileScreen extends StatelessWidget {
   final Store store;
@@ -18,6 +17,7 @@ class StoreProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ تأكد من النوع الصريح
     final List<ProductModel> products = ShopMockData.getFeaturedProducts().take(6).toList();
 
     return Scaffold(
