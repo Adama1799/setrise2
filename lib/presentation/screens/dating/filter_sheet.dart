@@ -1,4 +1,3 @@
-// lib/presentation/screens/date/filter_sheet.dart
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -9,7 +8,7 @@ class DateFilterSheet extends StatefulWidget {
   final int ageTo;
   final bool sortBySharedInterests;
   final bool incognitoMode;
-  final Function(int maxDistance, int ageFrom, int ageTo, bool sortByShared, bool incognito) onApply;
+  final Function(int, int, int, bool, bool) onApply;
 
   const DateFilterSheet({
     super.key,
@@ -45,159 +44,273 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey3,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Discovery Settings',
-            style: AppTextStyles.h5.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Maximum Distance: $_maxDistance km',
-            style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w500),
-          ),
-          Slider(
-            value: _maxDistance.toDouble(),
-            min: 1,
-            max: 500,
-            divisions: 50,
-            label: '$_maxDistance km',
-            activeColor: AppColors.dating,
-            onChanged: (value) => setState(() => _maxDistance = value.toInt()),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Age Range',
-            style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _AgeSelector(
-                  label: 'From',
-                  value: _ageFrom,
-                  onChanged: (value) => setState(() => _ageFrom = value),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'الفلاتر',
+                  style: AppTextStyles.h3,
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _AgeSelector(
-                  label: 'To',
-                  value: _ageTo,
-                  min: _ageFrom,
-                  onChanged: (value) => setState(() => _ageTo = value),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SwitchListTile(
-            value: _sortBySharedInterests,
-            onChanged: (value) => setState(() => _sortBySharedInterests = value),
-            title: const Text('Show people with shared interests first'),
-            subtitle: const Text('Profiles with more common interests appear first'),
-            activeColor: AppColors.dating,
-          ),
-          SwitchListTile(
-            value: _incognitoMode,
-            onChanged: (value) => setState(() => _incognitoMode = value),
-            title: const Text('Incognito Mode'),
-            subtitle: const Text('Your profile will be hidden from others'),
-            activeColor: Colors.purple,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: Colors.grey.shade400),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                TextButton(
+                  onPressed: _reset,
+                  child: const Text(
+                    'إعادة تعيين',
+                    style: TextStyle(color: AppColors.dating),
                   ),
-                  child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    widget.onApply(_maxDistance, _ageFrom, _ageTo, _sortBySharedInterests, _incognitoMode);
-                    Navigator.pop(context);
+              ],
+            ),
+          ),
+          
+          const Divider(color: AppColors.grey3, height: 1),
+          
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                // Distance Filter
+                _buildSectionTitle('المسافة القصوى'),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('1 كم', style: AppTextStyles.bodySmall),
+                    Text(
+                      '$_maxDistance كم',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.dating,
+                      ),
+                    ),
+                    const Text('200 كم', style: AppTextStyles.bodySmall),
+                  ],
+                ),
+                Slider(
+                  value: _maxDistance.toDouble(),
+                  min: 1,
+                  max: 200,
+                  divisions: 199,
+                  activeColor: AppColors.dating,
+                  inactiveColor: AppColors.grey3,
+                  onChanged: (value) {
+                    setState(() {
+                      _maxDistance = value.toInt();
+                    });
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.dating,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Age Range
+                _buildSectionTitle('العمر'),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('18', style: AppTextStyles.bodySmall),
+                    Text(
+                      '$_ageFrom - $_ageTo',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.dating,
+                      ),
+                    ),
+                    const Text('80', style: AppTextStyles.bodySmall),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('من', style: AppTextStyles.bodySmall),
+                          Slider(
+                            value: _ageFrom.toDouble(),
+                            min: 18,
+                            max: 79,
+                            divisions: 61,
+                            activeColor: AppColors.dating,
+                            inactiveColor: AppColors.grey3,
+                            onChanged: (value) {
+                              setState(() {
+                                _ageFrom = value.toInt();
+                                if (_ageFrom >= _ageTo) {
+                                  _ageTo = _ageFrom + 1;
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('إلى', style: AppTextStyles.bodySmall),
+                          Slider(
+                            value: _ageTo.toDouble(),
+                            min: 19,
+                            max: 80,
+                            divisions: 61,
+                            activeColor: AppColors.dating,
+                            inactiveColor: AppColors.grey3,
+                            onChanged: (value) {
+                              setState(() {
+                                _ageTo = value.toInt();
+                                if (_ageTo <= _ageFrom) {
+                                  _ageFrom = _ageTo - 1;
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Sort by Shared Interests
+                _buildSwitchTile(
+                  'ترتيب حسب الاهتمامات المشتركة',
+                  'اعرض الأشخاص ذوي الاهتمامات المشتركة أولاً',
+                  _sortBySharedInterests,
+                  (value) {
+                    setState(() {
+                      _sortBySharedInterests = value;
+                    });
+                  },
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Incognito Mode
+                _buildSwitchTile(
+                  'وضع التخفي',
+                  'تصفح دون أن يراك الآخرون',
+                  _incognitoMode,
+                  (value) {
+                    setState(() {
+                      _incognitoMode = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          
+          // Apply Button
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.onApply(
+                    _maxDistance,
+                    _ageFrom,
+                    _ageTo,
+                    _sortBySharedInterests,
+                    _incognitoMode,
+                  );
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.dating,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Text('Apply', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+                child: const Text(
+                  'تطبيق',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class _AgeSelector extends StatelessWidget {
-  final String label;
-  final int value;
-  final int min;
-  final Function(int) onChanged;
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: AppTextStyles.labelLarge,
+    );
+  }
 
-  const _AgeSelector({
-    required this.label,
-    required this.value,
-    this.min = 18,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSwitchTile(
+    String title,
+    String subtitle,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
+    return Row(
       children: [
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: Colors.grey.shade600)),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButton<int>(
-            value: value,
-            isExpanded: true,
-            underline: const SizedBox(),
-            items: List.generate(
-              60 - min + 1,
-              (index) => DropdownMenuItem(
-                value: min + index,
-                child: Text('${min + index}'),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.labelLarge),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySmall,
               ),
-            ),
-            onChanged: (val) => onChanged(val!),
+            ],
           ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppColors.dating,
+          activeTrackColor: AppColors.dating.withOpacity(0.3),
+          inactiveTrackColor: AppColors.grey3,
         ),
       ],
     );
+  }
+
+  void _reset() {
+    setState(() {
+      _maxDistance = 100;
+      _ageFrom = 18;
+      _ageTo = 35;
+      _sortBySharedInterests = false;
+      _incognitoMode = false;
+    });
   }
 }

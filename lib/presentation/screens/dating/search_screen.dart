@@ -1,9 +1,7 @@
-// lib/presentation/screens/date/search_screen.dart
-
 import 'package:flutter/material.dart';
+import '../../../data/models/dating_profile_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../data/models/dating_profile_model.dart';
 
 class DateSearchScreen extends StatefulWidget {
   final List<DatingProfileModel> profiles;
@@ -21,18 +19,24 @@ class DateSearchScreen extends StatefulWidget {
 
 class _DateSearchScreenState extends State<DateSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<DatingProfileModel> _searchResults = [];
+  List<DatingProfileModel> _filteredProfiles = [];
 
-  void _performSearch(String query) {
+  void _onSearchChanged(String query) {
     if (query.isEmpty) {
-      setState(() => _searchResults = []);
+      setState(() {
+        _filteredProfiles = [];
+      });
       return;
     }
+
     setState(() {
-      _searchResults = widget.profiles.where((profile) {
-        return profile.name.toLowerCase().contains(query.toLowerCase()) ||
-            profile.city.toLowerCase().contains(query.toLowerCase()) ||
-            profile.interests.any((interest) => interest.toLowerCase().contains(query.toLowerCase()));
+      _filteredProfiles = widget.profiles.where((profile) {
+        final nameMatch = profile.name.toLowerCase().contains(query.toLowerCase());
+        final cityMatch = profile.city.toLowerCase().contains(query.toLowerCase());
+        final interestMatch = profile.interests.any(
+          (interest) => interest.toLowerCase().contains(query.toLowerCase()),
+        );
+        return nameMatch || cityMatch || interestMatch;
       }).toList();
     });
   }
@@ -41,111 +45,128 @@ class _DateSearchScreenState extends State<DateSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: TextField(
-          controller: _searchController,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
-          decoration: InputDecoration(
-            hintText: 'Search by name, city, or interest...',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey2),
-            border: InputBorder.none,
-          ),
-          onChanged: _performSearch,
-          autofocus: true,
-        ),
-        actions: [
-          if (_searchController.text.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.clear, color: AppColors.grey2),
-              onPressed: () {
-                _searchController.clear();
-                _performSearch('');
-              },
-            ),
-        ],
-      ),
-      body: _searchResults.isEmpty && _searchController.text.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Icon(Icons.search_rounded, color: AppColors.grey2, size: 64),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Search for people',
-                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.grey2),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'البحث',
+                    style: AppTextStyles.h4,
                   ),
                 ],
               ),
-            )
-          : _searchResults.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.person_off_rounded, color: AppColors.grey2, size: 64),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No results found',
-                        style: AppTextStyles.labelLarge.copyWith(color: AppColors.grey2),
-                      ),
-                    ],
+            ),
+            
+            // Search Input
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'ابحث بالاسم، المدينة، أو الاهتمام...',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.grey1),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final profile = _searchResults[index];
-                    return _SearchResultCard(profile: profile);
-                  },
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Results
+            Expanded(
+              child: _searchController.text.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_rounded,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'ابدأ البحث عن أشخاص',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.grey1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _filteredProfiles.isEmpty
+                      ? Center(
+                          child: Text(
+                            'لا توجد نتائج مطابقة',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.grey1,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _filteredProfiles.length,
+                          itemBuilder: (context, index) {
+                            final profile = _filteredProfiles[index];
+                            return _buildProfileTile(profile);
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-}
 
-class _SearchResultCard extends StatelessWidget {
-  final DatingProfileModel profile;
-
-  const _SearchResultCard({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildProfileTile(DatingProfileModel profile) {
     return GestureDetector(
       onTap: () {
-        // يمكن فتح صفحة الملف الشخصي
+        widget.onMatchFound(profile);
+        Navigator.pop(context);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
+            // Avatar
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(30),
               child: Image.network(
-                profile.imageUrls.first,
-                width: 70,
-                height: 70,
+                profile.imageUrls[0],
+                width: 60,
+                height: 60,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 70,
-                  height: 70,
-                  color: AppColors.grey,
-                  child: const Icon(Icons.person, color: AppColors.grey2),
-                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
+            
+            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,27 +174,64 @@ class _SearchResultCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${profile.name}, ${profile.age}',
-                        style: AppTextStyles.labelLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
+                        profile.name,
+                        style: AppTextStyles.labelLarge,
                       ),
                       if (profile.isVerified) ...[
                         const SizedBox(width: 4),
-                        const Icon(Icons.verified, color: AppColors.electricBlue, size: 16),
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: AppColors.neonBlue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 10,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, color: AppColors.grey2, size: 12),
-                      const SizedBox(width: 2),
-                      Text('${profile.city} · ${profile.distance}', style: AppTextStyles.labelSmall.copyWith(color: AppColors.grey2)),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 14,
+                        color: AppColors.grey1,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        profile.city,
+                        style: AppTextStyles.bodySmall,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    profile.interests.join(' · '),
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.dating),
+                  Wrap(
+                    spacing: 4,
+                    children: profile.interests
+                        .take(2)
+                        .map((interest) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.grey3,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                interest,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                 ],
               ),
@@ -182,5 +240,11 @@ class _SearchResultCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
