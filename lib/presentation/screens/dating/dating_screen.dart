@@ -1,217 +1,225 @@
+// lib/presentation/screens/date/dating_screen.dart
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/formatters.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../data/models/dating_profile_model.dart';
+import 'widgets/swipeable_card.dart';
 
 class DatingScreen extends StatefulWidget {
   const DatingScreen({super.key});
+
   @override
   State<DatingScreen> createState() => _DatingScreenState();
 }
 
-class _DatingScreenState extends State<DatingScreen> with SingleTickerProviderStateMixin {
-  int _currentCard = 0;
-  double _dragX = 0;
-  double _dragY = 0;
-  final List<String> _matchedWith = [];
+class _DatingScreenState extends State<DatingScreen> {
+  late List<DatingProfileModel> _profiles;
+  int _currentIndex = 0;
+  final Set<String> _matches = {};
 
-  final List<Map<String, dynamic>> _profiles = [
-    {'name':'Sara','age':24,'city':'Algiers','bio':'Coffee lover ☕ · Traveler ✈️ · Dog mom 🐕','interests':['Travel','Photography','Music'],'color':const Color(0xFF1A000A),'isVerified':true,'distance':'12 km'},
-    {'name':'Nora','age':22,'city':'Oran','bio':'Artist 🎨 · Book lover 📚 · Looking for real connection','interests':['Art','Books','Cooking'],'color':const Color(0xFF0A001A),'isVerified':false,'distance':'45 km'},
-    {'name':'Lina','age':26,'city':'Paris','bio':'Software engineer 💻 · Gym addict 🏋️ · Foodie 🍜','interests':['Tech','Fitness','Food'],'color':const Color(0xFF1A0A00),'isVerified':true,'distance':'102 km'},
-    {'name':'Rania','age':23,'city':'Cairo','bio':'Architecture student 🏛️ · Night owl 🌙 · Anime fan 🎌','interests':['Design','Anime','Gaming'],'color':const Color(0xFF001A0A),'isVerified':false,'distance':'230 km'},
-    {'name':'Hana','age':25,'city':'Dubai','bio':'Entrepreneur 💼 · Pilot in training ✈️ · Sunset chaser 🌅','interests':['Business','Travel','Sports'],'color':const Color(0xFF0A1A00),'isVerified':true,'distance':'890 km'},
-  ];
-
-  List<Map<String, dynamic>> get _remaining => _profiles.skip(_currentCard).toList();
-
-  void _swipe(bool isLike) {
-    if (_currentCard >= _profiles.length) return;
-    final profile = _profiles[_currentCard];
-    if (isLike && _currentCard % 2 == 0) {
-      setState(() => _matchedWith.add(profile['name'] as String));
-      _showMatch(profile);
-      return;
-    }
-    setState(() { _dragX = 0; _dragY = 0; _currentCard++; });
+  @override
+  void initState() {
+    super.initState();
+    _profiles = DatingProfileModel.getMockProfiles();
   }
 
-  void _showMatch(Map profile) {
+  void _handleSwipe(bool isLiked) {
+    if (_currentIndex >= _profiles.length) return;
+    
+    final profile = _profiles[_currentIndex];
+    if (isLiked) {
+      // محاكاة المطابقة (Match) - احتمالية 40%
+      if (_currentIndex % 2 == 0) {
+        _matches.add(profile.id);
+        _showMatchDialog(profile);
+        return;
+      }
+    }
+    
+    setState(() {
+      _currentIndex++;
+    });
+  }
+
+  void _showMatchDialog(DatingProfileModel profile) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      barrierColor: Colors.black.withOpacity(0.8),
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-              colors: [AppColors.neonRed.withOpacity(0.8), AppColors.dating.withOpacity(0.8)]),
-            borderRadius: BorderRadius.circular(28)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('💛', style: TextStyle(fontSize: 50)),
-            const SizedBox(height: 12),
-            const Text("It's a Match!", style: TextStyle(color: AppColors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
-            const SizedBox(height: 8),
-            Text('You and ${profile['name']} liked each other!', style: const TextStyle(color: AppColors.white, fontSize: 14, fontFamily: 'HarmonyOS'), textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: () { Navigator.pop(context); setState(() { _dragX = 0; _dragY = 0; _currentCard++; }); },
-              child: Container(width: double.infinity, height: 48,
-                decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14)),
-                child: const Center(child: Text('Send Message 💬', style: TextStyle(color: AppColors.black, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS'))))),
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () { Navigator.pop(context); setState(() { _dragX = 0; _dragY = 0; _currentCard++; }); },
-              child: const Text('Keep Swiping', style: TextStyle(color: AppColors.white, fontSize: 13, fontFamily: 'HarmonyOS'))),
-          ]),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.neonRed.withOpacity(0.9), AppColors.dating.withOpacity(0.9)],
+            ),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('💛', style: TextStyle(fontSize: 56)),
+              const SizedBox(height: 16),
+              const Text(
+                "It's a Match!",
+                style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'You and ${profile.name} liked each other!',
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() => _currentIndex++);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Send Message 💬', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex++);
+                },
+                child: const Text('Keep Swiping', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  void _resetProfiles() {
+    setState(() {
+      _profiles = DatingProfileModel.getMockProfiles();
+      _currentIndex = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // العنوان فقط (بدون زر رجوع)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              const Spacer(),
-              Column(children: [
-                const Text('Date', style: TextStyle(color: AppColors.white, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'HarmonyOS')),
-                if (_matchedWith.isNotEmpty)
-                  Text('${_matchedWith.length} matches 💛', style: const TextStyle(color: AppColors.dating, fontSize: 11, fontFamily: 'HarmonyOS')),
-              ]),
-              const Spacer(),
-              const Icon(Icons.tune, color: AppColors.white, size: 22),
-            ],
-          ),
-        ),
-        // CARDS
-        Expanded(
-          child: _currentCard >= _profiles.length
-            ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('🎉', style: TextStyle(fontSize: 60)),
-                const SizedBox(height: 16),
-                const Text('No more profiles!', style: TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
-                const SizedBox(height: 8),
-                const Text('Check back later', style: TextStyle(color: AppColors.grey2, fontSize: 14, fontFamily: 'HarmonyOS')),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () => setState(() => _currentCard = 0),
-                  child: Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(color: AppColors.dating, borderRadius: BorderRadius.circular(14)),
-                    child: const Text('Start Over', style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')))),
-              ]))
-            : Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (_currentCard + 1 < _profiles.length)
-                    _buildCard(_profiles[_currentCard + 1], scale: 0.92, offset: 12),
-                  GestureDetector(
-                    onHorizontalDragUpdate: (d) => setState(() => _dragX += d.delta.dx),
-                    onHorizontalDragEnd: (_) {
-                      if (_dragX > 80) _swipe(true);
-                      else if (_dragX < -80) _swipe(false);
-                      else setState(() => _dragX = 0);
-                    },
-                    child: Transform.translate(
-                      offset: Offset(_dragX, _dragY * 0.2),
-                      child: Transform.rotate(
-                        angle: _dragX / 1000,
-                        child: _buildCard(_profiles[_currentCard], withOverlay: true),
+    return Container(
+      color: AppColors.background,
+      child: _currentIndex < _profiles.length
+          ? Stack(
+              children: [
+                // بطاقة الخلفية (إن وجدت)
+                if (_currentIndex + 1 < _profiles.length)
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SwipeableCard(
+                        profile: _profiles[_currentIndex + 1],
+                        isBackground: true,
                       ),
                     ),
                   ),
+                // البطاقة الأمامية
+                Positioned.fill(
+                  child: SwipeableCard(
+                    profile: _profiles[_currentIndex],
+                    onSwipeLeft: () => _handleSwipe(false),
+                    onSwipeRight: () => _handleSwipe(true),
+                  ),
+                ),
+                // أزرار التحكم السفلية
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _ActionButton(
+                        icon: Icons.close_rounded,
+                        color: AppColors.neonRed,
+                        onTap: () => _handleSwipe(false),
+                      ),
+                      _ActionButton(
+                        icon: Icons.star_rounded,
+                        color: AppColors.neonYellow,
+                        size: 50,
+                        onTap: () => _handleSwipe(true),
+                      ),
+                      _ActionButton(
+                        icon: Icons.favorite_rounded,
+                        color: AppColors.dating,
+                        onTap: () => _handleSwipe(true),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('🎉', style: TextStyle(fontSize: 60)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No more profiles!',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Check back later', style: TextStyle(color: AppColors.grey2, fontSize: 14)),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _resetProfiles,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.dating,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Start Over', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
-        ),
-        // BUTTONS
-        if (_currentCard < _profiles.length)
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              GestureDetector(onTap: () => _swipe(false),
-                child: Container(width: 60, height: 60,
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.neonRed, width: 2), color: AppColors.background),
-                  child: const Icon(Icons.close, color: AppColors.neonRed, size: 28))),
-              GestureDetector(onTap: () => _swipe(false),
-                child: Container(width: 44, height: 44,
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.neonYellow, width: 1.5), color: AppColors.background),
-                  child: const Icon(Icons.star, color: AppColors.neonYellow, size: 22))),
-              GestureDetector(onTap: () => _swipe(true),
-                child: Container(width: 60, height: 60,
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.dating, width: 2), color: AppColors.background),
-                  child: const Icon(Icons.favorite, color: AppColors.dating, size: 28))),
-            ])),
-      ],
+            ),
     );
   }
+}
 
-  Widget _buildCard(Map profile, {bool withOverlay = false, double scale = 1.0, double offset = 0}) {
-    final isRight = _dragX > 40;
-    final isLeft = _dragX < -40;
-    return Transform.scale(
-      scale: scale,
-      child: Transform.translate(
-        offset: Offset(0, offset),
-        child: Container(
-          width: MediaQuery.of(context).size.width - 32,
-          height: MediaQuery.of(context).size.height * 0.55,
-          decoration: BoxDecoration(
-            color: profile['color'] as Color,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))]),
-          child: Stack(children: [
-            Center(child: Icon(Icons.person, color: AppColors.white.withOpacity(0.08), size: 160)),
-            if (withOverlay && isRight)
-              Positioned(top: 40, left: 20, child: Transform.rotate(angle: -0.3,
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(border: Border.all(color: AppColors.dating, width: 3), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('LIKE 💛', style: TextStyle(color: AppColors.dating, fontSize: 22, fontWeight: FontWeight.w900))))),
-            if (withOverlay && isLeft)
-              Positioned(top: 40, right: 20, child: Transform.rotate(angle: 0.3,
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(border: Border.all(color: AppColors.neonRed, width: 3), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('NOPE ✕', style: TextStyle(color: AppColors.neonRed, fontSize: 22, fontWeight: FontWeight.w900))))),
-            Positioned(bottom: 0, left: 0, right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.9)]),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24))),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text('${profile['name']}  ${profile['age']}', style: const TextStyle(color: AppColors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'HarmonyOS')),
-                    if (profile['isVerified'] as bool) ...[const SizedBox(width: 6), const Icon(Icons.verified, color: AppColors.electricBlue, size: 18)],
-                  ]),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    const Icon(Icons.location_on, color: AppColors.grey2, size: 14),
-                    const SizedBox(width: 4),
-                    Text('${profile['city']} · ${profile['distance']}', style: const TextStyle(color: AppColors.grey2, fontSize: 13, fontFamily: 'HarmonyOS')),
-                  ]),
-                  const SizedBox(height: 8),
-                  Text(profile['bio'], style: const TextStyle(color: AppColors.white, fontSize: 13, fontFamily: 'HarmonyOS')),
-                  const SizedBox(height: 10),
-                  Wrap(spacing: 6, children: (profile['interests'] as List<String>).map((tag) =>
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(border: Border.all(color: AppColors.dating.withOpacity(0.6)), borderRadius: BorderRadius.circular(20)),
-                      child: Text(tag, style: const TextStyle(color: AppColors.dating, fontSize: 11, fontFamily: 'HarmonyOS')))
-                  ).toList()),
-                  const SizedBox(height: 10),
-                  Align(alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () => _swipe(true),
-                      child: Container(width: 38, height: 38,
-                        decoration: BoxDecoration(color: AppColors.dating.withOpacity(0.2), shape: BoxShape.circle, border: Border.all(color: AppColors.dating, width: 1.5)),
-                        child: const Icon(Icons.keyboard_arrow_up, color: AppColors.dating, size: 22)))),
-                ]),
-              )),
-          ]),
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    this.size = 28,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: color, width: 2),
+          color: AppColors.background,
         ),
+        child: Icon(icon, color: color, size: size),
       ),
     );
   }
