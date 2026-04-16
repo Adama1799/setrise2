@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
-import '../../../data/models/category_model.dart'; // ✅ تمت الإضافة
+import '../../../data/models/category_model.dart'; // ✅ موجود
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
 import 'marketplace_screen.dart';
