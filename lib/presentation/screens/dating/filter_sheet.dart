@@ -1,5 +1,4 @@
 // lib/presentation/screens/date/filter_sheet.dart
-
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -8,13 +7,17 @@ class DateFilterSheet extends StatefulWidget {
   final int maxDistance;
   final int ageFrom;
   final int ageTo;
-  final Function(int maxDistance, int ageFrom, int ageTo) onApply;
+  final bool sortBySharedInterests;
+  final bool incognitoMode;
+  final Function(int maxDistance, int ageFrom, int ageTo, bool sortByShared, bool incognito) onApply;
 
   const DateFilterSheet({
     super.key,
     required this.maxDistance,
     required this.ageFrom,
     required this.ageTo,
+    required this.sortBySharedInterests,
+    required this.incognitoMode,
     required this.onApply,
   });
 
@@ -26,6 +29,8 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
   late int _maxDistance;
   late int _ageFrom;
   late int _ageTo;
+  late bool _sortBySharedInterests;
+  late bool _incognitoMode;
 
   @override
   void initState() {
@@ -33,6 +38,8 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
     _maxDistance = widget.maxDistance;
     _ageFrom = widget.ageFrom;
     _ageTo = widget.ageTo;
+    _sortBySharedInterests = widget.sortBySharedInterests;
+    _incognitoMode = widget.incognitoMode;
   }
 
   @override
@@ -59,7 +66,6 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
             style: AppTextStyles.h5.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          // شريط المسافة
           Text(
             'Maximum Distance: $_maxDistance km',
             style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w500),
@@ -71,12 +77,9 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
             divisions: 50,
             label: '$_maxDistance km',
             activeColor: AppColors.dating,
-            onChanged: (value) {
-              setState(() => _maxDistance = value.toInt());
-            },
+            onChanged: (value) => setState(() => _maxDistance = value.toInt()),
           ),
           const SizedBox(height: 20),
-          // نطاق العمر
           Text(
             'Age Range',
             style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w500),
@@ -102,7 +105,22 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          SwitchListTile(
+            value: _sortBySharedInterests,
+            onChanged: (value) => setState(() => _sortBySharedInterests = value),
+            title: const Text('Show people with shared interests first'),
+            subtitle: const Text('Profiles with more common interests appear first'),
+            activeColor: AppColors.dating,
+          ),
+          SwitchListTile(
+            value: _incognitoMode,
+            onChanged: (value) => setState(() => _incognitoMode = value),
+            title: const Text('Incognito Mode'),
+            subtitle: const Text('Your profile will be hidden from others'),
+            activeColor: Colors.purple,
+          ),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
@@ -120,7 +138,7 @@ class _DateFilterSheetState extends State<DateFilterSheet> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    widget.onApply(_maxDistance, _ageFrom, _ageTo);
+                    widget.onApply(_maxDistance, _ageFrom, _ageTo, _sortBySharedInterests, _incognitoMode);
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
