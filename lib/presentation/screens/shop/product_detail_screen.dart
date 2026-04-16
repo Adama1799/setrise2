@@ -6,6 +6,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/mock_data/shop_mock_data.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
