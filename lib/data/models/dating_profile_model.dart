@@ -1,88 +1,104 @@
 // lib/data/models/dating_profile_model.dart
-import '../../domain/entities/dating_profile_entity.dart';
+import 'dart:math';
 
-class DatingProfileModel extends DatingProfileEntity {
+class DatingProfileModel {
+  final String id;
+  final String name;
+  final int age;
+  final String city;
+  final String distance;
+  final String bio;
+  final List<String> imageUrls;
+  final List<String> interests;
+  final bool isVerified;
+
   DatingProfileModel({
-    required String id,
-    required String userId,
-    required String name,
-    required String age,
-    required List<String> photos,
-    required String bio,
-    required String location,
-    required List<String> interests,
-    required String lookingFor,
-    required bool isOnline,
-    required DateTime lastSeen,
-  }) : super(
-    id: id,
-    userId: userId,
-    name: name,
-    age: age,
-    photos: photos,
-    bio: bio,
-    location: location,
-    interests: interests,
-    lookingFor: lookingFor,
-    isOnline: isOnline,
-    lastSeen: lastSeen,
-  );
+    required this.id,
+    required this.name,
+    required this.age,
+    required this.city,
+    required this.distance,
+    required this.bio,
+    required this.imageUrls,
+    required this.interests,
+    this.isVerified = false,
+  });
 
-  factory DatingProfileModel.fromJson(Map<String, dynamic> json) {
-    return DatingProfileModel(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      name: json['name'] ?? '',
-      age: json['age'] ?? '',
-      photos: List<String>.from(json['photos'] ?? []),
-      bio: json['bio'] ?? '',
-      location: json['location'] ?? '',
-      interests: List<String>.from(json['interests'] ?? []),
-      lookingFor: json['lookingFor'] ?? '',
-      isOnline: json['isOnline'] ?? false,
-      lastSeen: DateTime.parse(json['lastSeen'] ?? DateTime.now().toIso8601String()),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'userId': userId,
-    'name': name,
-    'age': age,
-    'photos': photos,
-    'bio': bio,
-    'location': location,
-    'interests': interests,
-    'lookingFor': lookingFor,
-    'isOnline': isOnline,
-    'lastSeen': lastSeen.toIso8601String(),
-  };
-
-  DatingProfileModel copyWith({
-    String? id,
-    String? userId,
-    String? name,
-    String? age,
-    List<String>? photos,
-    String? bio,
-    String? location,
-    List<String>? interests,
-    String? lookingFor,
-    bool? isOnline,
-    DateTime? lastSeen,
-  }) {
-    return DatingProfileModel(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      name: name ?? this.name,
-      age: age ?? this.age,
-      photos: photos ?? this.photos,
-      bio: bio ?? this.bio,
-      location: location ?? this.location,
-      interests: interests ?? this.interests,
-      lookingFor: lookingFor ?? this.lookingFor,
-      isOnline: isOnline ?? this.isOnline,
-      lastSeen: lastSeen ?? this.lastSeen,
-    );
+  static List<DatingProfileModel> getMockProfiles() {
+    final random = Random();
+    return [
+      DatingProfileModel(
+        id: 'd1',
+        name: 'Sarah',
+        age: 24,
+        city: 'Algiers',
+        distance: '12 km',
+        bio: 'Coffee lover ☕ · Traveler ✈️ · Dog mom 🐕',
+        imageUrls: [
+          'https://picsum.photos/400/600?random=1',
+          'https://picsum.photos/400/600?random=2',
+          'https://picsum.photos/400/600?random=3',
+        ],
+        interests: ['Travel', 'Photography', 'Music'],
+        isVerified: true,
+      ),
+      DatingProfileModel(
+        id: 'd2',
+        name: 'Nora',
+        age: 22,
+        city: 'Oran',
+        distance: '45 km',
+        bio: 'Artist 🎨 · Book lover 📚 · Looking for real connection',
+        imageUrls: [
+          'https://picsum.photos/400/600?random=4',
+          'https://picsum.photos/400/600?random=5',
+        ],
+        interests: ['Art', 'Books', 'Cooking'],
+        isVerified: false,
+      ),
+      DatingProfileModel(
+        id: 'd3',
+        name: 'Lina',
+        age: 26,
+        city: 'Paris',
+        distance: '102 km',
+        bio: 'Software engineer 💻 · Gym addict 🏋️ · Foodie 🍜',
+        imageUrls: [
+          'https://picsum.photos/400/600?random=6',
+          'https://picsum.photos/400/600?random=7',
+        ],
+        interests: ['Tech', 'Fitness', 'Food'],
+        isVerified: true,
+      ),
+      DatingProfileModel(
+        id: 'd4',
+        name: 'Rania',
+        age: 23,
+        city: 'Cairo',
+        distance: '230 km',
+        bio: 'Architecture student 🏛️ · Night owl 🌙 · Anime fan 🎌',
+        imageUrls: [
+          'https://picsum.photos/400/600?random=8',
+          'https://picsum.photos/400/600?random=9',
+        ],
+        interests: ['Design', 'Anime', 'Gaming'],
+        isVerified: false,
+      ),
+      DatingProfileModel(
+        id: 'd5',
+        name: 'Hana',
+        age: 25,
+        city: 'Dubai',
+        distance: '890 km',
+        bio: 'Entrepreneur 💼 · Pilot in training ✈️ · Sunset chaser 🌅',
+        imageUrls: [
+          'https://picsum.photos/400/600?random=10',
+          'https://picsum.photos/400/600?random=11',
+          'https://picsum.photos/400/600?random=12',
+        ],
+        interests: ['Business', 'Travel', 'Sports'],
+        isVerified: true,
+      ),
+    ];
   }
 }
