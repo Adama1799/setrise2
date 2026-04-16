@@ -1,100 +1,80 @@
 // lib/data/models/product_model.dart
-import '../../domain/entities/product_entity.dart';
 
-class ProductModel extends ProductEntity {
+class ProductModel {
+  final String id;
+  final String name;
+  final String brandName;
+  final String categoryId;
+  final String description;
+  final double price;
+  final double? oldPrice;
+  final double rating;
+  final int reviewsCount;
+  final int stock;
+  final List<String> images;
+  final List<String> sizes;
+  final List<String> colors;
+  final bool isFeatured;
+  final bool isFavorite;
+
   ProductModel({
-    required String id,
-    required String name,
-    required String description,
-    required double price,
-    required double originalPrice,
-    required List<String> images,
-    required double rating,
-    required int reviewsCount,
-    required int stock,
-    required bool isFavorite,
-    required String category,
-    required bool onSale,
-    required int discount,
-  }) : super(
-    id: id,
-    name: name,
-    description: description,
-    price: price,
-    originalPrice: originalPrice,
-    images: images,
-    rating: rating,
-    reviewsCount: reviewsCount,
-    stock: stock,
-    isFavorite: isFavorite,
-    category: category,
-    onSale: onSale,
-    discount: discount,
-  );
+    required this.id,
+    required this.name,
+    required this.brandName,
+    required this.categoryId,
+    required this.description,
+    required this.price,
+    this.oldPrice,
+    required this.rating,
+    required this.reviewsCount,
+    required this.stock,
+    required this.images,
+    required this.sizes,
+    required this.colors,
+    this.isFeatured = false,
+    this.isFavorite = false,
+  });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
-    return ProductModel(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      originalPrice: (json['originalPrice'] ?? 0).toDouble(),
-      images: List<String>.from(json['images'] ?? []),
-      rating: (json['rating'] ?? 0).toDouble(),
-      reviewsCount: json['reviewsCount'] ?? 0,
-      stock: json['stock'] ?? 0,
-      isFavorite: json['isFavorite'] ?? false,
-      category: json['category'] ?? '',
-      onSale: json['onSale'] ?? false,
-      discount: json['discount'] ?? 0,
-    );
+  double get discountPercentage {
+    if (oldPrice != null && oldPrice! > price) {
+      return ((oldPrice! - price) / oldPrice!) * 100;
+    }
+    return 0;
   }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'price': price,
-    'originalPrice': originalPrice,
-    'images': images,
-    'rating': rating,
-    'reviewsCount': reviewsCount,
-    'stock': stock,
-    'isFavorite': isFavorite,
-    'category': category,
-    'onSale': onSale,
-    'discount': discount,
-  };
 
   ProductModel copyWith({
     String? id,
     String? name,
+    String? brandName,
+    String? categoryId,
     String? description,
     double? price,
-    double? originalPrice,
-    List<String>? images,
+    double? oldPrice,
     double? rating,
     int? reviewsCount,
     int? stock,
+    List<String>? images,
+    List<String>? sizes,
+    List<String>? colors,
+    bool? isFeatured,
     bool? isFavorite,
-    String? category,
-    bool? onSale,
-    int? discount,
   }) {
     return ProductModel(
       id: id ?? this.id,
       name: name ?? this.name,
+      brandName: brandName ?? this.brandName,
+      categoryId: categoryId ?? this.categoryId,
       description: description ?? this.description,
       price: price ?? this.price,
-      originalPrice: originalPrice ?? this.originalPrice,
-      images: images ?? this.images,
+      oldPrice: oldPrice ?? this.oldPrice,
       rating: rating ?? this.rating,
       reviewsCount: reviewsCount ?? this.reviewsCount,
       stock: stock ?? this.stock,
+      images: images ?? this.images,
+      sizes: sizes ?? this.sizes,
+      colors: colors ?? this.colors,
+      isFeatured: isFeatured ?? this.isFeatured,
       isFavorite: isFavorite ?? this.isFavorite,
-      category: category ?? this.category,
-      onSale: onSale ?? this.onSale,
-      discount: discount ?? this.discount,
     );
   }
 }
