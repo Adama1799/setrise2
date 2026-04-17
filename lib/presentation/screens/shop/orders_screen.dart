@@ -3,10 +3,42 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/formatters.dart';
-import '../../../data/mock_data/shop_mock_data.dart';
-import '../../../data/models/product_model.dart';
-import 'product_detail_screen.dart';
+
+class OrderModel {
+  final String id;
+  final DateTime date;
+  final int itemCount;
+  final double total;
+  final String status;
+  final String shippingAddress;
+  final List<OrderItem> items;
+
+  OrderModel({
+    required this.id,
+    required this.date,
+    required this.itemCount,
+    required this.total,
+    required this.status,
+    required this.shippingAddress,
+    required this.items,
+  });
+
+  String get formattedDate => '${date.day}/${date.month}/${date.year}';
+}
+
+class OrderItem {
+  final String name;
+  final String imageUrl;
+  final int quantity;
+  final double price;
+
+  OrderItem({
+    required this.name,
+    required this.imageUrl,
+    required this.quantity,
+    required this.price,
+  });
+}
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -16,14 +48,18 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
-  final List<Order> _orders = Order.getMockOrders();
+  List<OrderModel> _allOrders = [];
+  List<OrderModel> _activeOrders = [];
+  List<OrderModel> _completedOrders = [];
+  List<OrderModel> _cancelledOrders = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadOrders();
   }
 
   @override
@@ -32,605 +68,436 @@ class _OrdersScreenState extends State<OrdersScreen>
     super.dispose();
   }
 
-  List<Order> get _activeOrders =>
-      _orders.where((o) => o.status == OrderStatus.processing || o.status == OrderStatus.shipped).toList();
+  void _loadOrders() {
+    // Mock data
+    _allOrders = [
+      OrderModel(
+        id: '#ORD-001',
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        itemCount: 2,
+        total: 129.98,
+        status: 'Delivered',
+        shippingAddress: '123 Main St, City, Country',
+        items: [
+          OrderItem(
+            name: 'Wireless Headphones',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 1,
+            price: 89.99,
+          ),
+          OrderItem(
+            name: 'Phone Case',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 1,
+            price: 24.99,
+          ),
+        ],
+      ),
+      OrderModel(
+        id: '#ORD-002',
+        date: DateTime.now().subtract(const Duration(days: 2)),
+        itemCount: 1,
+        total: 199.99,
+        status: 'Processing',
+        shippingAddress: '456 Oak Ave, City, Country',
+        items: [
+          OrderItem(
+            name: 'Smart Watch',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 1,
+            price: 199.99,
+          ),
+        ],
+      ),
+      OrderModel(
+        id: '#ORD-003',
+        date: DateTime.now().subtract(const Duration(days: 3)),
+        itemCount: 3,
+        total: 89.97,
+        status: 'Cancelled',
+        shippingAddress: '789 Pine Rd, City, Country',
+        items: [
+          OrderItem(
+            name: 'T-Shirt',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 2,
+            price: 24.99,
+          ),
+          OrderItem(
+            name: 'Sneakers',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 1,
+            price: 39.99,
+          ),
+        ],
+      ),
+      OrderModel(
+        id: '#ORD-004',
+        date: DateTime.now(),
+        itemCount: 1,
+        total: 49.99,
+        status: 'Shipped',
+        shippingAddress: '321 Elm St, City, Country',
+        items: [
+          OrderItem(
+            name: 'Bluetooth Speaker',
+            imageUrl: 'https://via.placeholder.com/50x50',
+            quantity: 1,
+            price: 49.99,
+          ),
+        ],
+      ),
+    ];
 
-  List<Order> get _completedOrders =>
-      _orders.where((o) => o.status == OrderStatus.delivered).toList();
+    _activeOrders = _allOrders.where((order) => 
+        order.status == 'Processing' || 
+        order.status == 'Shipped').toList();
+    _completedOrders = _allOrders.where((order) => 
+        order.status == 'Delivered').toList();
+    _cancelledOrders = _allOrders.where((order) => 
+        order.status == 'Cancelled').toList();
+  }
 
-  List<Order> get _cancelledOrders =>
-      _orders.where((o) => o.status == OrderStatus.cancelled).toList();
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return AppColors.electricBlue;
+      case 'processing':
+        return Colors.orange;
+      case 'shipped':
+        return Colors.blue;
+      case 'cancelled':
+        return AppColors.neonRed;
+      default:
+        return AppColors.grey2;
+    }
+  }
+
+  List<Widget> _getActionButtons(String status) {
+    List<Widget> buttons = [];
+    
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        buttons.add(
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.grey.withOpacity(0.2),
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Review',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+        buttons.add(const SizedBox(width: 8));
+        buttons.add(
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.electricBlue,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Buy Again',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+        break;
+      case 'processing':
+      case 'shipped':
+        buttons.add(
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.electricBlue,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Track',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+        break;
+      case 'cancelled':
+        buttons.add(
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.electricBlue,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Order Again',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+        break;
+    }
+    
+    return buttons;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.white,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
-          'My Orders',
-          style: AppTextStyles.h5.copyWith(
-            color: AppColors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          "My Orders",
+          style: AppTextStyles.h5.copyWith(color: AppColors.white),
         ),
-        centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: AppColors.shop,
-          indicatorWeight: 2,
-          labelColor: AppColors.shop,
-          unselectedLabelColor: AppColors.grey2,
-          labelStyle: AppTextStyles.labelMedium.copyWith(
-            fontWeight: FontWeight.bold,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            color: AppColors.background,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppColors.electricBlue,
+              labelColor: AppColors.electricBlue,
+              unselectedLabelColor: AppColors.grey2,
+              labelStyle: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: const [
+                Tab(text: 'All'),
+                Tab(text: 'Active'),
+                Tab(text: 'Completed'),
+                Tab(text: 'Cancelled'),
+              ],
+            ),
           ),
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Active'),
-            Tab(text: 'Completed'),
-            Tab(text: 'Cancelled'),
-          ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _OrdersList(orders: _orders),
-          _OrdersList(orders: _activeOrders),
-          _OrdersList(orders: _completedOrders),
-          _OrdersList(orders: _cancelledOrders),
+          _buildOrderList(_allOrders),
+          _buildOrderList(_activeOrders),
+          _buildOrderList(_completedOrders),
+          _buildOrderList(_cancelledOrders),
         ],
       ),
     );
   }
-}
 
-// ===== ORDERS LIST =====
-class _OrdersList extends StatelessWidget {
-  final List<Order> orders;
-
-  const _OrdersList({required this.orders});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOrderList(List<OrderModel> orders) {
     if (orders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.inventory_2_outlined,
-                color: AppColors.grey2,
-                size: 50,
-              ),
+            Icon(
+              Icons.inbox_outlined,
+              size: 80,
+              color: AppColors.grey2,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Text(
               'No orders found',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.grey2,
-              ),
+              style: AppTextStyles.h5.copyWith(color: AppColors.white),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You haven\'t placed any orders yet',
+              style: AppTextStyles.body1.copyWith(color: AppColors.grey2),
             ),
           ],
         ),
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        return _OrderCard(order: orders[index]);
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Refresh orders
       },
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
+        itemBuilder: (context, index) => _buildOrderCard(orders[index]),
+      ),
     );
   }
-}
 
-// ===== ORDER CARD =====
-class _OrderCard extends StatefulWidget {
-  final Order order;
-
-  const _OrderCard({required this.order});
-
-  @override
-  State<_OrderCard> createState() => _OrderCardState();
-}
-
-class _OrderCardState extends State<_OrderCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final order = widget.order;
+  Widget _buildOrderCard(OrderModel order) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.grey.withOpacity(0.2),
-        ),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: ExpansionTile(
+        title: Row(
+          children: [
+            Text(
+              order.id,
+              style: AppTextStyles.body1.copyWith(
+                color: AppColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getStatusColor(order.status).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: BorderSide(
+                  color: _getStatusColor(order.status),
+                ),
+              ),
+              child: Text(
+                order.status,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: _getStatusColor(order.status),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          order.formattedDate,
+          style: AppTextStyles.body1.copyWith(color: AppColors.grey2),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Order header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Order #${order.id}',
-                          style: AppTextStyles.labelLarge.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          Formatters.formatDate(order.orderDate),
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.grey2,
-                          ),
-                        ),
-                      ],
-                    ),
-                    _buildStatusBadge(order.status),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Items summary
-                Row(
-                  children: [
-                    // Product images stack
-                    SizedBox(
-                      width: 80,
-                      height: 70,
-                      child: Stack(
-                        children: order.items.take(3).toList().asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final item = entry.value;
-                          return Positioned(
-                            left: index * 20.0,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppColors.background,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Image.network(
-                                  item.product.images.first,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: AppColors.grey,
-                                    child: const Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: AppColors.grey2,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
-                            style: AppTextStyles.labelMedium.copyWith(
-                              color: AppColors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Total: \$${order.total.toStringAsFixed(2)}',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.shop,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Expand/Collapse icon
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _expanded = !_expanded;
-                        });
-                      },
-                      icon: Icon(
-                        _expanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.grey2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          // Track order
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: AppColors.shop.withOpacity(0.5),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          'Track Order',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.shop,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (order.status == OrderStatus.processing) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            // Cancel order
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: AppColors.grey,
-                                title: Text(
-                                  'Cancel Order',
-                                  style: AppTextStyles.labelLarge.copyWith(
-                                    color: AppColors.white,
-                                  ),
-                                ),
-                                content: Text(
-                                  'Are you sure you want to cancel this order?',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.grey2,
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text(
-                                      'No',
-                                      style: AppTextStyles.labelMedium.copyWith(
-                                        color: AppColors.grey2,
-                                      ),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(ctx);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Order cancelled'),
-                                          backgroundColor: AppColors.neonRed,
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      'Yes, Cancel',
-                                      style: AppTextStyles.labelMedium.copyWith(
-                                        color: AppColors.neonRed,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: AppColors.neonRed.withOpacity(0.5),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.neonRed,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (order.status == OrderStatus.delivered) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            // Write review
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: AppColors.neonYellow.withOpacity(0.5),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            'Write Review',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.neonYellow,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (order.status == OrderStatus.delivered) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Buy again
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Added to cart!'),
-                                backgroundColor: AppColors.shop,
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.shop,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            'Buy Again',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Expanded items list
-          if (_expanded)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.05),
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(16),
-                ),
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.grey.withOpacity(0.2),
+                // Order Items
+                Text(
+                  'Items (${order.itemCount})',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  ...order.items.map((item) => _OrderItemRow(item: item)),
-                  const SizedBox(height: 16),
-                  // Order summary
-                  _buildOrderSummary(order),
-                  const SizedBox(height: 16),
-                  // Shipping address
-                  _buildAddressSummary(order.shippingAddress),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(OrderStatus status) {
-    Color bgColor;
-    Color textColor;
-    String text;
-
-    switch (status) {
-      case OrderStatus.processing:
-        bgColor = AppColors.warning.withOpacity(0.2);
-        textColor = AppColors.warning;
-        text = 'Processing';
-        break;
-      case OrderStatus.shipped:
-        bgColor = AppColors.electricBlue.withOpacity(0.2);
-        textColor = AppColors.electricBlue;
-        text = 'Shipped';
-        break;
-      case OrderStatus.delivered:
-        bgColor = AppColors.neonGreen.withOpacity(0.2);
-        textColor = AppColors.neonGreen;
-        text = 'Delivered';
-        break;
-      case OrderStatus.cancelled:
-        bgColor = AppColors.neonRed.withOpacity(0.2);
-        textColor = AppColors.neonRed;
-        text = 'Cancelled';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrderSummary(Order order) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _buildSummaryRow('Subtotal', order.subtotal),
-          const SizedBox(height: 4),
-          _buildSummaryRow('Shipping', order.shippingCost),
-          const SizedBox(height: 4),
-          _buildSummaryRow('Tax', order.tax),
-          if (order.discount > 0) ...[
-            const SizedBox(height: 4),
-            _buildSummaryRow('Discount', -order.discount, valueColor: AppColors.neonGreen),
-          ],
-          const SizedBox(height: 8),
-          const Divider(color: AppColors.grey),
-          const SizedBox(height: 8),
-          _buildSummaryRow('Total', order.total, isTotal: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(
-    String label,
-    double amount, {
-    bool isTotal = false,
-    Color? valueColor,
-  }) {
-    final displayColor = valueColor ?? (isTotal ? AppColors.shop : AppColors.white);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: isTotal
-              ? AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                )
-              : AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.grey2,
-                ),
-        ),
-        Text(
-          '${amount < 0 ? '-' : ''}\$${amount.abs().toStringAsFixed(2)}',
-          style: isTotal
-              ? AppTextStyles.labelSmall.copyWith(
-                  color: displayColor,
-                  fontWeight: FontWeight.bold,
-                )
-              : AppTextStyles.labelSmall.copyWith(
-                  color: displayColor,
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddressSummary(Address address) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.location_on_outlined,
-            color: AppColors.shop,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                const SizedBox(height: 8),
+                ...order.items.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.imageUrl,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 40,
+                            height: 40,
+                            color: AppColors.grey,
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.grey2,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${item.name} x${item.quantity}',
+                          style: AppTextStyles.body1.copyWith(
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '\$${(item.price * item.quantity).toStringAsFixed(2)}',
+                        style: AppTextStyles.body1.copyWith(
+                          color: AppColors.electricBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+                
+                const SizedBox(height: 16),
+                
+                // Shipping Address
                 Text(
                   'Shipping Address',
-                  style: AppTextStyles.labelSmall.copyWith(
+                  style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  address.fullName,
-                  style: AppTextStyles.labelSmall.copyWith(
+                  order.shippingAddress,
+                  style: AppTextStyles.body1.copyWith(
                     color: AppColors.grey2,
                   ),
                 ),
-                Text(
-                  '${address.street}, ${address.city}',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                  ),
+                
+                const SizedBox(height: 16),
+                
+                // Order Total
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Order Total',
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '\$${order.total.toStringAsFixed(2)}',
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.electricBlue,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '${address.state}, ${address.zipCode}',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                  ),
-                ),
-                Text(
-                  address.country,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                  ),
-                ),
-                Text(
-                  address.phone,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                  ),
+                
+                const SizedBox(height: 16),
+                
+                // Action Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: _getActionButtons(order.status),
                 ),
               ],
             ),
@@ -639,267 +506,4 @@ class _OrderCardState extends State<_OrderCard> {
       ),
     );
   }
-}
-
-// ===== ORDER ITEM ROW =====
-class _OrderItemRow extends StatelessWidget {
-  final OrderItem item;
-
-  const _OrderItemRow({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final product = item.product;
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 60,
-                height: 60,
-                color: AppColors.grey,
-                child: Image.network(
-                  product.images.first,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.grey,
-                    child: const Icon(
-                      Icons.image_not_supported_outlined,
-                      color: AppColors.grey2,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Qty: ${item.quantity}  •  \$${product.price.toStringAsFixed(2)}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.grey2,
-                    ),
-                  ),
-                  if (item.selectedSize != null || item.selectedColor != null)
-                    Text(
-                      '${item.selectedSize ?? ''} ${item.selectedColor != null ? '• ${item.selectedColor}' : ''}',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.grey2,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ===== ORDER MODEL =====
-enum OrderStatus { processing, shipped, delivered, cancelled }
-
-class Order {
-  final String id;
-  final List<OrderItem> items;
-  final double subtotal;
-  final double shippingCost;
-  final double tax;
-  final double discount;
-  final double total;
-  final Address shippingAddress;
-  final OrderStatus status;
-  final DateTime orderDate;
-  final DateTime? deliveredDate;
-
-  Order({
-    required this.id,
-    required this.items,
-    required this.subtotal,
-    required this.shippingCost,
-    required this.tax,
-    this.discount = 0,
-    required this.total,
-    required this.shippingAddress,
-    required this.status,
-    required this.orderDate,
-    this.deliveredDate,
-  });
-
-  static List<Order> getMockOrders() {
-    final products = ShopMockData.getFeaturedProducts();
-    final popularProducts = ShopMockData.getPopularProducts();
-
-    return [
-      Order(
-        id: 'ORD-2024-001',
-        items: [
-          OrderItem(
-            product: products[0],
-            quantity: 2,
-            selectedSize: 'M',
-            selectedColor: 'Black',
-          ),
-          OrderItem(
-            product: popularProducts[1],
-            quantity: 1,
-            selectedSize: 'One Size',
-            selectedColor: 'Silver',
-          ),
-        ],
-        subtotal: 349.97,
-        shippingCost: 0,
-        tax: 28.00,
-        discount: 0,
-        total: 377.97,
-        shippingAddress: Address(
-          id: '1',
-          name: 'Home',
-          fullName: 'Ahmed Benali',
-          street: '123 Rue Didouche Mourad',
-          city: 'Algiers',
-          state: 'Alger Centre',
-          zipCode: '16000',
-          country: 'Algeria',
-          phone: '+213 555 123 456',
-          isDefault: true,
-        ),
-        status: OrderStatus.delivered,
-        orderDate: DateTime.now().subtract(const Duration(days: 7)),
-        deliveredDate: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-      Order(
-        id: 'ORD-2024-002',
-        items: [
-          OrderItem(
-            product: products[2],
-            quantity: 1,
-            selectedSize: 'L',
-            selectedColor: 'Blue',
-          ),
-        ],
-        subtotal: 149.99,
-        shippingCost: 15.99,
-        tax: 12.00,
-        discount: 15.00,
-        total: 162.98,
-        shippingAddress: Address(
-          id: '2',
-          name: 'Work',
-          fullName: 'Ahmed Benali',
-          street: '45 Boulevard Colonel Amirouche',
-          city: 'Oran',
-          state: 'Oran',
-          zipCode: '31000',
-          country: 'Algeria',
-          phone: '+213 555 789 012',
-          isDefault: false,
-        ),
-        status: OrderStatus.shipped,
-        orderDate: DateTime.now().subtract(const Duration(days: 3)),
-        deliveredDate: null,
-      ),
-      Order(
-        id: 'ORD-2024-003',
-        items: [
-          OrderItem(
-            product: popularProducts[3],
-            quantity: 3,
-            selectedSize: 'S',
-            selectedColor: 'White',
-          ),
-        ],
-        subtotal: 269.97,
-        shippingCost: 0,
-        tax: 21.60,
-        discount: 0,
-        total: 291.57,
-        shippingAddress: Address(
-          id: '1',
-          name: 'Home',
-          fullName: 'Ahmed Benali',
-          street: '123 Rue Didouche Mourad',
-          city: 'Algiers',
-          state: 'Alger Centre',
-          zipCode: '16000',
-          country: 'Algeria',
-          phone: '+213 555 123 456',
-          isDefault: true,
-        ),
-        status: OrderStatus.processing,
-        orderDate: DateTime.now().subtract(const Duration(days: 1)),
-        deliveredDate: null,
-      ),
-      Order(
-        id: 'ORD-2024-004',
-        items: [
-          OrderItem(
-            product: products[4],
-            quantity: 1,
-            selectedSize: 'M',
-            selectedColor: 'Black',
-          ),
-        ],
-        subtotal: 169.99,
-        shippingCost: 15.99,
-        tax: 13.60,
-        discount: 0,
-        total: 199.58,
-        shippingAddress: Address(
-          id: '3',
-          name: 'Parents',
-          fullName: 'Ahmed Benali',
-          street: '78 Avenue des Palmiers',
-          city: 'Constantine',
-          state: 'Constantine',
-          zipCode: '25000',
-          country: 'Algeria',
-          phone: '+213 555 456 789',
-          isDefault: false,
-        ),
-        status: OrderStatus.cancelled,
-        orderDate: DateTime.now().subtract(const Duration(days: 10)),
-        deliveredDate: null,
-      ),
-    ];
-  }
-}
-
-class OrderItem {
-  final ProductModel product;
-  final int quantity;
-  final String? selectedSize;
-  final String? selectedColor;
-
-  OrderItem({
-    required this.product,
-    required this.quantity,
-    this.selectedSize,
-    this.selectedColor,
-  });
 }
