@@ -234,7 +234,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 Expanded(
                   child: ShaderMask(
                     shaderCallback: (bounds) => const LinearGradient(
-                      colors: [AppColors.dateColor, Colors.amber],
+                      colors: [AppColors.dating, Colors.amber],
                     ).createShader(bounds),
                     child: const Text(
                       'المتطابقون',
@@ -256,25 +256,25 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.dateColor.withOpacity(0.15),
+                          AppColors.dating.withOpacity(0.15),
                           Colors.amber.withOpacity(0.15),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppColors.dateColor.withOpacity(0.3),
+                        color: AppColors.dating.withOpacity(0.3),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.favorite_rounded,
-                            color: AppColors.dateColor, size: 14),
+                            color: AppColors.dating, size: 14),
                         const SizedBox(width: 5),
                         Text(
                           '$matchCount',
                           style: const TextStyle(
-                            color: AppColors.dateColor,
+                            color: AppColors.dating,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
@@ -295,11 +295,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _isSearching
-                          ? AppColors.dateColor.withOpacity(0.15)
+                          ? AppColors.dating.withOpacity(0.15)
                           : Colors.white.withOpacity(0.06),
                       border: _isSearching
                           ? Border.all(
-                              color: AppColors.dateColor.withOpacity(0.3))
+                              color: AppColors.dating.withOpacity(0.3))
                           : null,
                     ),
                     child: Icon(
@@ -307,7 +307,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                           ? Icons.close_rounded
                           : Icons.search_rounded,
                       color: _isSearching
-                          ? AppColors.dateColor
+                          ? AppColors.dating
                           : Colors.white.withOpacity(0.8),
                       size: 20,
                     ),
@@ -351,7 +351,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                   gradient: isSelected
                       ? const LinearGradient(
                           colors: [
-                            AppColors.dateColor,
+                            AppColors.dating,
                             Colors.amber,
                           ],
                         )
@@ -360,7 +360,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.dateColor.withOpacity(0.3),
+                            color: AppColors.dating.withOpacity(0.3),
                             blurRadius: 12,
                             spreadRadius: 1,
                           ),
@@ -376,7 +376,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                         height: 6,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.dateColor,
+                          color: AppColors.dating,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -386,7 +386,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white
-                            : AppColors.textTertiary,
+                            : AppColors.grey2,
                         fontSize: 14,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -420,7 +420,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
       child: Row(
         children: [
           const Icon(Icons.search_rounded,
-              color: AppColors.textTertiary, size: 20),
+              color: AppColors.grey2, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -517,13 +517,13 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.dateColor.withOpacity(0.08),
+              AppColors.dating.withOpacity(0.08),
               Colors.amber.withOpacity(0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.dateColor.withOpacity(0.15),
+            color: AppColors.dating.withOpacity(0.15),
           ),
         ),
         child: Row(
@@ -536,17 +536,17 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.dateColor.withOpacity(0.2),
+                    AppColors.dating.withOpacity(0.2),
                     Colors.amber.withOpacity(0.15),
                   ],
                 ),
                 border: Border.all(
-                  color: AppColors.dateColor.withOpacity(0.3),
+                  color: AppColors.dating.withOpacity(0.3),
                 ),
               ),
               child: const Icon(
                 Icons.favorite_rounded,
-                color: AppColors.dateColor,
+                color: AppColors.dating,
                 size: 24,
               ),
             ),
@@ -568,7 +568,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                   Text(
                     'لديك $total متطابق إجمالاً - ${categories['اليوم']?.length ?? 0} اليوم',
                     style: TextStyle(
-                      color: AppColors.textTertiary,
+                      color: AppColors.grey2,
                       fontSize: 13,
                     ),
                   ),
@@ -582,7 +582,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('استمر في التمرير لاكتشاف المزيد! 💛'),
-                    backgroundColor: AppColors.dateColor,
+                    backgroundColor: AppColors.dating,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -591,7 +591,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.dateColor,
+                  color: AppColors.dating,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -632,7 +632,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
           child: Text(
             '$count',
             style: TextStyle(
-              color: AppColors.textTertiary,
+              color: AppColors.grey2,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -696,7 +696,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 : null,
             boxShadow: [
               BoxShadow(
-                color: AppColors.black.withOpacity(0.12),
+                color: Colors.black.withOpacity(0.12),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -732,7 +732,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  AppColors.dateColor.withOpacity(0.2),
+                                  AppColors.dating.withOpacity(0.2),
                                   Colors.white.withOpacity(0.05),
                                 ],
                               ),
@@ -740,7 +740,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                             child: const Icon(
                               Icons.person_rounded,
                               size: 56,
-                              color: AppColors.textTertiary,
+                              color: AppColors.grey2,
                             ),
                           ),
                         ),
@@ -782,12 +782,12 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.circle,
-                                    color: AppColors.dateColor, size: 8),
+                                    color: AppColors.dating, size: 8),
                                 SizedBox(width: 4),
                                 Text(
                                   'متصل',
                                   style: TextStyle(
-                                    color: AppColors.dateColor,
+                                    color: AppColors.dating,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -863,11 +863,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.dateColor,
+                                  color: AppColors.dating,
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          AppColors.dateColor.withOpacity(0.4),
+                                          AppColors.dating.withOpacity(0.4),
                                       blurRadius: 4,
                                     ),
                                   ],
@@ -895,7 +895,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                           children: [
                             const Icon(
                               Icons.location_on_rounded,
-                              color: AppColors.textTertiary,
+                              color: AppColors.grey2,
                               size: 13,
                             ),
                             const SizedBox(width: 4),
@@ -903,7 +903,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                               child: Text(
                                 match.location,
                                 style: TextStyle(
-                                  color: AppColors.textTertiary,
+                                  color: AppColors.grey2,
                                   fontSize: 12,
                                 ),
                                 maxLines: 1,
@@ -922,7 +922,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isSuperMatch
                                   ? Colors.amber
-                                  : AppColors.dateColor,
+                                  : AppColors.dating,
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
@@ -1011,12 +1011,12 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: index == 0
-                ? AppColors.dateColor.withOpacity(0.06)
+                ? AppColors.dating.withOpacity(0.06)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
             border: index == 0
                 ? Border.all(
-                    color: AppColors.dateColor.withOpacity(0.15))
+                    color: AppColors.dating.withOpacity(0.15))
                 : null,
           ),
           child: Row(
@@ -1033,7 +1033,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.dateColor.withOpacity(0.3),
+                          AppColors.dating.withOpacity(0.3),
                           Colors.amber.withOpacity(0.2),
                         ],
                       ),
@@ -1045,7 +1045,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                           : null,
                       border: Border.all(
                         color: isOnline
-                            ? AppColors.dateColor
+                            ? AppColors.dating
                             : Colors.transparent,
                         width: 2.5,
                       ),
@@ -1061,7 +1061,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                         height: 14,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.dateColor,
+                          color: AppColors.dating,
                           border: Border.all(
                             color: AppColors.background,
                             width: 2.5,
@@ -1092,7 +1092,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                         Text(
                           '${match.age}',
                           style: TextStyle(
-                            color: AppColors.textTertiary,
+                            color: AppColors.grey2,
                             fontSize: 14,
                           ),
                         ),
@@ -1100,7 +1100,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                         Text(
                           time,
                           style: TextStyle(
-                            color: AppColors.textTertiary,
+                            color: AppColors.grey2,
                             fontSize: 11,
                           ),
                         ),
@@ -1110,7 +1110,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                     Text(
                       lastMessage,
                       style: TextStyle(
-                        color: AppColors.textTertiary,
+                        color: AppColors.grey2,
                         fontSize: 13,
                       ),
                       maxLines: 1,
@@ -1127,10 +1127,10 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                   height: 10,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.dateColor,
+                    color: AppColors.dating,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.dateColor.withOpacity(0.4),
+                        color: AppColors.dating.withOpacity(0.4),
                         blurRadius: 6,
                       ),
                     ],
@@ -1173,9 +1173,9 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.dateColor.withOpacity(0.08),
+                    color: AppColors.dating.withOpacity(0.08),
                     border: Border.all(
-                      color: AppColors.dateColor.withOpacity(0.15),
+                      color: AppColors.dating.withOpacity(0.15),
                     ),
                   ),
                   child: const Text(
@@ -1199,7 +1199,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
               Text(
                 subtitle ?? 'استمر في التمرير للعثور على أشخاص مميزين!',
                 style: TextStyle(
-                  color: AppColors.textTertiary,
+                  color: AppColors.grey2,
                   fontSize: 14,
                   height: 1.6,
                 ),
@@ -1213,7 +1213,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.dateColor,
+                        backgroundColor: AppColors.dating,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -1279,7 +1279,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                 ),
                 child: const Icon(
                   Icons.search_off_rounded,
-                  color: AppColors.textTertiary,
+                  color: AppColors.grey2,
                   size: 48,
                 ),
               ),
@@ -1297,7 +1297,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
             Text(
               'جرّب كلمات بحث مختلفة',
               style: TextStyle(
-                color: AppColors.textTertiary,
+                color: AppColors.grey2,
                 fontSize: 14,
               ),
             ),
@@ -1317,7 +1317,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('فتح محادثة مع ${match.name} 💬'),
-        backgroundColor: AppColors.dateColor,
+        backgroundColor: AppColors.dating,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -1330,7 +1330,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('بدء محادثة مع ${match.name} 💬'),
-        backgroundColor: AppColors.dateColor,
+        backgroundColor: AppColors.dating,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
