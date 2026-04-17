@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
-import 'product_detail_screen.dart';
+import '../../../data/services/mock_shop_service.dart';
+import 'shop_screen.dart'; // For CartService
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -15,95 +15,71 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  late List<ProductModel> _wishlistItems;
+  List<ProductModel> _wishlistItems = [];
+  List<ProductModel> _filteredItems = [];
+  bool _isLoading = true;
+  String _sortBy = 'Date Added';
 
   @override
   void initState() {
     super.initState();
-    // Get mock products and mark some as favorite
-    _wishlistItems = ShopMockData.getFeaturedProducts()
-        .take(4)
-        .map((p) => p.copyWith(isFavorite: true))
-        .toList();
-    _wishlistItems.addAll(ShopMockData.getPopularProducts()
-        .take(3)
-        .map((p) => p.copyWith(isFavorite: true)));
+    _loadWishlist();
+  }
+
+  void _loadWishlist() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final allProducts = await MockShopService.getAllProducts();
+      _wishlistItems = allProducts.where((product) => product.isFavorite).toList();
+      _sortItems();
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _sortItems() {
+    List<ProductModel> sortedItems = List.from(_wishlistItems);
+
+    switch (_sortBy) {
+      case 'Price: Low to High':
+        sortedItems.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'Discount %':
+        sortedItems.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage));
+        break;
+      default:
+        // Date Added - keep original order
+        break;
+    }
+
+    setState(() {
+      _filteredItems = sortedItems;
+    });
   }
 
   void _removeFromWishlist(ProductModel product) {
     setState(() {
-      _wishlistItems.removeWhere((p) => p.id == product.id);
+      _wishlistItems.remove(product);
+      _filteredItems.remove(product);
+      // Update the product's favorite status
+      product.isFavorite = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} removed from wishlist'),
-        backgroundColor: AppColors.grey,
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: 'UNDO',
-          textColor: AppColors.shop,
-          onPressed: () {
-            setState(() {
-              _wishlistItems.add(product);
-            });
-          },
-        ),
-      ),
-    );
   }
 
-  void _addToCart(ProductModel product) {
+  void _moveToCart(ProductModel product) {
+    CartService().addToCart();
+    _removeFromWishlist(product);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${product.name} added to cart!'),
-        backgroundColor: AppColors.shop,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _clearAll() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.grey,
-        title: Text(
-          'Clear Wishlist',
-          style: AppTextStyles.labelLarge.copyWith(
-            color: AppColors.white,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to remove all items from your wishlist?',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.grey2,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.labelMedium.copyWith(
-                color: AppColors.grey2,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _wishlistItems.clear();
-              });
-              Navigator.pop(ctx);
-            },
-            child: Text(
-              'Clear All',
-              style: AppTextStyles.labelMedium.copyWith(
-                color: AppColors.neonRed,
-              ),
-            ),
-          ),
-        ],
+        content: Text('${product.name} moved to cart'),
+        backgroundColor: AppColors.electricBlue,
       ),
     );
   }
@@ -111,113 +87,131 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.white,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
-          'My Wishlist',
-          style: AppTextStyles.h5.copyWith(
-            color: AppColors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          "My Wishlist (${_filteredItems.length})",
+          style: AppTextStyles.h5.copyWith(color: AppColors.white),
         ),
-        centerTitle: true,
-        actions: [
-          if (_wishlistItems.isNotEmpty)
-            IconButton(
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                color: AppColors.grey2,
-              ),
-              onPressed: _clearAll,
-            ),
-        ],
+        centerTitle: false,
       ),
-      body: _wishlistItems.isEmpty
-          ? _buildEmptyWishlist()
-          : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: _wishlistItems.length,
-              itemBuilder: (context, index) {
-                final product = _wishlistItems[index];
-                return _WishlistCard(
-                  product: product,
-                  onRemove: () => _removeFromWishlist(product),
-                  onAddToCart: () => _addToCart(product),
-                );
-              },
-            ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.electricBlue))
+          : _filteredItems.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _loadWishlist,
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Sort by:',
+                                style: AppTextStyles.body1.copyWith(
+                                  color: AppColors.grey2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: DropdownButton<String>(
+                                  value: _sortBy,
+                                  isExpanded: true,
+                                  underline: Container(
+                                    height: 1,
+                                    color: AppColors.grey2,
+                                  ),
+                                  dropdownColor: AppColors.grey.withOpacity(0.2),
+                                  style: AppTextStyles.body1.copyWith(
+                                    color: AppColors.white,
+                                  ),
+                                  items: [
+                                    'Date Added',
+                                    'Price: Low to High',
+                                    'Discount %',
+                                  ].map<DropdownMenuItem<String>>((String value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        _sortBy = newValue;
+                                        _sortItems();
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverGrid(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.7,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = _filteredItems[index];
+                              return _buildWishlistCard(product);
+                            },
+                            childCount: _filteredItems.length,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
     );
   }
 
-  Widget _buildEmptyWishlist() {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.grey.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.favorite_border_rounded,
-              color: AppColors.grey2,
-              size: 60,
-            ),
+          Icon(
+            Icons.favorite_border_outlined,
+            size: 80,
+            color: AppColors.grey2,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Your wishlist is empty',
-            style: AppTextStyles.h5.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.h5.copyWith(color: AppColors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            'Save your favorite items here',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.grey2,
-            ),
+            'Add items to your wishlist to save them for later',
+            style: AppTextStyles.body1.copyWith(color: AppColors.grey2),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
+              // Navigate back to shop
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.shop,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 14,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+              backgroundColor: AppColors.electricBlue,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: Text(
-              'Start Shopping',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.black,
-                fontWeight: FontWeight.bold,
+              'Continue Shopping',
+              style: AppTextStyles.body1.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -225,191 +219,170 @@ class _WishlistScreenState extends State<WishlistScreen> {
       ),
     );
   }
-}
 
-// ===== WISHLIST CARD =====
-class _WishlistCard extends StatelessWidget {
-  final ProductModel product;
-  final VoidCallback onRemove;
-  final VoidCallback onAddToCart;
-
-  const _WishlistCard({
-    required this.product,
-    required this.onRemove,
-    required this.onAddToCart,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasDiscount = product.oldPrice != null;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.grey.withOpacity(0.2),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product Image
-            Expanded(
-              flex: 5,
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    child: Container(
-                      width: double.infinity,
-                      color: AppColors.grey,
-                      child: Image.network(
-                        product.images.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: AppColors.grey,
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppColors.grey2,
-                            size: 40,
-                          ),
-                        ),
+  Widget _buildWishlistCard(ProductModel product) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  product.imageUrls.first,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 150,
+                    color: AppColors.grey,
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: AppColors.grey2,
                       ),
                     ),
                   ),
-                  // Discount Badge
-                  if (hasDiscount)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.neonRed,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '-${product.discountPercentage.round()}%',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  // Remove button
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: onRemove,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          color: AppColors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            // Product Details
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => _removeFromWishlist(product),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      color: AppColors.grey2,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+              if (product.oldPrice != null)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.neonRed,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '-${product.discountPercentage}%',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.brand,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.grey2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  product.name,
+                  style: AppTextStyles.body1.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Row(
                   children: [
                     Text(
-                      product.brandName,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.shop,
+                      '\$${product.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: AppColors.electricBlue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (product.oldPrice != null) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        '\$${product.oldPrice!.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: AppColors.grey2,
+                          decoration: TextDecoration.lineThrough,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 32,
+                  child: ElevatedButton(
+                    onPressed: () => _moveToCart(product),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.electricBlue,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Move to Cart',
+                      style: AppTextStyles.labelSmall.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      product.name,
+                      'Price Drop Alert',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.grey2,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.shop,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (hasDiscount)
-                              Text(
-                                '\$${product.oldPrice!.toStringAsFixed(2)}',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.grey2,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                          ],
-                        ),
-                        // Add to Cart Button
-                        GestureDetector(
-                          onTap: onAddToCart,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: AppColors.shop,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.add_shopping_cart_rounded,
-                              color: AppColors.black,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Switch(
+                      value: false,
+                      onChanged: (value) {
+                        // Toggle price drop alert
+                      },
+                      activeColor: AppColors.electricBlue,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
