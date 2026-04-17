@@ -63,7 +63,7 @@ class SwipeableCardState extends State<SwipeableCard>
   int _currentPhotoIndex = 0;
   int get _photoCount => widget.profile.imageUrls.length;
 
-  // --- Verifed pulse ---
+  // --- Verified pulse ---
   late AnimationController _verifiedPulseController;
 
   @override
@@ -185,11 +185,6 @@ class SwipeableCardState extends State<SwipeableCard>
       // Spring back
       _animateReturn();
     }
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    if (widget.isBackground || _isDismissing) return;
-    // Will use this for potential double-tap super like
   }
 
   // =========================================================================
@@ -438,7 +433,7 @@ class SwipeableCardState extends State<SwipeableCard>
             // --- Gradient Overlay ---
             _buildGradientOverlay(),
 
-            // --- Swipe Indicators (LIKE / NOPE / SUPER LIKE) ---
+            // --- Swipe Indicators ---
             _buildLikeIndicator(),
             _buildNopeIndicator(),
             _buildSuperLikeIndicator(),
@@ -498,7 +493,7 @@ class SwipeableCardState extends State<SwipeableCard>
           widget.profile.imageUrls[index],
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
-            color: AppColors.surface,
+            color: AppColors.background,
             child: const Center(
               child: Icon(Icons.person_rounded,
                   size: 80, color: AppColors.grey2),
@@ -794,7 +789,6 @@ class SwipeableCardState extends State<SwipeableCard>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Lock icon with animated ring
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 800),
@@ -1008,10 +1002,10 @@ class SwipeableCardState extends State<SwipeableCard>
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.neonBlue,
+            color: Colors.blue,
             boxShadow: [
               BoxShadow(
-                color: AppColors.neonBlue.withOpacity(
+                color: Colors.blue.withOpacity(
                     0.3 + (_verifiedPulseController.value * 0.3)),
                 blurRadius: 8 + (_verifiedPulseController.value * 4),
               ),
@@ -1025,27 +1019,5 @@ class SwipeableCardState extends State<SwipeableCard>
         );
       },
     );
-  }
-}
-
-// =============================================================================
-//  ANIMATED BUILDER HELPER
-// =============================================================================
-
-/// A widget that rebuilds on every animation tick
-class AnimatedBuilder extends AnimatedWidget {
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
-
-  const AnimatedBuilder({
-    super.key,
-    required super.listenable,
-    required this.builder,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
   }
 }
