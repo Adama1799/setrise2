@@ -493,7 +493,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
                 const RoundSliderThumbShape(enabledThumbRadius: 10),
             overlayShape:
                 const RoundSliderOverlayShape(overlayRadius: 20),
-            activeTickMarkShape: const RoundSliderTickMarkShape(),
+            tickMarkShape: const RoundSliderTickMarkShape(),
           ),
           child: Slider(
             value: _maxDistance.toDouble(),
