@@ -6,6 +6,7 @@ class AppColors {
 
   // ===== PRIMARY COLORS =====
   static const Color electricBlue = Color(0xFF0066FF);  // ⚡ Primary
+  static const Color neonBlue = electricBlue;            // ⚡ Alias
   static const Color neonPink = Color(0xFFFF00CC);      // 💗 Accent
   static const Color neonYellow = Color(0xFFFFB300);    // 🟡 Amber
   static const Color neonRed = Color(0xFFFF2200);       // 🔴 Alert
@@ -16,8 +17,11 @@ class AppColors {
   static const Color background = Color(0xFF010101);    // #010101
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF0A0A0A);
+  static const Color surface = black;                   // 🖤 Surface
   static const Color grey = Color(0xFF2C2C2C);
+  static const Color grey1 = grey;                      // 🌑 Grey Dark
   static const Color grey2 = Color(0xFF8E8E8E);
+  static const Color grey3 = grey2;                     // 🔘 Grey Mid
   static const Color greyLight = Color(0xFFE0E0E0);
 
   // ===== FEATURE COLORS =====
@@ -41,11 +45,11 @@ class AppColors {
   static const Color recommend = neonGreen;
 
   // ===== STORY COLORS =====
-  static const Color storyUnseen = neonYellow;      // 🟡 لم تُفتح
-  static const Color storySeen = grey2;             // ⚪ مشاهدة
-  static const Color storyLive = neonRed;           // 🔴 لايف
-  static const Color storyCloseFriend = Color(0xFFFF6B35); // 🟠 صديق مقرب
-  static const Color storyOwn = neonGreen;          // 🟢 قصتك
+  static const Color storyUnseen = neonYellow;
+  static const Color storySeen = grey2;
+  static const Color storyLive = neonRed;
+  static const Color storyCloseFriend = Color(0xFFFF6B35);
+  static const Color storyOwn = neonGreen;
 
   // ===== GRADIENTS =====
   static const LinearGradient primaryGradient = LinearGradient(
