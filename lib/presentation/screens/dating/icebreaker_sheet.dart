@@ -216,7 +216,7 @@ class _IcebreakerSheetState extends State<IcebreakerSheet>
               // Match header with avatar
               _buildMatchHeader(),
 
-              const Divider(color: AppColors.grey3, height: 1),
+              const Divider(color: AppColors.grey2, height: 1),
 
               // Quick reactions
               _buildQuickReactions(),
@@ -880,7 +880,7 @@ class _IcebreakerSheetState extends State<IcebreakerSheet>
                   colors: [AppColors.dating, AppColors.neonRed],
                 )
               : null,
-          color: canSend ? null : AppColors.grey3.withOpacity(0.5),
+          color: canSend ? null : AppColors.grey2.withOpacity(0.5),
           borderRadius: BorderRadius.circular(18),
           boxShadow: canSend
               ? [

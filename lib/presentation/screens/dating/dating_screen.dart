@@ -47,7 +47,6 @@ class _DatingScreenState extends State<DatingScreen>
   late AnimationController _headerSlideController;
   late AnimationController _cardEntryController;
   late AnimationController _matchPulseController;
-  late AnimationController _fabScaleController;
 
   @override
   void initState() {
@@ -55,31 +54,21 @@ class _DatingScreenState extends State<DatingScreen>
     _allProfiles = DatingProfileModel.getMockProfiles();
     _swipedLeft = [];
 
-    // Header slide-in animation
     _headerSlideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..forward();
 
-    // Card fade-in animation
     _cardEntryController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..forward();
 
-    // Match pulse animation
     _matchPulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
       lowerBound: 0.8,
       upperBound: 1.2,
-    );
-
-    // FAB scale animation
-    _fabScaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
     );
 
     _applyFilter();
@@ -90,7 +79,6 @@ class _DatingScreenState extends State<DatingScreen>
     _headerSlideController.dispose();
     _cardEntryController.dispose();
     _matchPulseController.dispose();
-    _fabScaleController.dispose();
     super.dispose();
   }
 
@@ -257,7 +245,6 @@ class _DatingScreenState extends State<DatingScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Animated emoji
                     AnimatedBuilder(
                       animation: _matchPulseController,
                       builder: (context, child) {
@@ -272,7 +259,6 @@ class _DatingScreenState extends State<DatingScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Profile mini avatar
                     CircleAvatar(
                       radius: 36,
                       backgroundColor: Colors.white.withOpacity(0.3),
@@ -302,7 +288,6 @@ class _DatingScreenState extends State<DatingScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 28),
-                    // Send Message button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -328,7 +313,6 @@ class _DatingScreenState extends State<DatingScreen>
                       ),
                     ),
                     const SizedBox(height: 14),
-                    // Keep swiping link
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
@@ -819,6 +803,7 @@ class _DatingScreenState extends State<DatingScreen>
                 profile: _filteredProfiles[_currentIndex],
                 onSwipeLeft: () => _handleSwipe(false),
                 onSwipeRight: () => _handleSwipe(true),
+                onSuperLike: () => _handleSuperLike(_filteredProfiles[_currentIndex]),
                 onTap: () =>
                     _openProfileDetail(_filteredProfiles[_currentIndex]),
               ),
@@ -860,7 +845,6 @@ class _DatingScreenState extends State<DatingScreen>
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
-        backdropFilter: null,
       ),
       child: Text(
         '$current / $total',
@@ -1109,7 +1093,6 @@ class _DatingScreenState extends State<DatingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animated empty icon
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
               duration: const Duration(milliseconds: 800),
@@ -1201,7 +1184,6 @@ class _DatingScreenState extends State<DatingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Celebration animation
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
               duration: const Duration(milliseconds: 600),
@@ -1262,7 +1244,6 @@ class _DatingScreenState extends State<DatingScreen>
               const SizedBox(height: 24),
             ] else
               const SizedBox(height: 32),
-            // Start over button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -1293,7 +1274,6 @@ class _DatingScreenState extends State<DatingScreen>
 //  WIDGETS
 // =============================================================================
 
-/// Animated action button with label and press feedback
 class _AnimatedActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -1403,7 +1383,6 @@ class _AnimatedActionButtonState extends State<_AnimatedActionButton>
   }
 }
 
-/// Header icon button with subtle hover effect
 class _HeaderIconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;

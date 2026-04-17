@@ -650,10 +650,10 @@ class _DateSearchScreenState extends State<DateSearchScreen>
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.neonBlue,
+                              color: Colors.blue,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.neonBlue.withOpacity(0.3),
+                                  color: Colors.blue.withOpacity(0.3),
                                   blurRadius: 4,
                                 ),
                               ],

@@ -674,10 +674,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen>
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.neonBlue,
+              color: Colors.blue,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.neonBlue.withOpacity(0.4),
+                  color: Colors.blue.withOpacity(0.4),
                   blurRadius: 8,
                 ),
               ],
@@ -942,7 +942,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen>
       AppColors.dating,
       AppColors.neonYellow,
       AppColors.neonGreen,
-      AppColors.neonBlue,
+      Colors.blue,
       Colors.purple,
       Colors.orange,
       Colors.pink,
@@ -1216,26 +1216,4 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen>
   }
 }
 
-// =============================================================================
-//  ANIMATED BUILDER HELPER
-// =============================================================================
 
-/// A simple widget that rebuilds on animation ticks
-class AnimatedBuilder extends AnimatedWidget {
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
-
-  const AnimatedBuilder({
-    super.key,
-    required super.listenable,
-    required this.builder,
-    this.child,
-  });
-
-  Animation<double> get _animation => listenable as Animation<double>;
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
-  }
-}

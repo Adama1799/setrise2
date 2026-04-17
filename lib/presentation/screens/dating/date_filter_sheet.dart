@@ -176,7 +176,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
               // Header with active filters count
               _buildHeader(),
 
-              const Divider(color: AppColors.grey3, height: 1),
+              const Divider(color: AppColors.grey2, height: 1),
 
               // Scrollable filter options
               Flexible(
@@ -501,7 +501,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
             max: 200,
             divisions: 199,
             activeColor: AppColors.dating,
-            inactiveColor: AppColors.grey3,
+            inactiveColor: AppColors.grey2,
             onChanged: (value) {
               setState(() => _maxDistance = value.toInt());
             },
@@ -586,7 +586,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
                   max: 79,
                   divisions: 61,
                   activeColor: AppColors.dating,
-                  inactiveColor: AppColors.grey3,
+                  inactiveColor: AppColors.grey2,
                   onChanged: (value) {
                     setState(() {
                       _ageFrom = value.toInt();
@@ -636,7 +636,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
                   max: 80,
                   divisions: 61,
                   activeColor: AppColors.dating,
-                  inactiveColor: AppColors.grey3,
+                  inactiveColor: AppColors.grey2,
                   onChanged: (value) {
                     setState(() {
                       _ageTo = value.toInt();
@@ -869,7 +869,7 @@ class _DateFilterSheetState extends State<DateFilterSheet>
                   ],
                 )
               : null,
-          color: value ? null : AppColors.grey3,
+          color: value ? null : AppColors.grey2,
           boxShadow: value
               ? [
                   BoxShadow(

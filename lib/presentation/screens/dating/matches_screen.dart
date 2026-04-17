@@ -687,7 +687,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: AppColors.surface,
+            color: Colors.white.withOpacity(0.05),
             border: isSuperMatch
                 ? Border.all(
                     color: Colors.amber.withOpacity(0.3),
@@ -733,7 +733,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen>
                                 end: Alignment.bottomRight,
                                 colors: [
                                   AppColors.dateColor.withOpacity(0.2),
-                                  AppColors.surface,
+                                  Colors.white.withOpacity(0.05),
                                 ],
                               ),
                             ),
