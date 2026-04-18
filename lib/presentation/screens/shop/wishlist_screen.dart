@@ -1,11 +1,12 @@
-// lib/presentation/screens/shop/wishlist_screen.dart
+// lib/presentation/screens/shop/
 
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/product_model.dart';
-import '../../../data/mock_data/shop_mock_data.dart';
-import 'shop_screen.dart'; // For CartService
+import '../../../data/services/mock_shop_service.dart';
+import 'product_detail_screen.dart';
+import 'shop_screen.dart'; // لاستخدام CartService
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -16,9 +17,8 @@ class WishlistScreen extends StatefulWidget {
 
 class _WishlistScreenState extends State<WishlistScreen> {
   List<ProductModel> _wishlistItems = [];
-  List<ProductModel> _filteredItems = [];
   bool _isLoading = true;
-  String _sortBy = 'Date Added';
+  String _sortOption = 'Newest';
 
   @override
   void initState() {
@@ -26,363 +26,112 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _loadWishlist();
   }
 
-  void _loadWishlist() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _loadWishlist() async {
+    setState(() => _isLoading = true);
     try {
       final allProducts = await MockShopService.getAllProducts();
-      _wishlistItems = allProducts.where((product) => product.isFavorite).toList();
+      _wishlistItems = allProducts.where((p) => p.isFavorite).toList();
       _sortItems();
-    } catch (e) {
-      // Handle error
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   void _sortItems() {
-    List<ProductModel> sortedItems = List.from(_wishlistItems);
-
-    switch (_sortBy) {
-      case 'Price: Low to High':
-        sortedItems.sort((a, b) => a.price.compareTo(b.price));
-        break;
-      case 'Discount %':
-        sortedItems.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage));
-        break;
-      default:
-        // Date Added - keep original order
-        break;
-    }
-
     setState(() {
-      _filteredItems = sortedItems;
-    });
-  }
-
-  void _removeFromWishlist(ProductModel product) {
-    setState(() {
-      _wishlistItems.remove(product);
-      _filteredItems.remove(product);
-      // Update the product's favorite status
-      product.isFavorite = false;
+      switch (_sortOption) {
+        case 'Price: Low to High':
+          _wishlistItems.sort((a, b) => a.price.compareTo(b.price));
+          break;
+        case 'Price: High to Low':
+          _wishlistItems.sort((a, b) => b.price.compareTo(a.price));
+          break;
+        default:
+          break;
+      }
     });
   }
 
   void _moveToCart(ProductModel product) {
-    CartService().addToCart();
-    _removeFromWishlist(product);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} moved to cart'),
-        backgroundColor: AppColors.electricBlue,
-      ),
-    );
+    CartService().addItem(CartItem(id: product.id, name: product.name, brand: product.brand, price: product.price, imageUrl: product.imageUrls.first, quantity: 1));
+    setState(() => _wishlistItems.remove(product));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${product.name} moved to cart'), backgroundColor: AppColors.success));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text(
-          "My Wishlist (${_filteredItems.length})",
-          style: AppTextStyles.h5.copyWith(color: AppColors.white),
-        ),
+        title: Text('Wishlist', style: AppTextStyles.headline2.copyWith(color: AppColors.primaryText)),
         centerTitle: false,
+        foregroundColor: AppColors.primaryText,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.electricBlue))
-          : _filteredItems.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadWishlist,
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Sort by:',
-                                style: AppTextStyles.body1.copyWith(
-                                  color: AppColors.grey2,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: DropdownButton<String>(
-                                  value: _sortBy,
-                                  isExpanded: true,
-                                  underline: Container(
-                                    height: 1,
-                                    color: AppColors.grey2,
-                                  ),
-                                  dropdownColor: AppColors.grey.withOpacity(0.2),
-                                  style: AppTextStyles.body1.copyWith(
-                                    color: AppColors.white,
-                                  ),
-                                  items: [
-                                    'Date Added',
-                                    'Price: Low to High',
-                                    'Discount %',
-                                  ].map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    if (newValue != null) {
-                                      setState(() {
-                                        _sortBy = newValue;
-                                        _sortItems();
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+          ? const Center(child: CircularProgressIndicator())
+          : _wishlistItems.isEmpty
+              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.favorite_border, size: 80, color: AppColors.secondaryText), const SizedBox(height: 16), Text('Your wishlist is empty', style: AppTextStyles.headline2), const SizedBox(height: 8), Text('Save items you love', style: AppTextStyles.body2.copyWith(color: AppColors.secondaryText))]))
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: DropdownButtonFormField<String>(
+                        value: _sortOption,
+                        decoration: InputDecoration(labelText: 'Sort by', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                        items: ['Newest', 'Price: Low to High', 'Price: High to Low'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                        onChanged: (v) => setState(() { _sortOption = v!; _sortItems(); }),
                       ),
-                      SliverPadding(
+                    ),
+                    Expanded(
+                      child: GridView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverGrid(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final product = _filteredItems[index];
-                              return _buildWishlistCard(product);
-                            },
-                            childCount: _filteredItems.length,
-                          ),
-                        ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.7),
+                        itemCount: _wishlistItems.length,
+                        itemBuilder: (context, index) => _buildWishlistCard(_wishlistItems[index]),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.favorite_border_outlined,
-            size: 80,
-            color: AppColors.grey2,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Your wishlist is empty',
-            style: AppTextStyles.h5.copyWith(color: AppColors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add items to your wishlist to save them for later',
-            style: AppTextStyles.body1.copyWith(color: AppColors.grey2),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate back to shop
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.electricBlue,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
-            child: Text(
-              'Continue Shopping',
-              style: AppTextStyles.body1.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildWishlistCard(ProductModel product) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  product.imageUrls.first,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 150,
-                    color: AppColors.grey,
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        color: AppColors.grey2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => _removeFromWishlist(product),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      color: AppColors.grey2,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ),
-              if (product.oldPrice != null)
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))),
+      child: Container(
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(product.imageUrls.first, height: 150, width: double.infinity, fit: BoxFit.cover)),
                 Positioned(
                   top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.neonRed,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '-${product.discountPercentage}%',
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  right: 8,
+                  child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: AppColors.surface.withOpacity(0.8), shape: BoxShape.circle), child: IconButton(icon: const Icon(Icons.favorite, color: AppColors.error, size: 20), onPressed: () => setState(() { product.isFavorite = false; _wishlistItems.remove(product); }))),
                 ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.brand,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.grey2,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.name,
-                  style: AppTextStyles.body1.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: AppColors.electricBlue,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (product.oldPrice != null) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        '\$${product.oldPrice!.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: AppColors.grey2,
-                          decoration: TextDecoration.lineThrough,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 32,
-                  child: ElevatedButton(
-                    onPressed: () => _moveToCart(product),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.electricBlue,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Move to Cart',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Price Drop Alert',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.grey2,
-                      ),
-                    ),
-                    Switch(
-                      value: false,
-                      onChanged: (value) {
-                        // Toggle price drop alert
-                      },
-                      activeColor: AppColors.electricBlue,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ],
-                ),
+                if (product.oldPrice != null) Positioned(top: 8, left: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4)), child: Text('-${product.discountPercentage.round()}%', style: AppTextStyles.caption.copyWith(color: Colors.white)))),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(product.brand, style: AppTextStyles.body2.copyWith(color: AppColors.secondaryText)),
+                  Text(product.name, style: AppTextStyles.body1, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 8),
+                  Row(children: [Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.headline2), if (product.oldPrice != null) ...[const SizedBox(width: 8), Text('\$${product.oldPrice!.toStringAsFixed(2)}', style: AppTextStyles.caption.copyWith(decoration: TextDecoration.lineThrough, color: AppColors.secondaryText))]]),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: () => _moveToCart(product), style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, minimumSize: const Size(double.infinity, 36), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('Move to Cart', style: AppTextStyles.button.copyWith(fontSize: 14))),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
