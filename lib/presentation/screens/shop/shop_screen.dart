@@ -1,5 +1,4 @@
 // lib/presentation/screens/shop/shop_screen.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
@@ -22,7 +21,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   final ScrollController _scrollController = ScrollController();
   final ShopController _controller = ShopController();
-  
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +52,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: _onRefresh,
-      color: AppColors.accent,
+      color: AppColors.primary,
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -62,19 +61,17 @@ class _ShopScreenState extends State<ShopScreen> {
             expandedHeight: 120,
             backgroundColor: AppColors.surface,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-              title: Text('Shop', style: AppTextStyles.headline1),
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              title: Text('Shop', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
               centerTitle: false,
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.search, color: AppColors.primaryText),
-                onPressed: () {
-                  // TODO: Navigate to search
-                },
+                icon: Icon(Icons.search_rounded, color: AppColors.white),
+                onPressed: () {},
               ),
               IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryText),
+                icon: Icon(Icons.shopping_bag_outlined, color: AppColors.white),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen())),
               ),
             ],
@@ -95,7 +92,6 @@ class _ShopScreenState extends State<ShopScreen> {
                     return _SellerCard(seller: item);
                   }
                 }
-                
                 if (_controller.isLoadingMore) {
                   return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
                 }
@@ -118,25 +114,22 @@ class _ShopScreenState extends State<ShopScreen> {
             height: 120,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: 5,
               itemBuilder: (context, index) => _buildStoryShimmer(),
             ),
           );
         }
-        
         final sellers = snapshot.data!;
         return Container(
           height: 120,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: sellers.length + 1,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              if (index == 0) {
-                return _SellButtonCard();
-              }
+              if (index == 0) return _SellButtonCard();
               return _SellerStoryCard(seller: sellers[index - 1]);
             },
           ),
@@ -147,18 +140,14 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildStoryShimmer() {
     return Shimmer.fromColors(
-      baseColor: AppColors.border,
+      baseColor: AppColors.grey,
       highlightColor: AppColors.surface,
       child: Container(
         width: 80,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-            ),
+            Container(width: 60, height: 60, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white)),
             const SizedBox(height: 8),
             Container(width: 60, height: 12, color: Colors.white),
           ],
@@ -180,13 +169,13 @@ class _SellButtonCard extends StatelessWidget {
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.accent, width: 2),
+              border: Border.all(color: AppColors.primary, width: 2),
               color: AppColors.surface,
             ),
-            child: Icon(Icons.add, color: AppColors.accent, size: 30),
+            child: Icon(Icons.add_rounded, color: AppColors.primary, size: 30),
           ),
           const SizedBox(height: 8),
-          Text('Sell', style: AppTextStyles.body2),
+          Text('Sell', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
         ],
       ),
     );
@@ -200,9 +189,7 @@ class _SellerStoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // TODO: Navigate to StoreProfileScreen
-      },
+      onTap: () {},
       child: Container(
         width: 80,
         child: Column(
@@ -212,12 +199,12 @@ class _SellerStoryCard extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: seller.isVerified ? AppColors.success : AppColors.border, width: 2),
+                border: Border.all(color: seller.isVerified ? AppColors.success : AppColors.grey3, width: 2),
                 image: DecorationImage(image: NetworkImage(seller.avatarUrl ?? ''), fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 8),
-            Text(seller.storeName, style: AppTextStyles.body2, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(seller.storeName, style: AppTextStyles.bodySmall.copyWith(color: AppColors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -234,41 +221,42 @@ class _ProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(product.imageUrls.first, width: 80, height: 80, fit: BoxFit.cover)),
-              const SizedBox(width: 12),
+              ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.network(product.imageUrls.first, width: 80, height: 80, fit: BoxFit.cover)),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.brand, style: AppTextStyles.body2.copyWith(color: AppColors.secondaryText)),
-                    Text(product.name, style: AppTextStyles.body1, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(product.brand, style: AppTextStyles.bodySmall.copyWith(color: AppColors.grey2)),
+                    const SizedBox(height: 4),
+                    Text(product.name, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 8),
                     if (product.oldPrice != null)
                       Row(
                         children: [
-                          Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.body1.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+                          Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
                           const SizedBox(width: 8),
-                          Text('\$${product.oldPrice!.toStringAsFixed(2)}', style: AppTextStyles.caption.copyWith(decoration: TextDecoration.lineThrough, color: AppColors.secondaryText)),
+                          Text('\$${product.oldPrice!.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(decoration: TextDecoration.lineThrough, color: AppColors.grey2)),
                         ],
                       )
                     else
-                      Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.bold)),
+                      Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
               IconButton(
-                icon: Icon(product.isFavorite ? Icons.favorite : Icons.favorite_border, color: product.isFavorite ? AppColors.error : AppColors.secondaryText),
+                icon: Icon(product.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: product.isFavorite ? AppColors.error : AppColors.grey2),
                 onPressed: () {},
               ),
             ],
@@ -313,12 +301,12 @@ class _AuctionCardState extends State<_AuctionCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 2))],
-        border: Border.all(color: Colors.orange.shade300, width: 1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12)],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -327,19 +315,32 @@ class _AuctionCardState extends State<_AuctionCard> {
           children: [
             Row(
               children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4)), child: Text('LIVE', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.bold))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(8)),
+                  child: Text('LIVE', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
                 const SizedBox(width: 8),
-                Text(_timeLeft, style: AppTextStyles.body2.copyWith(color: Colors.orange, fontWeight: FontWeight.bold)),
+                Text(_timeLeft, style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 12),
-            Text(widget.auction.name, style: AppTextStyles.body1, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(widget.auction.name, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 8),
-            Text('Current Bid: \$${widget.auction.currentBid.toStringAsFixed(2)}', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.bold)),
+            Text('Current Bid: \$${widget.auction.currentBid.toStringAsFixed(2)}', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.accent), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: Text('Place Bid', style: TextStyle(color: AppColors.accent)))),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Text('Place Bid', style: TextStyle(color: AppColors.primary)),
+                  ),
+                ),
               ],
             ),
           ],
@@ -356,38 +357,57 @@ class _SellerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 2))],
-        border: Border.all(color: Colors.purple.shade300, width: 1),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12)],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(backgroundImage: NetworkImage(seller.avatarUrl ?? ''), radius: 30),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(seller.storeName, style: AppTextStyles.body1),
-                      if (seller.isVerified) const Icon(Icons.verified, color: AppColors.success, size: 16),
+                      Text(seller.storeName, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w500)),
+                      if (seller.isVerified) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.verified_rounded, color: AppColors.primary, size: 16),
+                      ],
                     ],
                   ),
-                  Row(children: [const Icon(Icons.star, color: Colors.amber, size: 16), const SizedBox(width: 4), Text(seller.rating.toStringAsFixed(1), style: AppTextStyles.body2)]),
+                  const SizedBox(height: 4),
+                  Row(children: [Icon(Icons.star_rounded, color: AppColors.warning, size: 16), const SizedBox(width: 4), Text(seller.rating.toStringAsFixed(1), style: AppTextStyles.bodySmall)]),
                 ],
               ),
             ),
             Column(
               children: [
-                ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('View Store', style: AppTextStyles.button)),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: Text('View Store', style: AppTextStyles.button.copyWith(fontSize: 14)),
+                ),
                 const SizedBox(height: 8),
-                OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.accent), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('Contact', style: TextStyle(color: AppColors.accent))),
+                OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: Text('Contact', style: TextStyle(color: AppColors.primary, fontSize: 14)),
+                ),
               ],
             ),
           ],
@@ -399,14 +419,12 @@ class _SellerCard extends StatelessWidget {
 
 class ShopController extends ChangeNotifier {
   final List<dynamic> _mixedItems = [];
-  final List<String> _itemTypes = [];
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _currentPage = 1;
-  
   final StreamController<List<SellerModel>> _sellersController = StreamController.broadcast();
-  
+
   List<dynamic> get mixedItems => List.unmodifiable(_mixedItems);
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
@@ -416,19 +434,15 @@ class ShopController extends ChangeNotifier {
   Future<void> fetchInitialData() async {
     _isLoading = true;
     notifyListeners();
-    
     try {
       _mixedItems.clear();
-      _itemTypes.clear();
       _currentPage = 1;
       _hasMore = true;
-      
       final sellers = await MockShopService.getTrendingSellers();
       _sellersController.add(sellers);
-      
       await _fetchNextPage();
     } catch (e) {
-      debugPrint('Error fetching initial data: $e');
+      debugPrint('Error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -437,10 +451,8 @@ class ShopController extends ChangeNotifier {
 
   Future<void> fetchNextPage() async {
     if (_isLoadingMore || !_hasMore) return;
-    
     _isLoadingMore = true;
     notifyListeners();
-    
     try {
       await _fetchNextPage();
     } finally {
@@ -450,28 +462,21 @@ class ShopController extends ChangeNotifier {
   }
 
   Future<void> _fetchNextPage() async {
-    // Simulate fetching mixed content
     final products = await MockShopService.getFeaturedProducts();
     final auctions = await MockShopService.getLiveAuctions();
-    
     if (products.isEmpty && auctions.isEmpty) {
       _hasMore = false;
       return;
     }
-    
-    // Mix items
     final newItems = <dynamic>[];
     newItems.addAll(products.take(3));
     newItems.addAll(auctions.take(2));
     newItems.shuffle();
-    
     _mixedItems.addAll(newItems);
     _currentPage++;
   }
 
-  Future<void> refresh() async {
-    await fetchInitialData();
-  }
+  Future<void> refresh() async => await fetchInitialData();
 
   @override
   void dispose() {
