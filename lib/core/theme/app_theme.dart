@@ -12,7 +12,6 @@ class AppTheme {
       brightness: Brightness.dark,
       fontFamily: 'Inter',
       
-      // Colors
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.electricBlue,
       colorScheme: const ColorScheme.dark(
@@ -27,7 +26,6 @@ class AppTheme {
         onError: AppColors.white,
       ),
 
-      // AppBar
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.white,
@@ -37,7 +35,6 @@ class AppTheme {
         titleTextStyle: AppTextStyles.h5,
       ),
 
-      // Text Theme
       textTheme: const TextTheme(
         displayLarge: AppTextStyles.displayLarge,
         displayMedium: AppTextStyles.displayMedium,
@@ -56,16 +53,13 @@ class AppTheme {
         labelSmall: AppTextStyles.labelSmall,
       ),
 
-      // Buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.electricBlue,
           foregroundColor: AppColors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: AppTextStyles.button,
         ),
       ),
@@ -75,9 +69,7 @@ class AppTheme {
           foregroundColor: AppColors.white,
           side: const BorderSide(color: AppColors.white, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: AppTextStyles.button,
         ),
       ),
@@ -89,7 +81,6 @@ class AppTheme {
         ),
       ),
 
-      // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.grey,
@@ -114,7 +105,6 @@ class AppTheme {
         labelStyle: AppTextStyles.labelMedium.copyWith(color: AppColors.grey2),
       ),
 
-      // Bottom Navigation
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.black,
         selectedItemColor: AppColors.white,
@@ -123,22 +113,18 @@ class AppTheme {
         elevation: 0,
       ),
 
-      // Card
-      cardTheme: CardTheme(
+      // ✅ تعديل: استخدام CardThemeData بدلاً من CardTheme
+      cardTheme: CardThemeData(
         color: AppColors.grey,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
-      // Divider
       dividerTheme: const DividerThemeData(
         color: AppColors.grey,
         thickness: 1,
       ),
 
-      // Icon
       iconTheme: const IconThemeData(
         color: AppColors.white,
         size: 24,
