@@ -1,8 +1,7 @@
-// lib/presentation/screens/date/dating_screen.dart
-
+// lib/presentation/screens/dating/dating_screen.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/dating_profile_model.dart';
@@ -20,7 +19,6 @@ class _DatingScreenState extends State<DatingScreen> {
   int _currentIndex = 0;
   final PageController _verticalPageController = PageController();
 
-  // Filter state
   double _distanceRange = 50.0;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _showOnlyVerified = false;
@@ -44,15 +42,9 @@ class _DatingScreenState extends State<DatingScreen> {
         final distanceValue = double.tryParse(
           profile.distance.replaceAll(RegExp(r'[^0-9.]'), ''),
         );
-        if (distanceValue != null && distanceValue > _distanceRange) {
-          return false;
-        }
-        if (profile.age < _ageRange.start || profile.age > _ageRange.end) {
-          return false;
-        }
-        if (_showOnlyVerified && !profile.isVerified) {
-          return false;
-        }
+        if (distanceValue != null && distanceValue > _distanceRange) return false;
+        if (profile.age < _ageRange.start || profile.age > _ageRange.end) return false;
+        if (_showOnlyVerified && !profile.isVerified) return false;
         return true;
       }).toList();
       _currentIndex = 0;
@@ -67,7 +59,7 @@ class _DatingScreenState extends State<DatingScreen> {
         curve: Curves.easeInOut,
       );
     } else if (_filteredProfiles.isNotEmpty) {
-      _applyFilters(); // إعادة تدوير القائمة
+      _applyFilters();
     }
   }
 
@@ -79,12 +71,8 @@ class _DatingScreenState extends State<DatingScreen> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.accent, AppColors.success],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(28),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -92,55 +80,35 @@ class _DatingScreenState extends State<DatingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(profile.imageUrls[0]),
-                  ),
+                  CircleAvatar(radius: 40, backgroundImage: NetworkImage(profile.imageUrls[0])),
                   const SizedBox(width: 16),
                   CircleAvatar(
                     radius: 40,
-                    backgroundImage: NetworkImage(
-                      'https://picsum.photos/seed/current_user/100/100',
-                    ),
+                    backgroundImage: NetworkImage('https://picsum.photos/seed/current_user/100/100'),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              const Text(
-                "It's a Match!",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text("It's a Match!", style: AppTextStyles.h4.copyWith(color: AppColors.white)),
               const SizedBox(height: 8),
-              Text(
-                'You and ${profile.name} liked each other.',
-                style: const TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
+              Text('You and ${profile.name} liked each other.',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey2)),
               const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Keep Swiping'),
+                      child: Text('Keep Swiping', style: AppTextStyles.button.copyWith(color: AppColors.grey2)),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // انتقل إلى المحادثة
-                      },
+                      onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.accent,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Send Message'),
                     ),
@@ -160,14 +128,14 @@ class _DatingScreenState extends State<DatingScreen> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.6,
+        initialChildSize: 0.65,
         maxChildSize: 0.9,
         builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: SingleChildScrollView(
             controller: scrollController,
             child: Column(
@@ -178,15 +146,15 @@ class _DatingScreenState extends State<DatingScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.border,
+                      color: AppColors.grey3,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('Filters', style: AppTextStyles.headline2),
+                Text('Filters', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
                 const SizedBox(height: 24),
-                Text('Distance', style: AppTextStyles.body1),
+                Text('Distance', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white)),
                 const SizedBox(height: 8),
                 Slider(
                   value: _distanceRange,
@@ -194,26 +162,22 @@ class _DatingScreenState extends State<DatingScreen> {
                   max: 200,
                   divisions: 199,
                   label: '${_distanceRange.round()} km',
-                  onChanged: (value) {
-                    setState(() {
-                      _distanceRange = value;
-                    });
-                  },
+                  activeColor: AppColors.primary,
+                  onChanged: (value) => setState(() => _distanceRange = value),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('1 km', style: AppTextStyles.body2),
-                      Text('${_distanceRange.round()} km',
-                          style: AppTextStyles.body1),
-                      Text('200 km', style: AppTextStyles.body2),
+                      Text('1 km', style: AppTextStyles.bodySmall.copyWith(color: AppColors.grey2)),
+                      Text('${_distanceRange.round()} km', style: AppTextStyles.bodyMedium),
+                      Text('200 km', style: AppTextStyles.bodySmall.copyWith(color: AppColors.grey2)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Age Range', style: AppTextStyles.body1),
+                Text('Age Range', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white)),
                 const SizedBox(height: 8),
                 RangeSlider(
                   values: _ageRange,
@@ -224,23 +188,18 @@ class _DatingScreenState extends State<DatingScreen> {
                     _ageRange.start.round().toString(),
                     _ageRange.end.round().toString(),
                   ),
-                  onChanged: (values) {
-                    setState(() {
-                      _ageRange = values;
-                    });
-                  },
+                  activeColor: AppColors.primary,
+                  onChanged: (values) => setState(() => _ageRange = values),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('18', style: AppTextStyles.body2),
-                      Text(
-                        '${_ageRange.start.round()}-${_ageRange.end.round()}',
-                        style: AppTextStyles.body1,
-                      ),
-                      Text('80', style: AppTextStyles.body2),
+                      Text('18', style: AppTextStyles.bodySmall.copyWith(color: AppColors.grey2)),
+                      Text('${_ageRange.start.round()}-${_ageRange.end.round()}',
+                          style: AppTextStyles.bodyMedium),
+                      Text('80', style: AppTextStyles.bodySmall.copyWith(color: AppColors.grey2)),
                     ],
                   ),
                 ),
@@ -249,18 +208,14 @@ class _DatingScreenState extends State<DatingScreen> {
                   children: [
                     Checkbox(
                       value: _showOnlyVerified,
-                      onChanged: (value) {
-                        setState(() {
-                          _showOnlyVerified = value ?? false;
-                        });
-                      },
-                      activeColor: AppColors.accent,
+                      onChanged: (value) => setState(() => _showOnlyVerified = value ?? false),
+                      activeColor: AppColors.primary,
                     ),
                     Text('Show only verified profiles',
-                        style: AppTextStyles.body1),
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 Row(
                   children: [
                     Expanded(
@@ -273,13 +228,10 @@ class _DatingScreenState extends State<DatingScreen> {
                           });
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.accent),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          side: BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: Text('Reset',
-                            style: TextStyle(color: AppColors.accent)),
+                        child: Text('Reset', style: TextStyle(color: AppColors.primary)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -290,10 +242,8 @@ class _DatingScreenState extends State<DatingScreen> {
                           _applyFilters();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         child: Text('Apply', style: AppTextStyles.button),
                       ),
@@ -317,27 +267,22 @@ class _DatingScreenState extends State<DatingScreen> {
         children: [
           SafeArea(
             bottom: false,
-            child: Container(
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: AppColors.border,
-                    backgroundImage: const NetworkImage(
-                      'https://picsum.photos/seed/current_user/100/100',
-                    ),
+                    backgroundColor: AppColors.grey,
+                    backgroundImage: const NetworkImage('https://picsum.photos/seed/current_user/100/100'),
                   ),
                   Expanded(
                     child: Center(
-                      child: Text(
-                        'Date',
-                        style: AppTextStyles.headline2,
-                      ),
+                      child: Text('Date', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.tune, color: AppColors.primaryText),
+                    icon: Icon(Icons.tune_rounded, color: AppColors.white),
                     onPressed: _showFilterSheet,
                   ),
                 ],
@@ -347,24 +292,20 @@ class _DatingScreenState extends State<DatingScreen> {
           _buildStoriesRow(),
           Expanded(
             child: _filteredProfiles.isEmpty
-                ? const Center(
-                    child: Text('No profiles match your filters'),
-                  )
+                ? Center(
+                    child: Text('No profiles match your filters',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey2)))
                 : PageView.builder(
                     controller: _verticalPageController,
                     scrollDirection: Axis.vertical,
                     itemCount: _filteredProfiles.length,
-                    onPageChanged: (index) {
-                      setState(() => _currentIndex = index);
-                    },
+                    onPageChanged: (index) => setState(() => _currentIndex = index),
                     itemBuilder: (context, index) {
                       final profile = _filteredProfiles[index];
                       return _ProfilePage(
                         profile: profile,
                         onLike: () {
-                          if (Random().nextBool()) {
-                            _showMatchDialog(profile);
-                          }
+                          if (Random().nextBool()) _showMatchDialog(profile);
                           _nextProfile();
                         },
                         onDislike: _nextProfile,
@@ -381,7 +322,6 @@ class _DatingScreenState extends State<DatingScreen> {
   Widget _buildStoriesRow() {
     final stories = _allProfiles.where((p) => p.hasStory).toList();
     if (stories.isEmpty) return const SizedBox.shrink();
-
     return Container(
       height: 100,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -392,39 +332,29 @@ class _DatingScreenState extends State<DatingScreen> {
         itemBuilder: (context, index) {
           final profile = stories[index];
           return GestureDetector(
-            onTap: () {
-              // فتح عارض القصص
-            },
-            child: Container(
-              width: 60,
-              child: Column(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.accent, AppColors.success],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
+            onTap: () {},
+            child: Column(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF007AFF), Color(0xFF5AC8FA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: CircleAvatar(
-                      radius: 29,
-                      backgroundImage: NetworkImage(profile.imageUrls[0]),
-                    ),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    profile.name,
-                    style: AppTextStyles.caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: CircleAvatar(
+                    radius: 29,
+                    backgroundImage: NetworkImage(profile.imageUrls[0]),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 4),
+                Text(profile.name, style: AppTextStyles.caption.copyWith(color: AppColors.white)),
+              ],
             ),
           );
         },
@@ -516,7 +446,7 @@ class _SwipeableCardState extends State<_SwipeableCard>
       _dragOffset += details.delta.dx;
       _showLike = _dragOffset > 40;
       _showNope = _dragOffset < -40;
-      _showSuperLike = _dragOffset > 100; // سحب قوي لليمين
+      _showSuperLike = _dragOffset > 100;
     });
   }
 
@@ -537,7 +467,6 @@ class _SwipeableCardState extends State<_SwipeableCard>
 
   @override
   Widget build(BuildContext context) {
-    // نسبة عرض إلى ارتفاع ~1.66 (مثل 1000x600)
     final cardHeight = MediaQuery.of(context).size.width / 1.66;
 
     return GestureDetector(
@@ -550,21 +479,20 @@ class _SwipeableCardState extends State<_SwipeableCard>
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withOpacity(0.2),
                 blurRadius: 20,
-                offset: const Offset(0, 6),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // معرض الصور
                 PageView.builder(
                   controller: _imageController,
                   onPageChanged: (index) => setState(() => _currentImage = index),
@@ -576,7 +504,6 @@ class _SwipeableCardState extends State<_SwipeableCard>
                     );
                   },
                 ),
-                // مؤشر النقاط
                 Positioned(
                   bottom: 80,
                   left: 0,
@@ -587,19 +514,18 @@ class _SwipeableCardState extends State<_SwipeableCard>
                       widget.profile.imageUrls.length,
                       (index) => Container(
                         margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: 8,
-                        height: 8,
+                        width: 6,
+                        height: 6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _currentImage == index
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.5),
+                              ? AppColors.white
+                              : AppColors.white.withOpacity(0.4),
                         ),
                       ),
                     ),
                   ),
                 ),
-                // التدرج السفلي
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -618,7 +544,6 @@ class _SwipeableCardState extends State<_SwipeableCard>
                     ),
                   ),
                 ),
-                // معلومات سريعة أسفل الصورة
                 Positioned(
                   bottom: 16,
                   left: 16,
@@ -630,36 +555,22 @@ class _SwipeableCardState extends State<_SwipeableCard>
                         children: [
                           Text(
                             '${widget.profile.name}, ${widget.profile.age}',
-                            style: AppTextStyles.headline1.copyWith(
-                              color: Colors.white,
-                            ),
+                            style: AppTextStyles.h4.copyWith(color: Colors.white),
                           ),
                           if (widget.profile.isVerified) ...[
                             const SizedBox(width: 6),
-                            const Icon(
-                              Icons.check_circle,
-                              color: AppColors.success,
-                              size: 18,
-                            ),
+                            Icon(Icons.verified, color: AppColors.primary, size: 18),
                           ],
                           if (widget.profile.isBoosted) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.warning,
+                                color: AppColors.primary,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(
-                                'BOOSTED',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child: Text('BOOSTED',
+                                  style: AppTextStyles.caption.copyWith(color: Colors.white)),
                             ),
                           ],
                         ],
@@ -667,24 +578,17 @@ class _SwipeableCardState extends State<_SwipeableCard>
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: Colors.white70,
-                          ),
+                          Icon(Icons.location_on, size: 14, color: Colors.white70),
                           const SizedBox(width: 4),
                           Text(
                             '${widget.profile.city} • ${widget.profile.distance}',
-                            style: AppTextStyles.body2.copyWith(
-                              color: Colors.white70,
-                            ),
+                            style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                // تراكبات السحب
                 if (_showLike)
                   Positioned(
                     top: 30,
@@ -694,15 +598,10 @@ class _SwipeableCardState extends State<_SwipeableCard>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.85),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          'LIKE',
-                          style: AppTextStyles.headline2.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: Text('LIKE', style: AppTextStyles.h4.copyWith(color: Colors.white)),
                       ),
                     ),
                   ),
@@ -715,15 +614,10 @@ class _SwipeableCardState extends State<_SwipeableCard>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.85),
+                          color: AppColors.error,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          'NOPE',
-                          style: AppTextStyles.headline2.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: Text('NOPE', style: AppTextStyles.h4.copyWith(color: Colors.white)),
                       ),
                     ),
                   ),
@@ -736,20 +630,16 @@ class _SwipeableCardState extends State<_SwipeableCard>
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.9),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, color: Colors.white),
+                            Icon(Icons.star, color: Colors.white),
                             const SizedBox(width: 8),
-                            Text(
-                              'SUPER LIKE',
-                              style: AppTextStyles.headline2.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
+                            Text('SUPER LIKE',
+                                style: AppTextStyles.h4.copyWith(color: Colors.white)),
                           ],
                         ),
                       ),
@@ -777,28 +667,14 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _CircularButton(
-            icon: Icons.clear,
-            color: AppColors.error,
-            onPressed: onDislike,
-          ),
-          _CircularButton(
-            icon: Icons.star,
-            color: AppColors.warning,
-            onPressed: onSuperLike,
-            size: 52,
-            iconSize: 28,
-          ),
-          _CircularButton(
-            icon: Icons.favorite,
-            color: AppColors.success,
-            onPressed: onLike,
-          ),
+          _CircularButton(icon: Icons.close_rounded, color: AppColors.error, onPressed: onDislike),
+          _CircularButton(icon: Icons.star_rounded, color: AppColors.primary, onPressed: onSuperLike, size: 56, iconSize: 28),
+          _CircularButton(icon: Icons.favorite_rounded, color: AppColors.primary, onPressed: onLike),
         ],
       ),
     );
@@ -830,9 +706,9 @@ class _CircularButton extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -850,8 +726,7 @@ class _ProfileDetailsSection extends StatefulWidget {
   const _ProfileDetailsSection({required this.profile});
 
   @override
-  State<_ProfileDetailsSection> createState() =>
-      _ProfileDetailsSectionState();
+  State<_ProfileDetailsSection> createState() => _ProfileDetailsSectionState();
 }
 
 class _ProfileDetailsSectionState extends State<_ProfileDetailsSection> {
@@ -860,10 +735,10 @@ class _ProfileDetailsSectionState extends State<_ProfileDetailsSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -875,23 +750,15 @@ class _ProfileDetailsSectionState extends State<_ProfileDetailsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // السيرة الذاتية قابلة للتوسيع
           if (widget.profile.bio.isNotEmpty) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'About',
-                  style: AppTextStyles.body1.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
+                Text('About', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600, color: AppColors.white)),
+                const SizedBox(height: 8),
                 Text(
                   widget.profile.bio,
-                  style: AppTextStyles.body2.copyWith(
-                    color: AppColors.secondaryText,
-                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey2),
                   maxLines: _isBioExpanded ? null : 2,
                   overflow: _isBioExpanded ? null : TextOverflow.ellipsis,
                 ),
@@ -899,59 +766,37 @@ class _ProfileDetailsSectionState extends State<_ProfileDetailsSection> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => setState(() {
-                        _isBioExpanded = !_isBioExpanded;
-                      }),
+                      onPressed: () => setState(() => _isBioExpanded = !_isBioExpanded),
                       child: Text(
                         _isBioExpanded ? 'Less' : 'More',
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.accent,
-                        ),
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
           ],
-          // الاهتمامات
-          Text(
-            'Interests',
-            style: AppTextStyles.body1.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
+          Text('Interests', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600, color: AppColors.white)),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: widget.profile.interests.map((interest) {
               return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.grey3.withOpacity(0.3)),
                 ),
-                child: Text(
-                  interest,
-                  style: AppTextStyles.body2,
-                ),
+                child: Text(interest, style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
-          // معرض صور إضافي
-          Text(
-            'Photos',
-            style: AppTextStyles.body1.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
+          Text('Photos', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600, color: AppColors.white)),
+          const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -964,7 +809,7 @@ class _ProfileDetailsSectionState extends State<_ProfileDetailsSection> {
             itemCount: widget.profile.imageUrls.length,
             itemBuilder: (context, index) {
               return ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: Image.network(
                   widget.profile.imageUrls[index],
                   fit: BoxFit.cover,
