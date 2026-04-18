@@ -1,224 +1,50 @@
+// lib/core/theme/app_text_styles.dart
+
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  AppTextStyles._();
+  static const String _fontFamily = 'Inter';
 
-  // Display styles
-  static const TextStyle display1 = TextStyle(
-    fontSize: 57,
-    fontWeight: FontWeight.w900,
-    letterSpacing: -0.25,
-    height: 1.12,
-  );
-
-  static const TextStyle display2 = TextStyle(
-    fontSize: 45,
-    fontWeight: FontWeight.w800,
-    height: 1.16,
-  );
-
-  static const TextStyle display3 = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
-    height: 1.22,
-  );
-
-  // Headline styles
-  static const TextStyle h1 = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.w900,
-    height: 1.25,
-  );
-
-  static const TextStyle h2 = TextStyle(
+  static const TextStyle headline1 = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w900,
-    height: 1.29,
+    fontWeight: FontWeight.bold,
+    color: AppColors.primaryText,
+    fontFamily: _fontFamily,
   );
 
-  static const TextStyle h3 = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    height: 1.33,
-  );
-
-  static const TextStyle h4 = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    height: 1.4,
-  );
-
-  static const TextStyle h5 = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    height: 1.44,
-  );
-
-  static const TextStyle h6 = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    height: 1.5,
-  );
-
-  // Title styles
-  static const TextStyle titleLarge = TextStyle(
+  static const TextStyle headline2 = TextStyle(
     fontSize: 22,
-    fontWeight: FontWeight.w400,
-    height: 1.27,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryText,
+    fontFamily: _fontFamily,
   );
 
-  static const TextStyle titleMedium = TextStyle(
+  static const TextStyle body1 = TextStyle(
     fontSize: 16,
-    fontWeight: FontWeight.w500,
-    height: 1.5,
+    fontWeight: FontWeight.normal,
+    color: AppColors.primaryText,
+    fontFamily: _fontFamily,
   );
 
-  static const TextStyle titleSmall = TextStyle(
+  static const TextStyle body2 = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.w500,
-    height: 1.43,
+    fontWeight: FontWeight.normal,
+    color: AppColors.secondaryText,
+    fontFamily: _fontFamily,
   );
 
-  // Body styles
-  static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    letterSpacing: 0.5,
-    height: 1.5,
-  );
-
-  static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    letterSpacing: 0.25,
-    height: 1.43,
-  );
-
-  static const TextStyle bodySmall = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w400,
-    letterSpacing: 0.4,
-    height: 1.33,
-  );
-
-  // Label styles
-  static const TextStyle labelLarge = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    height: 1.43,
-  );
-
-  static const TextStyle labelMedium = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    height: 1.33,
-  );
-
-  static const TextStyle labelSmall = TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-    height: 1.45,
-  );
-
-  // Caption
   static const TextStyle caption = TextStyle(
     fontSize: 12,
-    fontWeight: FontWeight.w400,
-    letterSpacing: 0.4,
-    height: 1.33,
-    color: AppColors.grey2,
+    fontWeight: FontWeight.normal,
+    color: AppColors.secondaryText,
+    fontFamily: _fontFamily,
   );
 
-  // Overline
-  static const TextStyle overline = TextStyle(
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 1.5,
-    height: 1.6,
-  );
-
-  // Button styles
   static const TextStyle button = TextStyle(
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
-    letterSpacing: 1.25,
-    height: 1.43,
+    color: Colors.white,
+    fontFamily: _fontFamily,
   );
-
-  static const TextStyle buttonLarge = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.25,
-    height: 1.5,
-  );
-
-  // Specialized app styles
-  static const TextStyle username = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-  );
-
-  static const TextStyle timestamp = TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w400,
-    color: AppColors.grey2,
-  );
-
-  static const TextStyle postTitle = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w900,
-    height: 1.4,
-  );
-
-  static const TextStyle postBody = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.6,
-  );
-
-  // Rize styles
-  static const TextStyle rizeTitle = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w900,
-    height: 1.3,
-  );
-
-  static const TextStyle rizeBody = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.6,
-  );
-
-  static const TextStyle rizeUsername = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-  );
-
-  static const TextStyle rizeHandle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: AppColors.grey2,
-  );
-
-  // Stats
-  static const TextStyle statValue = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w900,
-  );
-
-  static const TextStyle statLabel = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w400,
-    color: AppColors.grey2,
-  );
-
-  // Convenience aliases
-  static const TextStyle body1 = bodyLarge;
-  static const TextStyle body2 = bodyMedium;
-
-  // Material3 display aliases
-  static const TextStyle displayLarge  = display1;
-  static const TextStyle displayMedium = display2;
-  static const TextStyle displaySmall  = display3;
 }
