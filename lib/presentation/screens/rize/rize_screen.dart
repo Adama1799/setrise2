@@ -572,7 +572,7 @@ class _RizeCardState extends State<_RizeCard>
   Widget build(BuildContext context) {
     final post = widget.post;
     // التحقق من وجود isVerified في الموديل، إذا لم يكن موجوداً نستخدم false
-    final bool isVerified = (post as dynamic).isVerified ?? false;
+    const bool isVerified = false;
     
     return GestureDetector(
       onDoubleTap: _handleDoubleTap,
@@ -599,10 +599,10 @@ class _RizeCardState extends State<_RizeCard>
                     child: CircleAvatar(
                       radius: 20,
                       backgroundColor: const Color(0xFF2C2C2E),
-                      backgroundImage: post.userAvatar.isNotEmpty ? NetworkImage(post.userAvatar) : null,
-                      child: post.userAvatar.isEmpty
-                          ? const Icon(CupertinoIcons.person_fill, color: Colors.white54, size: 18)
-                          : null,
+                      child: Text(
+                        post.userAvatar,
+                        style: const TextStyle(fontSize: 18),
+                      ),
                     ),
                   ),
                 ),
@@ -1710,6 +1710,3 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
     );
   }
 }
-
-
- 
