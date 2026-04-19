@@ -565,7 +565,7 @@ class _MiniPlayer extends StatefulWidget {
   State<_MiniPlayer> createState() => _MiniPlayerState();
 }
 
-class _MiniPlayerState extends State<_MiniPlayer> {
+class _MiniPlayerState extends State<_MiniPlayer> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
 
