@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
 
-/// Brand Colors - Neon Theme
 class AppColors {
   AppColors._();
 
   // ===== PRIMARY COLORS =====
-  static const Color primary = Color(0xFF007AFF);       // ✅ أضيف للتوافق مع map_screen
-  static const Color electricBlue = Color(0xFF0066FF);  // ⚡ Primary
-  static const Color neonBlue = electricBlue;            // ⚡ Alias
-  static const Color neonPink = Color(0xFFFF00CC);      // 💗 Accent
-  static const Color neonYellow = Color(0xFFFFB300);    // 🟡 Amber
-  static const Color neonRed = Color(0xFFFF2200);       // 🔴 Alert
-  static const Color cyan = Color(0xFF00FFEE);          // 🧊 Ice Blue
-  static const Color neonGreen = Color(0xFF39FF14);     // 🟢 Success
+  static const Color primary = Color(0xFF007AFF);       // ✅ أضيف
+  static const Color accent = primary;                  // ✅ أضيف كمرادف للتوافق
+  static const Color electricBlue = Color(0xFF0066FF);
+  static const Color neonBlue = electricBlue;
+  static const Color neonPink = Color(0xFFFF00CC);
+  static const Color neonYellow = Color(0xFFFFB300);
+  static const Color neonRed = Color(0xFFFF2200);
+  static const Color cyan = Color(0xFF00FFEE);
+  static const Color neonGreen = Color(0xFF39FF14);
 
   // ===== BASE COLORS =====
-  static const Color background = Color(0xFF010101);    // #010101
+  static const Color background = Color(0xFF010101);
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF0A0A0A);
-  static const Color surface = black;                   // 🖤 Surface
+  static const Color surface = black;
   static const Color grey = Color(0xFF2C2C2C);
-  static const Color grey1 = grey;                      // 🌑 Grey Dark
+  static const Color grey1 = grey;
   static const Color grey2 = Color(0xFF8E8E8E);
-  static const Color grey3 = grey2;                     // 🔘 Grey Mid
+  static const Color grey3 = grey2;
   static const Color greyLight = Color(0xFFE0E0E0);
+  static const Color border = grey;                     // ✅ أضيف لاستخدامه في shimmer
 
   // ===== FEATURE COLORS =====
   static const Color live = Color(0xFFFF4444);
@@ -58,25 +59,21 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
   static const LinearGradient liveGradient = LinearGradient(
     colors: [neonRed, neonPink],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
   static const LinearGradient musicGradient = LinearGradient(
     colors: [cyan, Color(0xFF00D4FF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
   static const LinearGradient datingGradient = LinearGradient(
     colors: [neonYellow, Color(0xFFFFD740)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
   static const LinearGradient shopGradient = LinearGradient(
     colors: [neonGreen, Color(0xFF7FFF00)],
     begin: Alignment.topLeft,
@@ -89,7 +86,6 @@ class AppColors {
     blurRadius: 20,
     spreadRadius: 2,
   );
-
   static BoxShadow get pinkGlow => BoxShadow(
     color: neonPink.withOpacity(0.3),
     blurRadius: 20,
