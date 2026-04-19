@@ -11,9 +11,8 @@ class DatingProfileModel {
   final List<String> imageUrls;
   final List<String> interests;
   final bool isVerified;
-  final bool isLocked;
-  final bool isBoosted;
-  final bool hasStory; // ✅ جديد
+  final bool isLocked; // ✅ جديد: قفل الملف الشخصي
+  final bool isBoosted; // ✅ جديد: معزز
 
   DatingProfileModel({
     required this.id,
@@ -27,7 +26,6 @@ class DatingProfileModel {
     this.isVerified = false,
     this.isLocked = false,
     this.isBoosted = false,
-    this.hasStory = false, // ✅ جديد
   });
 
   static List<DatingProfileModel> getMockProfiles() {
@@ -49,7 +47,6 @@ class DatingProfileModel {
         isVerified: true,
         isLocked: false,
         isBoosted: true,
-        hasStory: true,
       ),
       DatingProfileModel(
         id: 'd2',
@@ -64,9 +61,8 @@ class DatingProfileModel {
         ],
         interests: ['Art', 'Books', 'Cooking'],
         isVerified: false,
-        isLocked: true,
+        isLocked: true, // ✅ مقفل
         isBoosted: false,
-        hasStory: false,
       ),
       DatingProfileModel(
         id: 'd3',
@@ -83,7 +79,6 @@ class DatingProfileModel {
         isVerified: true,
         isLocked: false,
         isBoosted: false,
-        hasStory: true,
       ),
       DatingProfileModel(
         id: 'd4',
@@ -100,7 +95,6 @@ class DatingProfileModel {
         isVerified: false,
         isLocked: false,
         isBoosted: true,
-        hasStory: false,
       ),
       DatingProfileModel(
         id: 'd5',
@@ -118,7 +112,6 @@ class DatingProfileModel {
         isVerified: true,
         isLocked: false,
         isBoosted: false,
-        hasStory: true,
       ),
     ];
   }

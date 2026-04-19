@@ -3,80 +3,78 @@
 class ProductModel {
   final String id;
   final String name;
-  final String brand;
+  final String brandName;
+  final String categoryId;
+  final String description;
   final double price;
   final double? oldPrice;
   final double rating;
   final int reviewsCount;
   final int stock;
-  final List<String> imageUrls;
-  final String? videoUrl;
-  final String description;
-  final String categoryId;
-  final DateTime createdAt;
-  final double shippingCost;
-  bool isFavorite;
-  final List<String> tags;
+  final List<String> images;
+  final List<String> sizes;
+  final List<String> colors;
+  final bool isFeatured;
+  final bool isFavorite;
 
   ProductModel({
     required this.id,
     required this.name,
-    required this.brand,
+    required this.brandName,
+    required this.categoryId,
+    required this.description,
     required this.price,
     this.oldPrice,
     required this.rating,
     required this.reviewsCount,
     required this.stock,
-    required this.imageUrls,
-    this.videoUrl,
-    required this.description,
-    required this.categoryId,
-    DateTime? createdAt,
-    this.shippingCost = 5.99,
+    required this.images,
+    required this.sizes,
+    required this.colors,
+    this.isFeatured = false,
     this.isFavorite = false,
-    this.tags = const [],
-  }) : createdAt = createdAt ?? DateTime.now();
+  });
 
-  int get discountPercentage {
-    if (oldPrice == null || oldPrice! <= price) return 0;
-    return ((1 - (price / oldPrice!)) * 100).round();
+  double get discountPercentage {
+    if (oldPrice != null && oldPrice! > price) {
+      return ((oldPrice! - price) / oldPrice!) * 100;
+    }
+    return 0;
   }
 
   ProductModel copyWith({
     String? id,
     String? name,
-    String? brand,
+    String? brandName,
+    String? categoryId,
+    String? description,
     double? price,
     double? oldPrice,
     double? rating,
     int? reviewsCount,
     int? stock,
-    List<String>? imageUrls,
-    String? videoUrl,
-    String? description,
-    String? categoryId,
-    DateTime? createdAt,
-    double? shippingCost,
+    List<String>? images,
+    List<String>? sizes,
+    List<String>? colors,
+    bool? isFeatured,
     bool? isFavorite,
-    List<String>? tags,
   }) {
     return ProductModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      brand: brand ?? this.brand,
+      brandName: brandName ?? this.brandName,
+      categoryId: categoryId ?? this.categoryId,
+      description: description ?? this.description,
       price: price ?? this.price,
       oldPrice: oldPrice ?? this.oldPrice,
       rating: rating ?? this.rating,
       reviewsCount: reviewsCount ?? this.reviewsCount,
       stock: stock ?? this.stock,
-      imageUrls: imageUrls ?? this.imageUrls,
-      videoUrl: videoUrl ?? this.videoUrl,
-      description: description ?? this.description,
-      categoryId: categoryId ?? this.categoryId,
-      createdAt: createdAt ?? this.createdAt,
-      shippingCost: shippingCost ?? this.shippingCost,
+      images: images ?? this.images,
+      sizes: sizes ?? this.sizes,
+      colors: colors ?? this.colors,
+      isFeatured: isFeatured ?? this.isFeatured,
       isFavorite: isFavorite ?? this.isFavorite,
-      tags: tags ?? this.tags,
     );
   }
 }
