@@ -1,11 +1,13 @@
 // lib/data/models/rize_model.dart
+// ✅ FIXED: حذف كل URLs — emoji avatars بدل صور الشبكة
+// ✅ FIXED: منشورات نصية فقط — لا يحتاج انترنت لعرضها
 
 class RizePostModel {
   final String id;
-  final String userId;           // ✅ جديد
+  final String userId;
   final String name;
   final String username;
-  final String userAvatar;       // ✅ جديد
+  final String userAvatar;   // emoji بدل URL
   final String title;
   final String body;
   final int upvotes;
@@ -16,16 +18,16 @@ class RizePostModel {
   final bool hasMedia;
   final bool isBookmarked;
   final bool isFollowing;
-  final List<String> mediaUrls;  // ✅ جديد
-  final String mediaType;        // ✅ جديد ('image' أو 'video')
+  final List<String> mediaUrls;
+  final String mediaType;
   final DateTime createdAt;
 
   RizePostModel({
     required this.id,
-    required this.userId,          // ✅
+    required this.userId,
     required this.name,
     required this.username,
-    required this.userAvatar,      // ✅
+    required this.userAvatar,
     required this.title,
     required this.body,
     this.upvotes = 0,
@@ -36,8 +38,8 @@ class RizePostModel {
     this.hasMedia = false,
     this.isBookmarked = false,
     this.isFollowing = false,
-    this.mediaUrls = const [],     // ✅ افتراضي قائمة فارغة
-    this.mediaType = 'image',      // ✅ افتراضي صورة
+    this.mediaUrls = const [],
+    this.mediaType = 'image',
     required this.createdAt,
   });
 
@@ -83,6 +85,7 @@ class RizePostModel {
     );
   }
 
+  // ✅ بيانات وهمية بدون أي URL خارجي
   static List<RizePostModel> getMockPosts() {
     return [
       RizePostModel(
@@ -90,32 +93,28 @@ class RizePostModel {
         userId: 'user1',
         name: 'Ahmed Codes',
         username: '@ahmed_codes',
-        userAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+        userAvatar: '👨‍💻',
         title: 'Flutter 3.29 is amazing!',
-        body: 'Just updated to Flutter 3.29 and the performance improvements are noticeable.',
+        body: 'Just updated to Flutter 3.29 and the performance improvements are insane. Startup time dropped by 40% on my app. Highly recommend updating now.',
         upvotes: 12400,
         comments: 340,
         shares: 1200,
         views: 45000,
         isUpvoted: false,
-        hasMedia: true,
+        hasMedia: false,
         isBookmarked: false,
         isFollowing: false,
-        mediaUrls: [
-          'https://picsum.photos/400/600?random=1',
-          'https://picsum.photos/400/600?random=2',
-        ],
-        mediaType: 'image',
+        mediaUrls: [],
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
       RizePostModel(
         id: '2',
         userId: 'user2',
-        name: 'Flutter Dev',
-        username: '@flutter_dev',
-        userAvatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-        title: '10 Tips for Clean Flutter Code',
-        body: '1. Use const constructors\n2. Extract widgets\n3. Use themes\n4. Avoid rebuilding',
+        name: 'Sara Design',
+        username: '@sara_ui',
+        userAvatar: '👩‍🎨',
+        title: 'Glassmorphism in 2025 🔥',
+        body: 'Glassmorphism is still trending and honestly it looks incredible on dark backgrounds. Here are my top 3 tips for making it look premium without hurting performance.',
         upvotes: 8900,
         comments: 210,
         shares: 890,
@@ -125,30 +124,122 @@ class RizePostModel {
         isBookmarked: true,
         isFollowing: true,
         mediaUrls: [],
-        mediaType: 'image',
         createdAt: DateTime.now().subtract(const Duration(hours: 5)),
       ),
       RizePostModel(
         id: '3',
         userId: 'user3',
-        name: 'Video Creator',
-        username: '@video_maker',
-        userAvatar: 'https://randomuser.me/api/portraits/women/3.jpg',
-        title: 'My first short video!',
-        body: 'Check out this amazing sunset 🌅',
-        upvotes: 2300,
-        comments: 87,
-        shares: 340,
-        views: 12000,
+        name: 'Karim Dev',
+        username: '@karim_dz',
+        userAvatar: '🧑‍🚀',
+        title: 'من الجزائر للعالم 🇩🇿',
+        body: 'أطلقت تطبيقي الأول على Google Play وحصل على 1000 تحميل في اليوم الأول. الحلم ممكن يا شباب، فقط لا تتوقفوا.',
+        upvotes: 24300,
+        comments: 780,
+        shares: 3400,
+        views: 89000,
         isUpvoted: false,
-        hasMedia: true,
+        hasMedia: false,
         isBookmarked: false,
         isFollowing: false,
-        mediaUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'],
-        mediaType: 'video', // ✅ فيديو
+        mediaUrls: [],
         createdAt: DateTime.now().subtract(const Duration(hours: 1)),
       ),
-      // ... أضف بقية المنشورات بنفس النمط
+      RizePostModel(
+        id: '4',
+        userId: 'user4',
+        name: 'Lina Tech',
+        username: '@lina_codes',
+        userAvatar: '👩‍💻',
+        title: 'Riverpod vs BLoC in 2025',
+        body: 'After using both for 2 years here is my honest take:\n\n• Riverpod: simpler, less boilerplate, great for small-medium apps\n• BLoC: more structured, better for large teams\n\nFor solo devs? Riverpod all the way.',
+        upvotes: 5600,
+        comments: 430,
+        shares: 670,
+        views: 21000,
+        isUpvoted: false,
+        hasMedia: false,
+        isBookmarked: false,
+        isFollowing: true,
+        mediaUrls: [],
+        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+      ),
+      RizePostModel(
+        id: '5',
+        userId: 'user5',
+        name: 'Omar SetRize',
+        username: '@omar_sr',
+        userAvatar: '⚽',
+        title: 'SetRize is growing fast 🚀',
+        body: 'شكرا لكل من انضم للتطبيق هذا الشهر. المجتمع يكبر يوم بعد يوم ونحن نعمل على ميزات جديدة ستفاجئكم قريباً.',
+        upvotes: 3400,
+        comments: 156,
+        shares: 289,
+        views: 15000,
+        isUpvoted: true,
+        hasMedia: false,
+        isBookmarked: true,
+        isFollowing: false,
+        mediaUrls: [],
+        createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
+      ),
+      RizePostModel(
+        id: '6',
+        userId: 'user6',
+        name: 'Nour Startup',
+        username: '@nour_build',
+        userAvatar: '🎬',
+        title: 'Lesson learned after 3 failed startups',
+        body: '1. Build for a real problem, not a cool idea\n2. Talk to users before writing one line of code\n3. Launch ugly and iterate fast\n4. Revenue > Downloads\n5. Mental health matters more than hustle',
+        upvotes: 18700,
+        comments: 920,
+        shares: 4500,
+        views: 102000,
+        isUpvoted: false,
+        hasMedia: false,
+        isBookmarked: false,
+        isFollowing: false,
+        mediaUrls: [],
+        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
+      ),
+      RizePostModel(
+        id: '7',
+        userId: 'user7',
+        name: 'Yacine Gaming',
+        username: '@yacine_gamer',
+        userAvatar: '🎮',
+        title: 'Mobile gaming in Algeria 🎯',
+        body: 'يا شباب سوق الألعاب في الجزائر يكبر بسرعة مجنونة. هل فكر أحد منكم في بناء لعبة موبايل محلية؟ أنا جاهز للتعاون مع أي مطور مهتم.',
+        upvotes: 4200,
+        comments: 340,
+        shares: 210,
+        views: 19000,
+        isUpvoted: false,
+        hasMedia: false,
+        isBookmarked: false,
+        isFollowing: false,
+        mediaUrls: [],
+        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      ),
+      RizePostModel(
+        id: '8',
+        userId: 'user8',
+        name: 'Amira UX',
+        username: '@amira_ux',
+        userAvatar: '🌸',
+        title: 'Dark mode is not just a trend',
+        body: 'Dark mode reduces eye strain by 40% in low-light environments. OLED screens save up to 60% battery on pure black backgrounds. This is why AMOLED dark themes matter. Design for the eyes, not just the aesthetics.',
+        upvotes: 7800,
+        comments: 188,
+        shares: 1100,
+        views: 28000,
+        isUpvoted: true,
+        hasMedia: false,
+        isBookmarked: false,
+        isFollowing: true,
+        mediaUrls: [],
+        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+      ),
     ];
   }
 }
