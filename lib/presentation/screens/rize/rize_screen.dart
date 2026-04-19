@@ -174,13 +174,8 @@ class _RizeScreenState extends State<RizeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
-      child: Scaffold(
-        backgroundColor: Colors.white, // خلفية بيضاء
-        body: SafeArea(
-          child: Column(
-            children: [
+    return Column(
+      children: [
               // شريط علوي متحرك
               ValueListenableBuilder<bool>(
                 valueListenable: _showTopBar,
@@ -195,20 +190,20 @@ class _RizeScreenState extends State<RizeScreen>
                               Text(
                                 'Rize',
                                 style: AppTextStyles.h4.copyWith(
-                                  color: Colors.black87,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
                               const Spacer(),
                               const Icon(
                                 Icons.search_rounded,
-                                color: Colors.black54,
+                                color: AppColors.grey2,
                                 size: 24,
                               ),
                               const SizedBox(width: 16),
                               const Icon(
                                 Icons.notifications_none_rounded,
-                                color: Colors.black54,
+                                color: AppColors.grey2,
                                 size: 24,
                               ),
                             ],
@@ -220,10 +215,10 @@ class _RizeScreenState extends State<RizeScreen>
               // تبويبات For You / Following
               TabBar(
                 controller: _tabCtrl,
-                indicatorColor: Colors.black87,
+                indicatorColor: Colors.white,
                 indicatorWeight: 2,
-                labelColor: Colors.black87,
-                unselectedLabelColor: Colors.black45,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white38,
                 labelStyle: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -250,15 +245,7 @@ class _RizeScreenState extends State<RizeScreen>
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showCreateSheet(context),
-          backgroundColor: AppColors.electricBlue,
-          child: const Icon(Icons.add_rounded, color: Colors.white),
-        ),
-      ),
+      ],
     );
   }
 
@@ -266,7 +253,7 @@ class _RizeScreenState extends State<RizeScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -450,7 +437,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
                       ? NetworkImage(post.userAvatar)
                       : null,
                   child: post.userAvatar.isEmpty
-                      ? const Icon(Icons.person_rounded, color: Colors.black54, size: 24)
+                      ? const Icon(Icons.person_rounded, color: AppColors.grey2, size: 24)
                       : null,
                 ),
               ),
@@ -466,7 +453,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
                           child: Text(
                             post.name,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
                             ),
@@ -476,7 +463,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
                         Text(
                           post.username,
                           style: const TextStyle(
-                            color: Colors.black45,
+                            color: AppColors.grey2,
                             fontSize: 13,
                           ),
                         ),
@@ -493,7 +480,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
                               child: const Text(
                                 'Follow',
                                 style: TextStyle(
-                                  color: Colors.black87,
+                                  color: AppColors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -524,7 +511,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
               child: Text(
                 post.title,
                 style: const TextStyle(
-                  color: Colors.black87,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
@@ -533,7 +520,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
           // نص المنشور
           Text(
             post.body,
-            style: const TextStyle(color: Colors.black87, fontSize: 15, height: 1.4),
+            style: const TextStyle(color: AppColors.white, fontSize: 15, height: 1.4),
           ),
           // الوسائط (صور أو فيديوهات)
           if (post.mediaUrls.isNotEmpty) ...[
@@ -562,21 +549,21 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
               _buildActionButton(
                 icon: Icons.chat_bubble_outline_rounded,
                 label: Formatters.formatCount(post.comments),
-                color: Colors.black45,
+                color: AppColors.grey2,
                 onTap: () => _showCommentsSheet(context),
               ),
               const SizedBox(width: 24),
               _buildActionButton(
                 icon: Icons.share_outlined,
                 label: Formatters.formatCount(post.shares),
-                color: Colors.black45,
+                color: AppColors.grey2,
                 onTap: () => _showRepostSheet(context),
               ),
               const Spacer(),
               _buildActionButton(
                 icon: post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
                 label: '',
-                color: Colors.black45,
+                color: AppColors.grey2,
                 onTap: () => widget.onUpdate(post.copyWith(isBookmarked: !post.isBookmarked)),
               ),
             ],
@@ -704,7 +691,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   void _showPostMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -731,7 +718,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   Widget _menuOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.black54),
-      title: Text(label, style: const TextStyle(color: Colors.black87, fontSize: 16)),
+      title: Text(label, style: const TextStyle(color: AppColors.white, fontSize: 16)),
       onTap: () {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(label)));
@@ -742,7 +729,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   void _showRepostSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -773,7 +760,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   Widget _repostOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.black54),
-      title: Text(label, style: const TextStyle(color: Colors.black87, fontSize: 16)),
+      title: Text(label, style: const TextStyle(color: AppColors.white, fontSize: 16)),
       onTap: onTap,
     );
   }
@@ -782,7 +769,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -794,7 +781,7 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0D0D0D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -950,12 +937,12 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   Expanded(
                     child: Text(
                       'Replying to @${_findCommentById(_comments, _replyingToId!)?.username ?? ''}',
-                      style: const TextStyle(color: Colors.black54, fontSize: 13),
+                      style: const TextStyle(color: AppColors.grey2, fontSize: 13),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => setState(() => _replyingToId = null),
-                    child: const Icon(Icons.close, color: Colors.black45, size: 18),
+                    child: const Icon(Icons.close, color: AppColors.grey2, size: 18),
                   ),
                 ],
               ),
@@ -977,13 +964,13 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         top: false,
         child: Row(
           children: [
-            const CircleAvatar(radius: 15, backgroundColor: Colors.black12, child: Icon(Icons.person, color: Colors.black54, size: 18)),
+            const CircleAvatar(radius: 15, backgroundColor: Colors.black12, child: Icon(Icons.person, color: AppColors.grey2, size: 18)),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(
                 controller: _textController,
                 focusNode: _focusNode,
-                style: const TextStyle(color: Colors.black87, fontSize: 15),
+                style: const TextStyle(color: AppColors.white, fontSize: 15),
                 decoration: InputDecoration(
                   hintText: _replyingToId != null ? 'Write a reply...' : 'Add a comment...',
                   hintStyle: const TextStyle(color: Colors.black38),
@@ -1042,7 +1029,7 @@ class _CommentTile extends StatelessWidget {
               SizedBox(width: 20.0 * depth),
               Container(width: 2, height: 30, color: Colors.black12, margin: const EdgeInsets.only(right: 12)),
             ],
-            CircleAvatar(radius: 14, backgroundColor: Colors.black12, child: const Icon(Icons.person, color: Colors.black54, size: 16)),
+            CircleAvatar(radius: 14, backgroundColor: Colors.black12, child: const Icon(Icons.person, color: AppColors.grey2, size: 16)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1050,7 +1037,7 @@ class _CommentTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(comment.username, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(comment.username, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600, fontSize: 13)),
                       const SizedBox(width: 6),
                       Text(Formatters.timeAgo(comment.createdAt), style: const TextStyle(color: Colors.black38, fontSize: 11)),
                       const Spacer(),
@@ -1062,7 +1049,7 @@ class _CommentTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(comment.text, style: const TextStyle(color: Colors.black87, fontSize: 14)),
+                  Text(comment.text, style: const TextStyle(color: AppColors.white, fontSize: 14)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -1072,14 +1059,14 @@ class _CommentTile extends StatelessWidget {
                           children: [
                             Icon(comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: comment.isLiked ? Colors.redAccent : Colors.black45, size: 14),
                             const SizedBox(width: 4),
-                            Text(Formatters.formatCount(comment.likes), style: TextStyle(color: Colors.black45, fontSize: 12)),
+                            Text(Formatters.formatCount(comment.likes), style: TextStyle(color: AppColors.grey2, fontSize: 12)),
                           ],
                         ),
                       ),
                       const SizedBox(width: 16),
                       GestureDetector(
                         onTap: () => onReply(comment.id),
-                        child: const Text('Reply', style: TextStyle(color: Colors.black45, fontSize: 12)),
+                        child: const Text('Reply', style: TextStyle(color: AppColors.grey2, fontSize: 12)),
                       ),
                     ],
                   ),
@@ -1150,7 +1137,7 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
                 child: TextField(
                   controller: _textController,
                   focusNode: _focusNode,
-                  style: const TextStyle(color: Colors.black87, fontSize: 16),
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
                   maxLines: null,
                   decoration: const InputDecoration(
                     hintText: 'What\'s on your mind?',
@@ -1169,7 +1156,7 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.quotedPost!.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                  Text(widget.quotedPost!.name, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600)),
                   Text(widget.quotedPost!.body, style: const TextStyle(color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ],
               ),
@@ -1213,7 +1200,7 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: Colors.black54, size: 20),
+        child: Icon(icon, color: AppColors.grey2, size: 20),
       ),
     );
   }
