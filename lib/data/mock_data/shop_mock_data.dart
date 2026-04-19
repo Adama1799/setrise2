@@ -1,4 +1,4 @@
-here// lib/data/mock_data/shop_mock_data.dart
+// lib/data/mock_data/shop_mock_data.dart
 import '../models/product_model.dart';
 import '../models/category_model.dart';
 import 'package:flutter/material.dart';
