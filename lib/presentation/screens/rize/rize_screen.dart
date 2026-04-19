@@ -1,5 +1,8 @@
-// lib/presentation/screens/rize/rize_screen.dart
+// lib/presentation/screens/rize/rize_screen_pro.dart
+// نسخة برو - Threads UI + Twitter Features
 
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,7 +11,9 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/models/rize_model.dart';
 import 'widgets/media_fullscreen.dart';
 
-// ─── نموذج التعليق (محسّن) ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 نموذج التعليق المتداخل (Threaded) 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
 class RizeCommentModel {
   final String id;
   final String userId;
@@ -18,7 +23,8 @@ class RizeCommentModel {
   int likes;
   bool isLiked;
   final DateTime createdAt;
-  final List<RizeCommentModel> replies; // دعم الردود المتداخلة
+  final List<RizeCommentModel> replies;
+  bool isDeleted;
 
   RizeCommentModel({
     required this.id,
@@ -30,6 +36,7 @@ class RizeCommentModel {
     required this.isLiked,
     required this.createdAt,
     this.replies = const [],
+    this.isDeleted = false,
   });
 
   RizeCommentModel copyWith({
@@ -42,6 +49,7 @@ class RizeCommentModel {
     bool? isLiked,
     DateTime? createdAt,
     List<RizeCommentModel>? replies,
+    bool? isDeleted,
   }) {
     return RizeCommentModel(
       id: id ?? this.id,
@@ -53,6 +61,7 @@ class RizeCommentModel {
       isLiked: isLiked ?? this.isLiked,
       createdAt: createdAt ?? this.createdAt,
       replies: replies ?? this.replies,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -63,7 +72,7 @@ class RizeCommentModel {
         userId: 'user1',
         username: '@ahmed_codes',
         name: 'Ahmed',
-        text: 'This is exactly what I was looking for! Great breakdown.',
+        text: 'This is exactly what I was looking for! Great breakdown 🔥',
         likes: 24,
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
@@ -73,10 +82,22 @@ class RizeCommentModel {
             userId: 'user2',
             username: '@flutter_dev',
             name: 'Flutter Dev',
-            text: 'Totally agree! The new features are 🔥',
+            text: 'Totally agree! The new features are amazing',
             likes: 8,
             isLiked: true,
             createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+            replies: [
+              RizeCommentModel(
+                id: '1-1-1',
+                userId: 'current_user',
+                username: '@you',
+                name: 'You',
+                text: 'Thanks for the feedback guys! 🙏',
+                likes: 3,
+                isLiked: false,
+                createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
+              ),
+            ],
           ),
         ],
       ),
@@ -95,7 +116,7 @@ class RizeCommentModel {
         userId: 'user3',
         username: '@ui_designer',
         name: 'Sarah',
-        text: 'The design patterns you mentioned are spot on.',
+        text: 'The design patterns you mentioned are spot on. Love the dark mode!',
         likes: 8,
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(hours: 1)),
@@ -105,7 +126,7 @@ class RizeCommentModel {
             userId: 'user1',
             username: '@ahmed_codes',
             name: 'Ahmed',
-            text: 'Glad you liked it!',
+            text: 'Glad you liked it! Dark mode is the way to go.',
             likes: 2,
             isLiked: false,
             createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
@@ -117,7 +138,7 @@ class RizeCommentModel {
         userId: 'user4',
         username: '@meta_fan',
         name: 'Khalid',
-        text: 'Feels like Threads indeed! Love the clean UI.',
+        text: 'Feels like Threads indeed! Love the clean UI and smooth animations.',
         likes: 15,
         isLiked: false,
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
@@ -126,15 +147,17 @@ class RizeCommentModel {
   }
 }
 
-// ─── RizeScreen الرئيسية ────────────────────────────────────────────────────
-class RizeScreen extends StatefulWidget {
-  const RizeScreen({super.key});
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 RizeScreen Pro - الواجهة الرئيسية 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class RizeScreenPro extends StatefulWidget {
+  const RizeScreenPro({super.key});
 
   @override
-  State<RizeScreen> createState() => _RizeScreenState();
+  State<RizeScreenPro> createState() => _RizeScreenProState();
 }
 
-class _RizeScreenState extends State<RizeScreen>
+class _RizeScreenProState extends State<RizeScreenPro>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   final List<RizePostModel> _posts = RizePostModel.getMockPosts();
@@ -151,7 +174,6 @@ class _RizeScreenState extends State<RizeScreen>
 
   void _onScroll() {
     final offset = _scrollCtrl.offset;
-    // إخفاء الشريط العلوي عند التمرير للأسفل بمسافة كافية
     if (offset > _lastScrollOffset && offset > 80) {
       _showTopBar.value = false;
     } else {
@@ -174,78 +196,127 @@ class _RizeScreenState extends State<RizeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-              // شريط علوي متحرك
-              ValueListenableBuilder<bool>(
-                valueListenable: _showTopBar,
-                builder: (context, visible, _) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  height: visible ? 56 : 0,
-                  child: visible
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Rize',
-                                style: AppTextStyles.h4.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.search_rounded,
-                                color: AppColors.grey2,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 16),
-                              const Icon(
-                                Icons.notifications_none_rounded,
-                                color: AppColors.grey2,
-                                size: 24,
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ),
-              // تبويبات For You / Following
-              TabBar(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      floatingActionButton: const _CreateButtonPro(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildGlassHeader(),
+            _buildTabs(),
+            Expanded(
+              child: TabBarView(
                 controller: _tabCtrl,
-                indicatorColor: Colors.white,
-                indicatorWeight: 2,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white38,
-                labelStyle: AppTextStyles.labelLarge.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                tabs: const [
-                  Tab(text: 'For You'),
-                  Tab(text: 'Following'),
+                children: [
+                  _RizeFeedPro(
+                    posts: _posts,
+                    onUpdate: _updatePost,
+                    scrollController: _scrollCtrl,
+                  ),
+                  _RizeFeedPro(
+                    posts: _posts.reversed.toList(),
+                    onUpdate: (i, p) {},
+                    scrollController: ScrollController(),
+                  ),
                 ],
               ),
-              // المحتوى الرئيسي
-              Expanded(
-                child: TabBarView(
-                  controller: _tabCtrl,
-                  children: [
-                    _RizeFeed(
-                      posts: _posts,
-                      onUpdate: _updatePost,
-                      scrollController: _scrollCtrl,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassHeader() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _showTopBar,
+      builder: (context, visible, _) => AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        height: visible ? 56 : 0,
+        child: visible
+            ? ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 0.5,
+                        ),
+                      ),
                     ),
-                    _RizeFeed(
-                      posts: _posts.reversed.toList(),
-                      onUpdate: (i, p) {},
-                      scrollController: ScrollController(),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Rize',
+                          style: AppTextStyles.h4.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 28,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        _GlassIconButton(
+                          icon: CupertinoIcons.search,
+                          onTap: () => HapticFeedback.lightImpact(),
+                        ),
+                        const SizedBox(width: 12),
+                        _GlassIconButton(
+                          icon: CupertinoIcons.bell,
+                          onTap: () => HapticFeedback.lightImpact(),
+                          badge: 3,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-      ],
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  Widget _buildTabs() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: TabBar(
+        controller: _tabCtrl,
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(width: 2.5, color: Colors.white),
+          insets: EdgeInsets.symmetric(horizontal: 80),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white38,
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          letterSpacing: -0.3,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 15,
+        ),
+        tabs: const [
+          Tab(text: 'For You'),
+          Tab(text: 'Following'),
+        ],
+        onTap: (_) => HapticFeedback.selectionClick(),
+      ),
     );
   }
 
@@ -253,32 +324,126 @@ class _RizeScreenState extends State<RizeScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => const _CreateRizeSheet(),
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _CreateRizeSheetPro(),
     );
   }
 }
 
-// ─── RizeFeed (قائمة المنشورات) ─────────────────────────────────────────────
-class _RizeFeed extends StatefulWidget {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 زر الإنشاء الاحترافي (أزرق كهربائي) 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _CreateButtonPro extends StatelessWidget {
+  const _CreateButtonPro();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        final state = context.findAncestorStateOfType<_RizeScreenProState>();
+        state?._showCreateSheet(context);
+      },
+      child: Container(
+        width: 60,
+        height: 60,
+        margin: const EdgeInsets.only(top: 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF007AFF).withOpacity(0.5),
+              blurRadius: 25,
+              offset: const Offset(0, 10),
+              spreadRadius: 3,
+            ),
+          ],
+        ),
+        child: const Icon(
+          CupertinoIcons.plus,
+          color: Colors.white,
+          size: 32,
+          weight: 700,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final int? badge;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onTap,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 0.5,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, color: Colors.white70, size: 20),
+            if (badge != null)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 RizeFeed Pro 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _RizeFeedPro extends StatefulWidget {
   final List<RizePostModel> posts;
   final Function(int, RizePostModel) onUpdate;
   final ScrollController scrollController;
 
-  const _RizeFeed({
+  const _RizeFeedPro({
     required this.posts,
     required this.onUpdate,
     required this.scrollController,
   });
 
   @override
-  State<_RizeFeed> createState() => _RizeFeedState();
+  State<_RizeFeedPro> createState() => _RizeFeedProState();
 }
 
-class _RizeFeedState extends State<_RizeFeed> {
+class _RizeFeedProState extends State<_RizeFeedPro> {
   bool _isLoading = false;
   late List<RizePostModel> _localPosts;
 
@@ -301,42 +466,44 @@ class _RizeFeedState extends State<_RizeFeed> {
     });
   }
 
-  void _updateLocalPost(int index, RizePostModel updated) {
-    setState(() => _localPosts[index] = updated);
-    widget.onUpdate(index, updated);
-  }
-
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
+      color: AppColors.electricBlue,
+      backgroundColor: const Color(0xFF1C1C1E),
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
         setState(() => _localPosts = List.from(widget.posts));
       },
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (notification.metrics.pixels >=
-                  notification.metrics.maxScrollExtent - 500 &&
-              !_isLoading) {
+          if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 500 && !_isLoading) {
             _loadMore();
           }
           return false;
         },
         child: ListView.separated(
           controller: widget.scrollController,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           itemCount: _localPosts.length + (_isLoading ? 1 : 0),
-          separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+          separatorBuilder: (_, __) => Divider(
+            height: 1,
+            thickness: 0.5,
+            color: Colors.white.withOpacity(0.08),
+          ),
           itemBuilder: (ctx, i) {
             if (i >= _localPosts.length) {
               return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: CircularProgressIndicator()),
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CupertinoActivityIndicator()),
               );
             }
-            return _RizeCard(
+            return _RizeCardPro(
               post: _localPosts[i],
-              onUpdate: (p) => _updateLocalPost(i, p),
+              onUpdate: (p) {
+                setState(() => _localPosts[i] = p);
+                widget.onUpdate(i, p);
+              },
             );
           },
         ),
@@ -346,47 +513,63 @@ class _RizeFeedState extends State<_RizeFeed> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 نهاية الجزء الأول (تابع الجزء الثاني) 🔹
+// 🔹 RizeCard Pro - بطاقة المنشور الاحترافية (Threads + Twitter Style) 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 بداية الجزء الثاني 🔹
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ─── RizeCard (بطاقة المنشور) ────────────────────────────────────────────────
-class _RizeCard extends StatefulWidget {
+class _RizeCardPro extends StatefulWidget {
   final RizePostModel post;
   final Function(RizePostModel) onUpdate;
 
-  const _RizeCard({
+  const _RizeCardPro({
     required this.post,
     required this.onUpdate,
   });
 
   @override
-  State<_RizeCard> createState() => _RizeCardState();
+  State<_RizeCardPro> createState() => _RizeCardProState();
 }
 
-class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixin {
-  late AnimationController _likeAnimCtrl;
-  late Animation<double> _likeScaleAnim;
+class _RizeCardProState extends State<_RizeCardPro>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _likeCtrl;
+  late Animation<double> _likeScale;
+  bool _showHeartOverlay = false;
   int _currentImageIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _likeAnimCtrl = AnimationController(
+    _likeCtrl = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _likeScaleAnim = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _likeAnimCtrl, curve: Curves.easeInOut),
+    _likeScale = Tween<double>(begin: 1.0, end: 1.35).animate(
+      CurvedAnimation(parent: _likeCtrl, curve: Curves.easeOutBack),
     );
   }
 
   @override
   void dispose() {
-    _likeAnimCtrl.dispose();
+    _likeCtrl.dispose();
     super.dispose();
+  }
+
+  void _handleDoubleTap() {
+    HapticFeedback.mediumImpact();
+    if (!widget.post.isUpvoted) {
+      _triggerLike();
+    }
+    setState(() => _showHeartOverlay = true);
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _showHeartOverlay = false);
+    });
+  }
+
+  void _triggerLike() {
+    _likeCtrl.forward().then((_) => _likeCtrl.reverse());
+    widget.onUpdate(widget.post.copyWith(
+      isUpvoted: true,
+      upvotes: widget.post.upvotes + 1,
+    ));
   }
 
   void _openMediaFullScreen(BuildContext context, int initialIndex) {
@@ -413,367 +596,400 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // رأس البطاقة
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () => _navigateToProfile(context),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.grey[200],
-                  backgroundImage: post.userAvatar.isNotEmpty
-                      ? NetworkImage(post.userAvatar)
-                      : null,
-                  child: post.userAvatar.isEmpty
-                      ? const Icon(Icons.person_rounded, color: AppColors.grey2, size: 24)
-                      : null,
+    return GestureDetector(
+      onDoubleTap: _handleDoubleTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: Colors.black,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ الصف العلوي: الاسم + Views + التحقق
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => _navigateToProfile(context),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: post.isVerified ? AppColors.electricBlue : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color(0xFF2C2C2E),
+                      backgroundImage: post.userAvatar.isNotEmpty ? NetworkImage(post.userAvatar) : null,
+                      child: post.userAvatar.isEmpty
+                          ? const Icon(CupertinoIcons.person_fill, color: Colors.white54, size: 18)
+                          : null,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _navigateToProfile(context),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: () => _navigateToProfile(context),
-                          child: Text(
-                            post.name,
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
+                        Row(
+                          children: [
+                            Text(
+                              post.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                              ),
                             ),
-                          ),
+                            if (post.isVerified) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                CupertinoIcons.check_mark_circled_solid,
+                                color: Color(0xFF007AFF),
+                                size: 14,
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          post.username,
-                          style: const TextStyle(
-                            color: AppColors.grey2,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (!post.isFollowing)
-                          GestureDetector(
-                            onTap: () => widget.onUpdate(post.copyWith(isFollowing: true)),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        Row(
+                          children: [
+                            Text(
+                              post.username,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 3,
+                              height: 3,
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black38),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Text(
-                                'Follow',
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                color: Colors.white.withOpacity(0.3),
+                                shape: BoxShape.circle,
                               ),
                             ),
-                          ),
-                        GestureDetector(
-                          onTap: () => _showPostMenu(context),
-                          child: const Icon(Icons.more_horiz_rounded, color: Colors.black38, size: 20),
+                            const SizedBox(width: 6),
+                            // ✅ عدد المشاهدات (Views) - مثل Twitter
+                            Icon(
+                              CupertinoIcons.eye_fill,
+                              size: 12,
+                              color: Colors.white.withOpacity(0.4),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${Formatters.formatCount(post.views)} views',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${Formatters.timeAgo(post.createdAt)} · ${post.views} views',
-                      style: const TextStyle(color: Colors.black38, fontSize: 12),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // عنوان المنشور
-          if (post.title.isNotEmpty)
+                // القائمة المنسدلة
+                GestureDetector(
+                  onTap: () => _showPostMenu(context),
+                  child: Icon(
+                    CupertinoIcons.ellipsis,
+                    color: Colors.white.withOpacity(0.4),
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // النص
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                post.title,
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              padding: const EdgeInsets.only(left: 50),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (post.title.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        post.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    post.body,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      height: 1.4,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  // الوسائط
+                  if (post.mediaUrls.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _buildMediaGallery(context),
+                  ],
+                  const SizedBox(height: 12),
+                  // أزرار التفاعل
+                  _buildActionBar(post),
+                ],
               ),
             ),
-          // نص المنشور
-          Text(
-            post.body,
-            style: const TextStyle(color: AppColors.white, fontSize: 15, height: 1.4),
-          ),
-          // الوسائط (صور أو فيديوهات)
-          if (post.mediaUrls.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildMediaGallery(context),
+            // تأثير القلب
+            if (_showHeartOverlay)
+              Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 400),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: 1 - value,
+                      child: Transform.scale(
+                        scale: 0.5 + (value * 0.5),
+                        child: const Icon(
+                          CupertinoIcons.heart_fill,
+                          color: Colors.redAccent,
+                          size: 100,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
-          const SizedBox(height: 12),
-          // أزرار التفاعل
-          Row(
-            children: [
-              _buildActionButton(
-                icon: post.isUpvoted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                label: Formatters.formatCount(post.upvotes),
-                color: post.isUpvoted ? Colors.redAccent : Colors.black45,
-                onTap: () {
-                  _likeAnimCtrl.forward().then((_) => _likeAnimCtrl.reverse());
-                  widget.onUpdate(post.copyWith(
-                    isUpvoted: !post.isUpvoted,
-                    upvotes: post.isUpvoted ? post.upvotes - 1 : post.upvotes + 1,
-                  ));
-                },
-                animationController: _likeAnimCtrl,
-                scaleAnimation: _likeScaleAnim,
-              ),
-              const SizedBox(width: 24),
-              _buildActionButton(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: Formatters.formatCount(post.comments),
-                color: AppColors.grey2,
-                onTap: () => _showCommentsSheet(context),
-              ),
-              const SizedBox(width: 24),
-              _buildActionButton(
-                icon: Icons.share_outlined,
-                label: Formatters.formatCount(post.shares),
-                color: AppColors.grey2,
-                onTap: () => _showRepostSheet(context),
-              ),
-              const Spacer(),
-              _buildActionButton(
-                icon: post.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                label: '',
-                color: AppColors.grey2,
-                onTap: () => widget.onUpdate(post.copyWith(isBookmarked: !post.isBookmarked)),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildMediaGallery(BuildContext context) {
     final mediaUrls = widget.post.mediaUrls;
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () => _openMediaFullScreen(context, _currentImageIndex),
-          child: Hero(
-            tag: 'media_${widget.post.id}_$_currentImageIndex',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                height: 400,
-                width: double.infinity,
-                color: Colors.grey[200],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 320,
+        color: const Color(0xFF1C1C1E),
+        child: PageView.builder(
+          itemCount: mediaUrls.length,
+          onPageChanged: (index) => setState(() => _currentImageIndex = index),
+          itemBuilder: (context, index) {
+            final isVideo = widget.post.mediaType == 'video';
+            return GestureDetector(
+              onTap: () => _openMediaFullScreen(context, index),
+              child: Hero(
+                tag: 'media_${widget.post.id}_$index',
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     Image.network(
-                      mediaUrls[_currentImageIndex],
+                      mediaUrls[index],
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.broken_image, size: 48, color: Colors.black26),
-                      ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CupertinoActivityIndicator(
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        );
+                      },
                     ),
-                    if (widget.post.mediaType == 'video')
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
-                          shape: BoxShape.circle,
+                    if (isVideo)
+                      Center(
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.play_fill,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
                       ),
                     if (mediaUrls.length > 1)
                       Positioned(
-                        bottom: 8,
-                        right: 8,
+                        bottom: 12,
+                        right: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${_currentImageIndex + 1}/${mediaUrls.length}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            '${index + 1}/${mediaUrls.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
                   ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
-        if (mediaUrls.length > 1) ...[
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(mediaUrls.length, (index) {
-              return Container(
-                width: 6,
-                height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentImageIndex == index ? Colors.black87 : Colors.black12,
-                ),
-              );
-            }),
-          ),
-        ],
-      ],
+      ),
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-    AnimationController? animationController,
-    Animation<double>? scaleAnimation,
-  }) {
-    Widget child = Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildActionBar(RizePostModel post) {
+    return Row(
       children: [
-        Icon(icon, color: color, size: 22),
-        if (label.isNotEmpty) ...[
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ],
-    );
-
-    if (animationController != null && scaleAnimation != null) {
-      child = AnimatedBuilder(
-        animation: animationController,
-        builder: (context, _) => Transform.scale(
-          scale: scaleAnimation.value,
-          child: child,
+        _ActionButtonPro(
+          icon: post.isUpvoted ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+          label: Formatters.formatCount(post.upvotes),
+          color: post.isUpvoted ? Colors.redAccent : Colors.white54,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _likeCtrl.forward().then((_) => _likeCtrl.reverse());
+            widget.onUpdate(post.copyWith(
+              isUpvoted: !post.isUpvoted,
+              upvotes: post.isUpvoted ? post.upvotes - 1 : post.upvotes + 1,
+            ));
+          },
+          animation: _likeScale,
         ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: child,
+        const SizedBox(width: 20),
+        _ActionButtonPro(
+          icon: CupertinoIcons.chat_bubble,
+          label: Formatters.formatCount(post.comments),
+          color: Colors.white54,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _showCommentsSheet(context);
+          },
+        ),
+        const SizedBox(width: 20),
+        _ActionButtonPro(
+          icon: CupertinoIcons.arrow_2_squarepath,
+          label: Formatters.formatCount(post.shares),
+          color: Colors.white54,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _showRepostSheet(context);
+          },
+        ),
+        const Spacer(),
+        _ActionButtonPro(
+          icon: post.isBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+          label: '',
+          color: post.isBookmarked ? const Color(0xFF007AFF) : Colors.white54,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onUpdate(post.copyWith(isBookmarked: !post.isBookmarked));
+          },
+        ),
+      ],
     );
   }
 
   void _showPostMenu(BuildContext context) {
-    showModalBottomSheet(
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            _menuOption(Icons.volume_off_outlined, 'Mute @${widget.post.username}', () {}),
-            _menuOption(Icons.block_outlined, 'Block @${widget.post.username}', () {}),
-            _menuOption(Icons.flag_outlined, 'Report', () {}),
-            _menuOption(Icons.link, 'Copy link', () {}),
-            _menuOption(Icons.do_not_disturb_on, 'Not interested', () {}),
-            const SizedBox(height: 20),
-          ],
+      builder: (_) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Mute @username'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Block @username'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            isDestructiveAction: true,
+            child: const Text('Report Post'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
         ),
       ),
-    );
-  }
-
-  Widget _menuOption(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(label, style: const TextStyle(color: AppColors.white, fontSize: 16)),
-      onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(label)));
-      },
     );
   }
 
   void _showRepostSheet(BuildContext context) {
-    showModalBottomSheet(
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            _repostOption(Icons.repeat_rounded, 'Repost', () {
+      builder: (_) => CupertinoActionSheet(
+        title: const Text('Share'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
               Navigator.pop(context);
               widget.onUpdate(widget.post.copyWith(shares: widget.post.shares + 1));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reposted!')));
-            }),
-            _repostOption(Icons.edit_note_rounded, 'Quote Rize', () {
+              HapticFeedback.mediumImpact();
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.repeat, size: 20),
+                SizedBox(width: 8),
+                Text('Repost'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
               Navigator.pop(context);
-              _showCreateSheetWithQuote(context);
-            }),
-            const SizedBox(height: 20),
-          ],
+              _showCreateQuoteSheet(context);
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.pencil, size: 20),
+                SizedBox(width: 8),
+                Text('Quote'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.share, size: 20),
+                SizedBox(width: 8),
+                Text('Share via...'),
+              ],
+            ),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
         ),
       ),
     );
   }
 
-  Widget _repostOption(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(label, style: const TextStyle(color: AppColors.white, fontSize: 16)),
-      onTap: onTap,
-    );
-  }
-
-  void _showCreateSheetWithQuote(BuildContext context) {
+  void _showCreateQuoteSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => _CreateRizeSheet(quotedPost: widget.post),
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateRizeSheetPro(quotedPost: widget.post),
     );
   }
 
@@ -781,17 +997,14 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D0D0D),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.6,
+        initialChildSize: 0.75,
         maxChildSize: 0.95,
         minChildSize: 0.4,
         builder: (context, scrollController) {
-          return _CommentsSheet(
+          return _CommentsSheetPro(
             post: widget.post,
             scrollController: scrollController,
             onCommentAdded: () {
@@ -804,27 +1017,79 @@ class _RizeCardState extends State<_RizeCard> with SingleTickerProviderStateMixi
   }
 }
 
-// ─── CommentsSheet (ورقة التعليقات) ──────────────────────────────────────────
-class _CommentsSheet extends StatefulWidget {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 Action Button Pro 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ActionButtonPro extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  final Animation<double>? animation;
+
+  const _ActionButtonPro({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.animation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 20),
+        if (label.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ],
+    );
+
+    if (animation != null) {
+      child = AnimatedBuilder(
+        animation: animation!,
+        builder: (_, __) => Transform.scale(scale: animation!.value, child: child),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: child,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 CommentsSheet Pro - تعليقات على شكل حرف L (Threads Style) 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _CommentsSheetPro extends StatefulWidget {
   final RizePostModel post;
   final ScrollController scrollController;
   final VoidCallback onCommentAdded;
 
-  const _CommentsSheet({
+  const _CommentsSheetPro({
     required this.post,
     required this.scrollController,
     required this.onCommentAdded,
   });
 
   @override
-  State<_CommentsSheet> createState() => _CommentsSheetState();
+  State<_CommentsSheetPro> createState() => _CommentsSheetProState();
 }
 
-class _CommentsSheetState extends State<_CommentsSheet> {
+class _CommentsSheetProState extends State<_CommentsSheetPro> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<RizeCommentModel> _comments = [];
   String? _replyingToId;
+  String? _replyingToName;
 
   @override
   void initState() {
@@ -842,6 +1107,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 
   void _sendComment() {
     if (_textController.text.trim().isEmpty) return;
+    
+    HapticFeedback.mediumImpact();
+    
     final newComment = RizeCommentModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       userId: 'current_user',
@@ -861,6 +1129,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       }
       _textController.clear();
       _replyingToId = null;
+      _replyingToName = null;
     });
     widget.onCommentAdded();
   }
@@ -877,72 +1146,122 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   void _deleteComment(String commentId) {
+    HapticFeedback.heavyImpact();
     setState(() {
-      _comments.removeWhere((c) => c.id == commentId);
+      _removeCommentById(_comments, commentId);
     });
+  }
+
+  bool _removeCommentById(List<RizeCommentModel> comments, String id) {
+    for (var i = 0; i < comments.length; i++) {
+      if (comments[i].id == id) {
+        comments.removeAt(i);
+        return true;
+      }
+      if (_removeCommentById(comments[i].replies, id)) return true;
+    }
+    return false;
+  }
+
+  void _likeComment(String commentId) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      final comment = _findCommentById(_comments, commentId);
+      if (comment != null) {
+        comment.isLiked = !comment.isLiked;
+        comment.likes += comment.isLiked ? 1 : -1;
+      }
+    });
+  }
+
+  RizeCommentModel? _findCommentById(List<RizeCommentModel> comments, String id) {
+    for (final comment in comments) {
+      if (comment.id == id) return comment;
+      final found = _findCommentById(comment.replies, id);
+      if (found != null) return found;
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Colors.black,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
           const SizedBox(height: 8),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Text('Replies', style: AppTextStyles.h5.copyWith(color: Colors.black87)),
+                Text(
+                  'Thread',
+                  style: AppTextStyles.h5.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(width: 8),
-                Text('(${_comments.length})', style: TextStyle(color: Colors.black45)),
+                Text(
+                  '(${_comments.length})',
+                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 15),
+                ),
                 const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(CupertinoIcons.xmark, color: Colors.white54, size: 20),
+                ),
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 0.5),
+          Divider(height: 24, thickness: 0.5, color: Colors.white.withOpacity(0.1)),
           Expanded(
             child: ListView.builder(
               controller: widget.scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _comments.length,
-              itemBuilder: (context, index) => _CommentTile(
+              itemBuilder: (context, index) => _CommentTilePro(
                 comment: _comments[index],
-                onReply: (id) => setState(() => _replyingToId = id),
-                onDelete: (id) => _deleteComment(id),
-                onLike: (id) {
+                onReply: (id, name) {
                   setState(() {
-                    final comment = _findCommentById(_comments, id);
-                    if (comment != null) {
-                      comment.isLiked = !comment.isLiked;
-                      comment.likes += comment.isLiked ? 1 : -1;
-                    }
+                    _replyingToId = id;
+                    _replyingToName = name;
                   });
+                  _focusNode.requestFocus();
                 },
+                onDelete: (id) => _deleteComment(id),
+                onLike: (id) => _likeComment(id),
                 depth: 0,
               ),
             ),
           ),
           if (_replyingToId != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.grey[100],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: const Color(0xFF1C1C1E),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Replying to @${_findCommentById(_comments, _replyingToId!)?.username ?? ''}',
-                      style: const TextStyle(color: AppColors.grey2, fontSize: 13),
+                      'Replying to $_replyingToName',
+                      style: const TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => setState(() => _replyingToId = null),
-                    child: const Icon(Icons.close, color: AppColors.grey2, size: 18),
+                    onTap: () => setState(() {
+                      _replyingToId = null;
+                      _replyingToName = null;
+                    }),
+                    child: const Icon(CupertinoIcons.xmark, color: Colors.white54, size: 16),
                   ),
                 ],
               ),
@@ -957,58 +1276,75 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: Colors.black,
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
-            const CircleAvatar(radius: 15, backgroundColor: Colors.black12, child: Icon(Icons.person, color: AppColors.grey2, size: 18)),
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFF2C2C2E),
+              child: Icon(CupertinoIcons.person_fill, color: Colors.white54, size: 16),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(
                 controller: _textController,
                 focusNode: _focusNode,
-                style: const TextStyle(color: AppColors.white, fontSize: 15),
+                style: const TextStyle(color: Colors.white, fontSize: 15),
                 decoration: InputDecoration(
-                  hintText: _replyingToId != null ? 'Write a reply...' : 'Add a comment...',
-                  hintStyle: const TextStyle(color: Colors.black38),
+                  hintText: _replyingToId != null ? 'Write a reply...' : 'Post your reply...',
+                  hintStyle: const TextStyle(color: Colors.white38),
                   border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
                 maxLines: null,
+                onChanged: (_) => setState(() {}),
               ),
             ),
             const SizedBox(width: 8),
             GestureDetector(
               onTap: _textController.text.trim().isNotEmpty ? _sendComment : null,
-              child: Icon(Icons.send_rounded, color: _textController.text.trim().isNotEmpty ? Colors.blue : Colors.black26, size: 24),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _textController.text.trim().isNotEmpty
+                      ? const Color(0xFF007AFF)
+                      : const Color(0xFF2C2C2E),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Reply',
+                  style: TextStyle(
+                    color: _textController.text.trim().isNotEmpty ? Colors.white : Colors.white38,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  RizeCommentModel? _findCommentById(List<RizeCommentModel> comments, String id) {
-    for (final comment in comments) {
-      if (comment.id == id) return comment;
-      final found = _findCommentById(comment.replies, id);
-      if (found != null) return found;
-    }
-    return null;
-  }
 }
 
-// ─── CommentTile (عرض تعليق مع الردود) ──────────────────────────────────────
-class _CommentTile extends StatelessWidget {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 CommentTile Pro - خط L للردود المتداخلة 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _CommentTilePro extends StatelessWidget {
   final RizeCommentModel comment;
-  final Function(String) onReply;
+  final Function(String id, String name) onReply;
   final Function(String) onDelete;
   final Function(String) onLike;
   final int depth;
 
-  const _CommentTile({
+  const _CommentTilePro({
     required this.comment,
     required this.onReply,
     required this.onDelete,
@@ -1019,17 +1355,38 @@ class _CommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOwnComment = comment.userId == 'current_user';
+    final hasReplies = comment.replies.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (depth > 0) ...[
-              SizedBox(width: 20.0 * depth),
-              Container(width: 2, height: 30, color: Colors.black12, margin: const EdgeInsets.only(right: 12)),
-            ],
-            CircleAvatar(radius: 14, backgroundColor: Colors.black12, child: const Icon(Icons.person, color: AppColors.grey2, size: 16)),
+            // العمود الأيسر: الصورة + خط L
+            Column(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: const Color(0xFF2C2C2E),
+                  backgroundImage: comment.userId.startsWith('user')
+                      ? const NetworkImage('https://i.pravatar.cc/150?img=3')
+                      : null,
+                  child: const Icon(CupertinoIcons.person_fill, color: Colors.white54, size: 14),
+                ),
+                // ✅ خط L العمودي - يظهر فقط إذا كان هناك ردود
+                if (hasReplies)
+                  Container(
+                    width: 2,
+                    height: 40,
+                    margin: const EdgeInsets.only(top: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1037,36 +1394,86 @@ class _CommentTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(comment.username, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(
+                        comment.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        comment.username,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(width: 6),
-                      Text(Formatters.timeAgo(comment.createdAt), style: const TextStyle(color: Colors.black38, fontSize: 11)),
+                      Text(
+                        '· ${Formatters.timeAgo(comment.createdAt)}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.3),
+                          fontSize: 12,
+                        ),
+                      ),
                       const Spacer(),
                       if (isOwnComment)
                         GestureDetector(
                           onTap: () => onDelete(comment.id),
-                          child: const Icon(Icons.delete_outline, color: Colors.black26, size: 16),
+                          child: Icon(
+                            CupertinoIcons.trash,
+                            color: Colors.redAccent.withOpacity(0.7),
+                            size: 14,
+                          ),
                         ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(comment.text, style: const TextStyle(color: AppColors.white, fontSize: 14)),
-                  const SizedBox(height: 6),
+                  Text(
+                    comment.text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       GestureDetector(
                         onTap: () => onLike(comment.id),
                         child: Row(
                           children: [
-                            Icon(comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: comment.isLiked ? Colors.redAccent : Colors.black45, size: 14),
+                            Icon(
+                              comment.isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                              color: comment.isLiked ? Colors.redAccent : Colors.white54,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
-                            Text(Formatters.formatCount(comment.likes), style: TextStyle(color: AppColors.grey2, fontSize: 12)),
+                            Text(
+                              Formatters.formatCount(comment.likes),
+                              style: TextStyle(
+                                color: comment.isLiked ? Colors.redAccent : Colors.white54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 16),
                       GestureDetector(
-                        onTap: () => onReply(comment.id),
-                        child: const Text('Reply', style: TextStyle(color: AppColors.grey2, fontSize: 12)),
+                        onTap: () => onReply(comment.id, comment.username),
+                        child: const Text(
+                          'Reply',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1075,133 +1482,42 @@ class _CommentTile extends StatelessWidget {
             ),
           ],
         ),
-        if (comment.replies.isNotEmpty)
-          ...comment.replies.map((reply) => _CommentTile(
-                comment: reply,
-                onReply: onReply,
-                onDelete: onDelete,
-                onLike: onLike,
-                depth: depth + 1,
-              )),
-      ],
-    );
-  }
-}
-
-// ─── CreateRizeSheet (ورقة إنشاء منشور) ──────────────────────────────────────
-class _CreateRizeSheet extends StatefulWidget {
-  final RizePostModel? quotedPost;
-  const _CreateRizeSheet({this.quotedPost});
-
-  @override
-  State<_CreateRizeSheet> createState() => _CreateRizeSheetState();
-}
-
-class _CreateRizeSheetState extends State<_CreateRizeSheet> {
-  final TextEditingController _textController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _submitRize() {
-    if (_textController.text.trim().isEmpty) return;
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rize posted!')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const CircleAvatar(radius: 20, backgroundColor: Colors.black12, child: Icon(Icons.person, color: Colors.black54)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  focusNode: _focusNode,
-                  style: const TextStyle(color: AppColors.white, fontSize: 16),
-                  maxLines: null,
-                  decoration: const InputDecoration(
-                    hintText: 'What\'s on your mind?',
-                    hintStyle: TextStyle(color: Colors.black38),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (widget.quotedPost != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.quotedPost!.name, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600)),
-                  Text(widget.quotedPost!.body, style: const TextStyle(color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
-          const Divider(height: 24),
-          Row(
-            children: [
-              _mediaBtn(Icons.image_rounded, () {}),
-              const SizedBox(width: 12),
-              _mediaBtn(Icons.videocam_rounded, () {}),
-              const Spacer(),
-              if (_textController.text.length > 400)
-                Text('${_textController.text.length}/500', style: TextStyle(color: _textController.text.length > 500 ? Colors.red : Colors.black45)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: _textController.text.trim().isNotEmpty ? _submitRize : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _textController.text.trim().isNotEmpty ? AppColors.electricBlue : Colors.black12,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text('Post', style: TextStyle(color: _textController.text.trim().isNotEmpty ? Colors.white : Colors.black38, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _mediaBtn(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: AppColors.grey2, size: 20),
-      ),
-    );
-  }
-}
+        // ✅ الردود المتداخلة مع خط L أفقي + عمودي
+        if (hasReplies)
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Column(
+              children: comment.replies.map((reply) {
+                return Stack(
+                  children: [
+                    // الخط الأفقي (جزء L)
+                    Positioned(
+                      left: 0,
+                      top: 16,
+                      child: Container(
+                        width: 20,
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ),
+                    // الخط العمودي الممتد
+                    if (reply.replies.isNotEmpty)
+                      Positioned(
+                        left: 0,
+                        top: 18,
+                        bottom: 0,
+                        child: Container(
+                          width: 2,
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 22),
+                      child: _CommentTilePro(
+                        comment: reply,
+                        onReply: onReply,
+                        onDelete: onDelete,
+             
