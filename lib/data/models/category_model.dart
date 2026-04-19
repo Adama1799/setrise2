@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class CategoryModel {
   final String id;
   final String name;
-  final String iconUrl;   // ✅ تم تغييره من icon إلى iconUrl
+  final String iconUrl;
   final Color color;
 
   CategoryModel({
