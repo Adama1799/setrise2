@@ -1,18 +1,22 @@
 // lib/data/models/cart_item.dart
-import 'product_model.dart';
-
 class CartItem {
-  final ProductModel product;
+  final String id;
+  final String name;
+  final String brand;
+  final double price;
+  final String imageUrl;
   int quantity;
   String? selectedSize;
   String? selectedColor;
 
   CartItem({
-    required this.product,
+    required this.id,
+    required this.name,
+    required this.brand,
+    required this.price,
+    required this.imageUrl,
     this.quantity = 1,
     this.selectedSize,
     this.selectedColor,
   });
-
-  double get totalPrice => product.price * quantity;
 }
