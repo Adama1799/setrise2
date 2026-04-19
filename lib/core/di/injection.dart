@@ -1,6 +1,4 @@
-// lib/core/di/injection.dart
-// ✅ FIXED: حذف كل Stories (غير موجودة في التطبيق)
-// ✅ FIXED: أسماء UseCases الصحيحة
+here// lib/core/di/injection.dart
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
@@ -32,12 +30,20 @@ import '../../domain/usecases/auth/logout_usecase.dart';
 import '../../domain/usecases/auth/register_usecase.dart';
 import '../../domain/usecases/posts/create_post_usecase.dart';
 import '../../domain/usecases/posts/delete_post_usecase.dart';
-import '../../domain/usecases/posts/get_posts_usecase.dart';
+import '../../domain/usecases/posts/get_feed_usecase.dart';
 import '../../domain/usecases/posts/like_post_usecase.dart';
 import '../../domain/usecases/threads/create_thread_usecase.dart';
 import '../../domain/usecases/threads/get_threads_usecase.dart';
 import '../../domain/usecases/users/follow_user_usecase.dart';
-import '../../domain/usecases/users/get_user_usecase.dart';
+import '../../domain/usecases/users/get_user_profile_usecase.dart';
+
+// ─── Stories Feature ──────────────────────────────────────────────────────────
+import '../../features/stories/data/datasources/story_remote_datasource.dart';
+import '../../features/stories/data/repositories/story_repository_impl.dart';
+import '../../features/stories/domain/repositories/story_repository.dart';
+import '../../features/stories/domain/usecases/story_usecases.dart';
+// ─────────────────────────────────────────────────────────────────────────────
+
 import '../constants/api_endpoints.dart';
 import '../network/api_client.dart';
 import '../network/dio_client.dart';
@@ -45,33 +51,42 @@ import '../network/network_info.dart';
 
 final getIt = GetIt.instance;
 
+/// Initialize all dependencies
 Future<void> initDependencies() async {
+  // ==================== External Dependencies ====================
 
-  // ── External ────────────────────────────────────────────────────────────
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerLazySingleton(() => sharedPreferences);
 
   await Hive.initFlutter();
+  getIt.registerLazySingleton(() => Hive);
 
   getIt.registerLazySingleton(() => Connectivity());
   getIt.registerLazySingleton(() => Dio());
 
-  // ── Core ─────────────────────────────────────────────────────────────────
+  // ==================== Core ====================
+
   getIt.registerLazySingleton<NetworkInfo>(
     () => NetworkInfoImpl(getIt()),
   );
+
   getIt.registerLazySingleton<LocalStorage>(
     () => LocalStorageImpl(getIt()),
   );
+
+  // DioClient
   getIt.registerLazySingleton<DioClient>(
     () => DioClient(
       baseUrl: '${ApiEndpoints.baseUrl}${ApiEndpoints.apiVersion}',
       dio: getIt(),
     ),
   );
+
+  // ✅ Fix: ApiClient كان مو مسجّل وكل الـ datasources تستخدمه
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
 
-  // ── Data Sources ─────────────────────────────────────────────────────────
+  // ==================== Data Sources ====================
+
   getIt.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(getIt()),
   );
@@ -91,7 +106,14 @@ Future<void> initDependencies() async {
     () => DatingRemoteDataSourceImpl(getIt()),
   );
 
-  // ── Repositories ──────────────────────────────────────────────────────────
+  // ─── Stories ─────────────────────────────────────────────────────────────
+  getIt.registerLazySingleton<StoryRemoteDataSource>(
+    () => StoryRemoteDataSourceImpl(apiClient: getIt()),
+  );
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ==================== Repositories ====================
+
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       remoteDataSource: getIt(),
@@ -130,28 +152,43 @@ Future<void> initDependencies() async {
     ),
   );
 
-  // ── Use Cases ─────────────────────────────────────────────────────────────
+  // ─── Stories ─────────────────────────────────────────────────────────────
+  getIt.registerLazySingleton<StoryRepository>(
+    () => StoryRepositoryImpl(remoteDataSource: getIt()),
+  );
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ==================== Use Cases ====================
 
   // Auth
-  getIt.registerLazySingleton(() => LoginUsecase(getIt()));
-  getIt.registerLazySingleton(() => RegisterUsecase(getIt()));
-  getIt.registerLazySingleton(() => LogoutUsecase(getIt()));
+  getIt.registerLazySingleton(() => LoginUseCase(getIt()));
+  getIt.registerLazySingleton(() => RegisterUseCase(getIt()));
+  getIt.registerLazySingleton(() => LogoutUseCase(getIt()));
 
   // Users
-  getIt.registerLazySingleton(() => GetUserUsecase(getIt()));
-  getIt.registerLazySingleton(() => FollowUserUsecase(getIt()));
+  getIt.registerLazySingleton(() => GetUserProfileUseCase(getIt()));
+  getIt.registerLazySingleton(() => FollowUserUseCase(getIt()));
 
   // Posts
-  getIt.registerLazySingleton(() => GetPostsUsecase(getIt()));
-  getIt.registerLazySingleton(() => CreatePostUsecase(getIt()));
-  getIt.registerLazySingleton(() => LikePostUsecase(getIt()));
-  getIt.registerLazySingleton(() => DeletePostUsecase(getIt()));
+  getIt.registerLazySingleton(() => GetFeedUseCase(getIt()));
+  getIt.registerLazySingleton(() => CreatePostUseCase(getIt()));
+  getIt.registerLazySingleton(() => LikePostUseCase(getIt()));
+  getIt.registerLazySingleton(() => DeletePostUseCase(getIt()));
 
   // Threads
-  getIt.registerLazySingleton(() => GetThreadsUsecase(getIt()));
-  getIt.registerLazySingleton(() => CreateThreadUsecase(getIt()));
+  getIt.registerLazySingleton(() => GetThreadsUseCase(getIt()));
+  getIt.registerLazySingleton(() => CreateThreadUseCase(getIt()));
+
+  // ─── Stories ─────────────────────────────────────────────────────────────
+  getIt.registerLazySingleton(() => GetFeedStoriesUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetUserStoriesUseCase(getIt()));
+  getIt.registerLazySingleton(() => CreateStoryUseCase(getIt()));
+  getIt.registerLazySingleton(() => DeleteStoryUseCase(getIt()));
+  getIt.registerLazySingleton(() => ViewStoryUseCase(getIt()));
+  // ─────────────────────────────────────────────────────────────────────────
 }
 
+/// Clear all dependencies (for testing)
 Future<void> resetDependencies() async {
   await getIt.reset();
 }
