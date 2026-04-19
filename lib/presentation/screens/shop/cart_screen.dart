@@ -1,8 +1,10 @@
 // lib/presentation/screens/shop/cart_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // أو استخدم Riverpod حسب ما تستخدم
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import 'shop_screen.dart'; // لاستخدام CartService
+import '../../../data/services/cart_service.dart';
+import '../../../data/models/cart_item.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -12,9 +14,16 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final CartService _cartService = CartService();
+  late final CartService _cartService;
   final TextEditingController _couponController = TextEditingController();
   double _couponDiscount = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // الحصول على CartService من Provider (تأكد من توفيره في شجرة التطبيق)
+    _cartService = context.read<CartService>();
+  }
 
   @override
   void dispose() {
@@ -43,7 +52,7 @@ class _CartScreenState extends State<CartScreen> {
         foregroundColor: AppColors.white,
       ),
       body: ValueListenableBuilder<List<CartItem>>(
-        valueListenable: _cartService.items,
+        valueListenable: _cartService.itemsListenable,
         builder: (context, items, _) {
           if (items.isEmpty) {
             return Center(
