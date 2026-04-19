@@ -2,9 +2,12 @@
 
 import 'dart:ui';
 
+import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -18,26 +21,22 @@ class RizeScreen extends StatefulWidget {
   State<RizeScreen> createState() => _RizeScreenState();
 }
 
-class _RizeScreenState extends State<RizeScreen>
-    with SingleTickerProviderStateMixin {
-  late final ScrollController _scrollController;
-  late final TabController _tabController;
-
+class _RizeScreenState extends State<RizeScreen> {
+  final ScrollController _scrollController = ScrollController();
   final List<RizePostModel> _posts = RizePostModel.getMockPosts();
+
   int _tabIndex = 0;
   bool _isLoadingMore = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController()..addListener(_onScroll);
-    _tabController = TabController(length: 2, vsync: this);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -45,6 +44,7 @@ class _RizeScreenState extends State<RizeScreen>
     if (!_scrollController.hasClients || _isLoadingMore) return;
 
     final position = _scrollController.position;
+
     if (position.pixels >= position.maxScrollExtent - 320) {
       _loadMore();
     }
@@ -52,6 +52,7 @@ class _RizeScreenState extends State<RizeScreen>
 
   Future<void> _loadMore() async {
     if (_isLoadingMore) return;
+
     setState(() => _isLoadingMore = true);
 
     await Future.delayed(const Duration(milliseconds: 900));
@@ -65,6 +66,7 @@ class _RizeScreenState extends State<RizeScreen>
         .toList();
 
     if (!mounted) return;
+
     setState(() {
       _posts.addAll(more);
       _isLoadingMore = false;
@@ -74,9 +76,13 @@ class _RizeScreenState extends State<RizeScreen>
   Future<void> _refresh() async {
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
-    setState(() {
-      _tabIndex = _tabController.index;
-    });
+    setState(() {});
+  }
+
+  void _updatePostById(String id, RizePostModel updated) {
+    final index = _posts.indexWhere((p) => p.id == id);
+    if (index == -1) return;
+    setState(() => _posts[index] = updated);
   }
 
   List<RizePostModel> get _visiblePosts {
@@ -85,12 +91,6 @@ class _RizeScreenState extends State<RizeScreen>
       return following.isEmpty ? _posts : following;
     }
     return _posts;
-  }
-
-  void _updatePost(int index, RizePostModel updated) {
-    setState(() {
-      _posts[index] = updated;
-    });
   }
 
   @override
@@ -113,18 +113,28 @@ class _RizeScreenState extends State<RizeScreen>
               elevation: 0,
               toolbarHeight: 0,
               collapsedHeight: 0,
+              pinned: false,
               floating: true,
               snap: true,
-              pinned: false,
               automaticallyImplyLeading: false,
-              expandedHeight: 112,
+              expandedHeight: 128,
               flexibleSpace: SafeArea(
                 bottom: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        'SetRize',
+                        style: AppTextStyles.h2.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       _SearchBar(
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -132,7 +142,6 @@ class _RizeScreenState extends State<RizeScreen>
                       ),
                       const SizedBox(height: 12),
                       _TabsHeader(
-                        controller: _tabController,
                         activeIndex: _tabIndex,
                         onChanged: (index) {
                           HapticFeedback.selectionClick();
@@ -144,7 +153,6 @@ class _RizeScreenState extends State<RizeScreen>
                 ),
               ),
             ),
-
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -160,10 +168,11 @@ class _RizeScreenState extends State<RizeScreen>
                   }
 
                   final post = _visiblePosts[index];
+
                   return RizePostCard(
                     key: ValueKey(post.id),
                     post: post,
-                    onUpdate: (updated) => _updatePost(index, updated),
+                    onUpdate: (updated) => _updatePostById(updated.id, updated),
                   );
                 },
                 childCount: _visiblePosts.length + 1,
@@ -186,11 +195,11 @@ class _SearchBar extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 44,
+        height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.white.withOpacity(0.08)),
         ),
         child: Row(
@@ -198,13 +207,14 @@ class _SearchBar extends StatelessWidget {
             Icon(
               CupertinoIcons.search,
               color: Colors.white.withOpacity(0.45),
-              size: 18,
+              size: 16,
             ),
             const SizedBox(width: 8),
             Text(
-              'Search Rize...',
+              'Search',
               style: AppTextStyles.bodySmall.copyWith(
                 color: Colors.white.withOpacity(0.35),
+                fontSize: 14,
               ),
             ),
           ],
@@ -215,25 +225,23 @@ class _SearchBar extends StatelessWidget {
 }
 
 class _TabsHeader extends StatelessWidget {
-  final TabController controller;
   final int activeIndex;
   final ValueChanged<int> onChanged;
 
   const _TabsHeader({
-    required this.controller,
     required this.activeIndex,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tabs = const ['For You', 'Following'];
+    const tabs = ['For You', 'Following'];
 
     return Container(
-      height: 40,
+      height: 34,
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: Row(
@@ -241,26 +249,23 @@ class _TabsHeader extends StatelessWidget {
           final selected = activeIndex == index;
           return Expanded(
             child: GestureDetector(
-              onTap: () {
-                controller.animateTo(index);
-                onChanged(index);
-              },
+              onTap: () => onChanged(index),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
-                margin: const EdgeInsets.all(3),
+                margin: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   color: selected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
                   child: Text(
                     tabs[index],
                     style: TextStyle(
                       color: selected ? Colors.black : Colors.white54,
-                      fontSize: 15,
-                      fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
-                      letterSpacing: -0.2,
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      letterSpacing: -0.1,
                     ),
                   ),
                 ),
@@ -293,6 +298,7 @@ class _RizePostCardState extends State<RizePostCard>
   late final Animation<double> _likeScale;
 
   bool _showFullBody = false;
+  int? _currentMediaIndex;
 
   @override
   void initState() {
@@ -407,15 +413,15 @@ class _RizePostCardState extends State<RizePostCard>
     Widget child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color, size: 20),
+        Icon(icon, color: color, size: 18),
         if (label.isNotEmpty) ...[
-          const SizedBox(width: 5),
+          const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               color: color,
               fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -439,14 +445,30 @@ class _RizePostCardState extends State<RizePostCard>
     );
   }
 
+  void _openImageViewer(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PhotoViewScreen(imageUrl: imageUrl),
+      ),
+    );
+  }
+
+  void _openVideoViewer(BuildContext context, String videoUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VideoPlayerScreen(videoUrl: videoUrl),
+      ),
+    );
+  }
+
   Widget _buildMedia() {
     final urls = widget.post.mediaUrls;
     if (urls.isEmpty) {
       return Container(
-        height: 220,
+        height: 200,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
           child: Icon(
@@ -461,72 +483,86 @@ class _RizePostCardState extends State<RizePostCard>
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 260,
-        color: Colors.white.withOpacity(0.04),
-        child: PageView.builder(
-          itemCount: urls.length,
-          itemBuilder: (context, index) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  urls[index],
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.white.withOpacity(0.05),
-                    child: Center(
-                      child: Icon(
-                        CupertinoIcons.photo,
-                        color: Colors.white.withOpacity(0.3),
-                        size: 44,
-                      ),
-                    ),
-                  ),
-                ),
-                if (widget.post.mediaType == 'video')
-                  Center(
-                    child: Container(
-                      width: 58,
-                      height: 58,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.55),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.play_fill,
-                        color: Colors.white,
-                        size: 26,
-                      ),
-                    ),
-                  ),
-                if (urls.length > 1)
-                  Positioned(
-                    right: 10,
-                    bottom: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${index + 1}/${urls.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+      borderRadius: BorderRadius.circular(12),
+      child: AspectRatio(
+        aspectRatio: 650 / 1000,
+        child: Container(
+          color: Colors.white.withOpacity(0.04),
+          child: PageView.builder(
+            itemCount: urls.length,
+            onPageChanged: (index) => setState(() => _currentMediaIndex = index),
+            itemBuilder: (context, index) {
+              final url = urls[index];
+
+              return GestureDetector(
+                onTap: () {
+                  if (widget.post.mediaType == 'image') {
+                    _openImageViewer(context, url);
+                  } else {
+                    _openVideoViewer(context, url);
+                  }
+                },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.white.withOpacity(0.05),
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.photo,
+                            color: Colors.white.withOpacity(0.3),
+                            size: 44,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            );
-          },
+                    if (widget.post.mediaType == 'video')
+                      Center(
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.play_fill,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                    if (urls.length > 1)
+                      Positioned(
+                        right: 10,
+                        bottom: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${(_currentMediaIndex ?? index) + 1}/${urls.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -536,193 +572,278 @@ class _RizePostCardState extends State<RizePostCard>
   Widget build(BuildContext context) {
     final post = widget.post;
 
-    return GestureDetector(
-      onDoubleTap: _toggleUpvote,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          border: Border(
-            bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
-          ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withOpacity(0.08)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFF2C2C2E),
-                  child: Text(
-                    post.userAvatar,
-                    style: const TextStyle(fontSize: 18),
-                  ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: const Color(0xFF2C2C2E),
+                child: Text(
+                  post.userAvatar,
+                  style: const TextStyle(fontSize: 14),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _toggleFollow,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              post.username,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.42),
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              width: 3,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Icon(
-                              CupertinoIcons.eye_fill,
-                              size: 12,
-                              color: Colors.white.withOpacity(0.4),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${Formatters.formatCount(post.views)} views',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.4),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showPostMenu(context),
-                  child: Icon(
-                    CupertinoIcons.ellipsis,
-                    color: Colors.white.withOpacity(0.4),
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.only(left: 50),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (post.title.isNotEmpty) ...[
-                    Text(
-                      post.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  Text(
-                    _showFullBody || post.body.length <= 220
-                        ? post.body
-                        : '${post.body.substring(0, 220)}...',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.92),
-                      fontSize: 15,
-                      height: 1.45,
-                    ),
-                  ),
-                  if (post.body.length > 220) ...[
-                    const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: () => setState(() => _showFullBody = !_showFullBody),
-                      child: Text(
-                        _showFullBody ? 'Show less' : 'More',
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.electricBlue,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  _buildMedia(),
-                  const SizedBox(height: 12),
-                  Row(
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _toggleFollow,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AnimatedBuilder(
-                        animation: _likeScale,
-                        builder: (_, child) => Transform.scale(
-                          scale: _likeScale.value,
-                          child: child,
-                        ),
-                        child: _buildAction(
-                          icon: post.isUpvoted
-                              ? CupertinoIcons.heart_fill
-                              : CupertinoIcons.heart,
-                          label: Formatters.formatCount(post.upvotes),
-                          color: post.isUpvoted
-                              ? Colors.redAccent
-                              : Colors.white54,
-                          onTap: _toggleUpvote,
+                      Text(
+                        post.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          letterSpacing: -0.1,
                         ),
                       ),
-                      const SizedBox(width: 18),
-                      _buildAction(
-                        icon: CupertinoIcons.chat_bubble,
-                        label: Formatters.formatCount(post.comments),
-                        color: Colors.white54,
-                        onTap: () => _showCommentsSheet(context),
-                      ),
-                      const SizedBox(width: 18),
-                      _buildAction(
-                        icon: CupertinoIcons.arrow_2_squarepath,
-                        label: Formatters.formatCount(post.shares),
-                        color: Colors.white54,
-                        onTap: () => _showRepostSheet(context),
-                      ),
-                      const Spacer(),
-                      _buildAction(
-                        icon: post.isBookmarked
-                            ? CupertinoIcons.bookmark_fill
-                            : CupertinoIcons.bookmark,
-                        label: '',
-                        color: post.isBookmarked
-                            ? AppColors.electricBlue
-                            : Colors.white54,
-                        onTap: () {
-                          widget.onUpdate(
-                            post.copyWith(isBookmarked: !post.isBookmarked),
-                          );
-                        },
+                      Row(
+                        children: [
+                          Text(
+                            post.username,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            Formatters.timeAgo(post.createdAt),
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
+              GestureDetector(
+                onTap: () => _showPostMenu(context),
+                child: Icon(
+                  CupertinoIcons.ellipsis,
+                  color: Colors.white.withOpacity(0.4),
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 42),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (post.title.isNotEmpty) ...[
+                  Text(
+                    post.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Text(
+                  _showFullBody || post.body.length <= 220
+                      ? post.body
+                      : '${post.body.substring(0, 220)}...',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+                if (post.body.length > 220) ...[
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => _showFullBody = !_showFullBody),
+                    child: Text(
+                      _showFullBody ? 'Show less' : 'More',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.electricBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                _buildMedia(),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _likeScale,
+                      builder: (_, child) => Transform.scale(
+                        scale: _likeScale.value,
+                        child: child,
+                      ),
+                      child: _buildAction(
+                        icon: post.isUpvoted
+                            ? CupertinoIcons.heart_fill
+                            : CupertinoIcons.heart,
+                        label: Formatters.formatCount(post.upvotes),
+                        color: post.isUpvoted
+                            ? Colors.redAccent
+                            : Colors.white54,
+                        onTap: _toggleUpvote,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildAction(
+                      icon: CupertinoIcons.chat_bubble,
+                      label: Formatters.formatCount(post.comments),
+                      color: Colors.white54,
+                      onTap: () => _showCommentsSheet(context),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildAction(
+                      icon: CupertinoIcons.arrow_2_squarepath,
+                      label: Formatters.formatCount(post.shares),
+                      color: Colors.white54,
+                      onTap: () => _showRepostSheet(context),
+                    ),
+                    const Spacer(),
+                    _buildAction(
+                      icon: post.isBookmarked
+                          ? CupertinoIcons.bookmark_fill
+                          : CupertinoIcons.bookmark,
+                      label: '',
+                      color: post.isBookmarked
+                          ? AppColors.electricBlue
+                          : Colors.white54,
+                      onTap: () {
+                        widget.onUpdate(
+                          post.copyWith(isBookmarked: !post.isBookmarked),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PhotoViewScreen extends StatelessWidget {
+  final String imageUrl;
+
+  const PhotoViewScreen({super.key, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.xmark, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
+      ),
+      body: PhotoView(
+        imageProvider: NetworkImage(imageUrl),
+        backgroundDecoration: const BoxDecoration(color: Colors.black),
+        minScale: PhotoViewComputedScale.contained * 0.8,
+        maxScale: PhotoViewComputedScale.covered * 2,
+      ),
+    );
+  }
+}
+
+class VideoPlayerScreen extends StatefulWidget {
+  final String videoUrl;
+
+  const VideoPlayerScreen({super.key, required this.videoUrl});
+
+  @override
+  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  late final VideoPlayerController _videoController;
+  ChewieController? _chewieController;
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        _chewieController = ChewieController(
+          videoPlayerController: _videoController,
+          autoPlay: true,
+          looping: true,
+          aspectRatio: _videoController.value.aspectRatio,
+          materialProgressColors: ChewieProgressColors(
+            playedColor: AppColors.electricBlue,
+            handleColor: AppColors.electricBlue,
+            backgroundColor: Colors.grey[700]!,
+            bufferedColor: Colors.grey[600]!,
+          ),
+        );
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_chewieController == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CupertinoActivityIndicator()),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.xmark, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Center(
+        child: Chewie(controller: _chewieController!),
       ),
     );
   }
@@ -794,7 +915,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   @override
@@ -890,7 +1013,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -1130,18 +1253,18 @@ class _ThreadCommentTile extends StatelessWidget {
             Column(
               children: [
                 CircleAvatar(
-                  radius: 16,
+                  radius: 14,
                   backgroundColor: const Color(0xFF2C2C2E),
                   child: const Icon(
                     CupertinoIcons.person_fill,
                     color: Colors.white54,
-                    size: 14,
+                    size: 12,
                   ),
                 ),
                 if (comment.replies.isNotEmpty)
                   Container(
-                    width: 2,
-                    height: 40,
+                    width: 1.5,
+                    height: 20,
                     margin: const EdgeInsets.only(top: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
@@ -1150,7 +1273,7 @@ class _ThreadCommentTile extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1161,7 +1284,7 @@ class _ThreadCommentTile extends StatelessWidget {
                         comment.name,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
                       ),
@@ -1257,7 +1380,7 @@ class _ThreadCommentTile extends StatelessWidget {
             child: Column(
               children: comment.replies.map((reply) {
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: 6),
                   child: _ThreadCommentTile(
                     comment: reply,
                     onReply: onReply,
@@ -1269,7 +1392,7 @@ class _ThreadCommentTile extends StatelessWidget {
               }).toList(),
             ),
           ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   }
