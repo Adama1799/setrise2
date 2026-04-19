@@ -5,6 +5,7 @@ class AppColors {
   AppColors._();
 
   // ===== PRIMARY COLORS =====
+  static const Color primary = Color(0xFF007AFF);       // ✅ أضيف للتوافق مع map_screen
   static const Color electricBlue = Color(0xFF0066FF);  // ⚡ Primary
   static const Color neonBlue = electricBlue;            // ⚡ Alias
   static const Color neonPink = Color(0xFFFF00CC);      // 💗 Accent
