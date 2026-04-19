@@ -1,6 +1,4 @@
 // lib/features/stories/data/datasources/story_remote_datasource.dart
-// ✅ FIXED: ServerException(e.toString()) → ServerException(message: e.toString())
-// ✅ FIXED: apiClient.post() — data parameter صح
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -11,10 +9,7 @@ import '../models/story_model.dart';
 abstract class StoryRemoteDataSource {
   Future<List<StoryModel>> getFeedStories();
   Future<List<StoryModel>> getUserStories(String userId);
-  Future<StoryModel> createStory({
-    required String mediaPath,
-    required StoryMediaType mediaType,
-  });
+  Future<StoryModel> createStory({required String mediaPath, required StoryMediaType mediaType});
   Future<bool> deleteStory(String storyId);
   Future<bool> viewStory(String storyId);
 }
@@ -29,12 +24,9 @@ class StoryRemoteDataSourceImpl implements StoryRemoteDataSource {
     try {
       final response = await apiClient.get(ApiEndpoints.storiesEndpoint);
       final List data = response['data'] as List;
-      return data
-          .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => StoryModel.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      // ✅ FIXED: named parameter بدل positional
-      throw ServerException(message: e.toString());
+      throw ServerException(e.toString());
     }
   }
 
@@ -45,11 +37,9 @@ class StoryRemoteDataSourceImpl implements StoryRemoteDataSource {
         ApiEndpoints.getUserStoriesEndpoint(userId),
       );
       final List data = response['data'] as List;
-      return data
-          .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => StoryModel.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      throw ServerException(message: e.toString());
+      throw ServerException(e.toString());
     }
   }
 
@@ -59,7 +49,6 @@ class StoryRemoteDataSourceImpl implements StoryRemoteDataSource {
     required StoryMediaType mediaType,
   }) async {
     try {
-      // ✅ FIXED: apiClient.post يأخذ (endpoint, data: {...})
       final response = await apiClient.post(
         ApiEndpoints.createStoryEndpoint,
         data: {
@@ -69,7 +58,7 @@ class StoryRemoteDataSourceImpl implements StoryRemoteDataSource {
       );
       return StoryModel.fromJson(response['data'] as Map<String, dynamic>);
     } catch (e) {
-      throw ServerException(message: e.toString());
+      throw ServerException(e.toString());
     }
   }
 
@@ -79,21 +68,20 @@ class StoryRemoteDataSourceImpl implements StoryRemoteDataSource {
       await apiClient.delete(ApiEndpoints.deleteStoryEndpoint(storyId));
       return true;
     } catch (e) {
-      throw ServerException(message: e.toString());
+      throw ServerException(e.toString());
     }
   }
 
   @override
   Future<bool> viewStory(String storyId) async {
     try {
-      // ✅ FIXED: apiClient.post يأخذ (endpoint, data: {...})
       await apiClient.post(
         ApiEndpoints.viewStoryEndpoint,
         data: {'story_id': storyId},
       );
       return true;
     } catch (e) {
-      throw ServerException(message: e.toString());
+      throw ServerException(e.toString());
     }
   }
 }
