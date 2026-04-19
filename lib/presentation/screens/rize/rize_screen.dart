@@ -192,88 +192,67 @@ class _RizeScreenState extends State<RizeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      floatingActionButton: const _CreateButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildGlassHeader(),
-            _buildTabs(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  _RizeFeed(
-                    posts: _posts,
-                    onUpdate: _updatePost,
-                    scrollController: _scrollCtrl,
-                  ),
-                  _RizeFeed(
-                    posts: _posts.reversed.toList(),
-                    onUpdate: (i, p) {},
-                    scrollController: ScrollController(),
-                  ),
-                ],
+    return Column(
+      children: [
+        _buildSearchHeader(),
+        _buildTabs(),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _RizeFeed(
+                posts: _posts,
+                onUpdate: _updatePost,
+                scrollController: _scrollCtrl,
               ),
-            ),
-          ],
+              _RizeFeed(
+                posts: _posts.reversed.toList(),
+                onUpdate: (i, p) {},
+                scrollController: ScrollController(),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildSearchHeader() {
     return ValueListenableBuilder<bool>(
       valueListenable: _showTopBar,
       builder: (context, visible, _) => AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        height: visible ? 56 : 0,
-        child: visible
-            ? ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.white.withOpacity(0.1),
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Rize',
-                          style: AppTextStyles.h4.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 28,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const Spacer(),
-                        _GlassIconButton(
-                          icon: CupertinoIcons.search,
-                          onTap: () => HapticFeedback.lightImpact(),
-                        ),
-                        const SizedBox(width: 12),
-                        _GlassIconButton(
-                          icon: CupertinoIcons.bell,
-                          onTap: () => HapticFeedback.lightImpact(),
-                          badge: 3,
-                        ),
-                      ],
-                    ),
-                  ),
+        height: visible ? 52 : 0,
+        clipBehavior: Clip.hardEdge,
+        decoration: const BoxDecoration(),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.black.withOpacity(0.6),
+              child: Container(
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.10)),
                 ),
-              )
-            : const SizedBox.shrink(),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 12),
+                    Icon(CupertinoIcons.search, color: Colors.white38, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Search Rize...',
+                      style: AppTextStyles.bodySmall.copyWith(color: Colors.white30),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -790,9 +769,24 @@ class _RizeCardState extends State<_RizeCard>
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Center(
-                          child: CupertinoActivityIndicator(
-                            color: Colors.white.withOpacity(0.5),
+                        return Container(
+                          color: const Color(0xFF1C1C1E),
+                          child: Center(
+                            child: CupertinoActivityIndicator(
+                              color: Colors.white.withOpacity(0.4),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stack) {
+                        return Container(
+                          color: const Color(0xFF1C1C1E),
+                          child: Center(
+                            child: Icon(
+                              CupertinoIcons.photo,
+                              color: Colors.white12,
+                              size: 40,
+                            ),
                           ),
                         );
                       },
@@ -1716,5 +1710,6 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
     );
   }
 }
+
 
  
