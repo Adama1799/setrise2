@@ -1,16 +1,41 @@
-// lib/data/mock_data/shop_mock_data.dart
-
+here// lib/data/mock_data/shop_mock_data.dart
 import '../models/product_model.dart';
 import '../models/category_model.dart';
+import 'package:flutter/material.dart';
 
 class ShopMockData {
   static List<CategoryModel> getCategories() {
     return [
-      CategoryModel(id: '1', name: 'Electronics', iconUrl: 'https://picsum.photos/200?random=1'),
-      CategoryModel(id: '2', name: 'Fashion', iconUrl: 'https://picsum.photos/200?random=2'),
-      CategoryModel(id: '3', name: 'Home', iconUrl: 'https://picsum.photos/200?random=3'),
-      CategoryModel(id: '4', name: 'Beauty', iconUrl: 'https://picsum.photos/200?random=4'),
-      CategoryModel(id: '5', name: 'Sports', iconUrl: 'https://picsum.photos/200?random=5'),
+      CategoryModel(
+        id: '1',
+        name: 'Electronics',
+        iconUrl: 'https://picsum.photos/200?random=1',
+        color: Colors.blue,
+      ),
+      CategoryModel(
+        id: '2',
+        name: 'Fashion',
+        iconUrl: 'https://picsum.photos/200?random=2',
+        color: Colors.pink,
+      ),
+      CategoryModel(
+        id: '3',
+        name: 'Home',
+        iconUrl: 'https://picsum.photos/200?random=3',
+        color: Colors.brown,
+      ),
+      CategoryModel(
+        id: '4',
+        name: 'Beauty',
+        iconUrl: 'https://picsum.photos/200?random=4',
+        color: Colors.purple,
+      ),
+      CategoryModel(
+        id: '5',
+        name: 'Sports',
+        iconUrl: 'https://picsum.photos/200?random=5',
+        color: Colors.green,
+      ),
     ];
   }
 
