@@ -1536,4 +1536,185 @@ class _CreateRizeSheetState extends State<_CreateRizeSheet> {
   final FocusNode _focusNode = FocusNode();
   bool _isPosting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() async {
+    if (_textController.text.trim().isEmpty) return;
+    setState(() => _isPosting = true);
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Posted successfully!'),
+          backgroundColor: Color(0xFF1C1C1E),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Color(0xFF2C2C2E),
+                  child: Icon(CupertinoIcons.person_fill, color: Colors.white54),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    focusNode: _focusNode,
+                    style: const TextStyle(color: Colors.white, fontSize: 17),
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      hintText: "What's new?",
+                      hintStyle: TextStyle(color: Colors.white38, fontSize: 17),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
+            ),
+            if (widget.quotedPost != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const CircleAvatar(radius: 12, backgroundColor: Color(0xFF2C2C2E)),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.quotedPost!.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          ' ${widget.quotedPost!.username}',
+                          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.quotedPost!.body,
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                _mediaBtn(CupertinoIcons.photo),
+                const SizedBox(width: 16),
+                _mediaBtn(CupertinoIcons.videocam),
+                const Spacer(),
+                if (_textController.text.isNotEmpty)
+                  Text(
+                    '${_textController.text.length}/500',
+                    style: TextStyle(
+                      color: _textController.text.length > 500 ? Colors.redAccent : Colors.white54,
+                      fontSize: 13,
+                    ),
+                  ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _textController.text.trim().isNotEmpty && !_isPosting ? _submit : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _textController.text.trim().isNotEmpty && !_isPosting
+                          ? const Color(0xFF007AFF)
+                          : const Color(0xFF2C2C2E),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: _isPosting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Post',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _mediaBtn(IconData icon) {
+    return GestureDetector(
+      onTap: () => HapticFeedback.lightImpact(),
+      child: Icon(icon, color: const Color(0xFF007AFF), size: 24),
+    );
+  }
+}
+
  
