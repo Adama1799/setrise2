@@ -1,5 +1,5 @@
-// lib/presentation/screens/rize/rize_screen_pro.dart
-// نسخة برو - Threads UI + Twitter Features
+// lib/presentation/screens/rize/rize_screen.dart
+// نسخة نهائية مضمونة - Threads UI + Twitter Features
 
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -24,7 +24,6 @@ class RizeCommentModel {
   bool isLiked;
   final DateTime createdAt;
   final List<RizeCommentModel> replies;
-  bool isDeleted;
 
   RizeCommentModel({
     required this.id,
@@ -36,7 +35,6 @@ class RizeCommentModel {
     required this.isLiked,
     required this.createdAt,
     this.replies = const [],
-    this.isDeleted = false,
   });
 
   RizeCommentModel copyWith({
@@ -49,7 +47,6 @@ class RizeCommentModel {
     bool? isLiked,
     DateTime? createdAt,
     List<RizeCommentModel>? replies,
-    bool? isDeleted,
   }) {
     return RizeCommentModel(
       id: id ?? this.id,
@@ -61,7 +58,6 @@ class RizeCommentModel {
       isLiked: isLiked ?? this.isLiked,
       createdAt: createdAt ?? this.createdAt,
       replies: replies ?? this.replies,
-      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -148,16 +144,16 @@ class RizeCommentModel {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 RizeScreen Pro - الواجهة الرئيسية 🔹
+// 🔹 RizeScreen الرئيسية 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class RizeScreenPro extends StatefulWidget {
-  const RizeScreenPro({super.key});
+class RizeScreen extends StatefulWidget {
+  const RizeScreen({super.key});
 
   @override
-  State<RizeScreenPro> createState() => _RizeScreenProState();
+  State<RizeScreen> createState() => _RizeScreenState();
 }
 
-class _RizeScreenProState extends State<RizeScreenPro>
+class _RizeScreenState extends State<RizeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   final List<RizePostModel> _posts = RizePostModel.getMockPosts();
@@ -199,7 +195,7 @@ class _RizeScreenProState extends State<RizeScreenPro>
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      floatingActionButton: const _CreateButtonPro(),
+      floatingActionButton: const _CreateButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         child: Column(
@@ -210,12 +206,12 @@ class _RizeScreenProState extends State<RizeScreenPro>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: [
-                  _RizeFeedPro(
+                  _RizeFeed(
                     posts: _posts,
                     onUpdate: _updatePost,
                     scrollController: _scrollCtrl,
                   ),
-                  _RizeFeedPro(
+                  _RizeFeed(
                     posts: _posts.reversed.toList(),
                     onUpdate: (i, p) {},
                     scrollController: ScrollController(),
@@ -325,23 +321,23 @@ class _RizeScreenProState extends State<RizeScreenPro>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _CreateRizeSheetPro(),
+      builder: (_) => const _CreateRizeSheet(),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 زر الإنشاء الاحترافي (أزرق كهربائي) 🔹
+// 🔹 زر الإنشاء الاحترافي 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class _CreateButtonPro extends StatelessWidget {
-  const _CreateButtonPro();
+class _CreateButton extends StatelessWidget {
+  const _CreateButton();
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
-        final state = context.findAncestorStateOfType<_RizeScreenProState>();
+        final state = context.findAncestorStateOfType<_RizeScreenState>();
         state?._showCreateSheet(context);
       },
       child: Container(
@@ -426,24 +422,24 @@ class _GlassIconButton extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 RizeFeed Pro 🔹
+// 🔹 RizeFeed 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class _RizeFeedPro extends StatefulWidget {
+class _RizeFeed extends StatefulWidget {
   final List<RizePostModel> posts;
   final Function(int, RizePostModel) onUpdate;
   final ScrollController scrollController;
 
-  const _RizeFeedPro({
+  const _RizeFeed({
     required this.posts,
     required this.onUpdate,
     required this.scrollController,
   });
 
   @override
-  State<_RizeFeedPro> createState() => _RizeFeedProState();
+  State<_RizeFeed> createState() => _RizeFeedState();
 }
 
-class _RizeFeedProState extends State<_RizeFeedPro> {
+class _RizeFeedState extends State<_RizeFeed> {
   bool _isLoading = false;
   late List<RizePostModel> _localPosts;
 
@@ -498,7 +494,7 @@ class _RizeFeedProState extends State<_RizeFeedPro> {
                 child: Center(child: CupertinoActivityIndicator()),
               );
             }
-            return _RizeCardPro(
+            return _RizeCard(
               post: _localPosts[i],
               onUpdate: (p) {
                 setState(() => _localPosts[i] = p);
@@ -513,22 +509,22 @@ class _RizeFeedProState extends State<_RizeFeedPro> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 RizeCard Pro - بطاقة المنشور الاحترافية (Threads + Twitter Style) 🔹
+// 🔹 RizeCard - بطاقة المنشور الاحترافية 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class _RizeCardPro extends StatefulWidget {
+class _RizeCard extends StatefulWidget {
   final RizePostModel post;
   final Function(RizePostModel) onUpdate;
 
-  const _RizeCardPro({
+  const _RizeCard({
     required this.post,
     required this.onUpdate,
   });
 
   @override
-  State<_RizeCardPro> createState() => _RizeCardProState();
+  State<_RizeCard> createState() => _RizeCardState();
 }
 
-class _RizeCardProState extends State<_RizeCardPro>
+class _RizeCardState extends State<_RizeCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _likeCtrl;
   late Animation<double> _likeScale;
@@ -596,6 +592,9 @@ class _RizeCardProState extends State<_RizeCardPro>
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    // التحقق من وجود isVerified في الموديل، إذا لم يكن موجوداً نستخدم false
+    final bool isVerified = (post as dynamic).isVerified ?? false;
+    
     return GestureDetector(
       onDoubleTap: _handleDoubleTap,
       child: Container(
@@ -604,7 +603,7 @@ class _RizeCardProState extends State<_RizeCardPro>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ✅ الصف العلوي: الاسم + Views + التحقق
+            // الصف العلوي: الاسم + Views
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -614,7 +613,7 @@ class _RizeCardProState extends State<_RizeCardPro>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: post.isVerified ? AppColors.electricBlue : Colors.transparent,
+                        color: isVerified ? AppColors.electricBlue : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -646,7 +645,7 @@ class _RizeCardProState extends State<_RizeCardPro>
                                 letterSpacing: -0.2,
                               ),
                             ),
-                            if (post.isVerified) ...[
+                            if (isVerified) ...[
                               const SizedBox(width: 4),
                               const Icon(
                                 CupertinoIcons.check_mark_circled_solid,
@@ -675,7 +674,6 @@ class _RizeCardProState extends State<_RizeCardPro>
                               ),
                             ),
                             const SizedBox(width: 6),
-                            // ✅ عدد المشاهدات (Views) - مثل Twitter
                             Icon(
                               CupertinoIcons.eye_fill,
                               size: 12,
@@ -695,7 +693,6 @@ class _RizeCardProState extends State<_RizeCardPro>
                     ),
                   ),
                 ),
-                // القائمة المنسدلة
                 GestureDetector(
                   onTap: () => _showPostMenu(context),
                   child: Icon(
@@ -707,7 +704,7 @@ class _RizeCardProState extends State<_RizeCardPro>
               ],
             ),
             const SizedBox(height: 8),
-            // النص
+            // النص والمحتوى
             Padding(
               padding: const EdgeInsets.only(left: 50),
               child: Column(
@@ -734,18 +731,15 @@ class _RizeCardProState extends State<_RizeCardPro>
                       letterSpacing: -0.2,
                     ),
                   ),
-                  // الوسائط
                   if (post.mediaUrls.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     _buildMediaGallery(context),
                   ],
                   const SizedBox(height: 12),
-                  // أزرار التفاعل
                   _buildActionBar(post),
                 ],
               ),
             ),
-            // تأثير القلب
             if (_showHeartOverlay)
               Center(
                 child: TweenAnimationBuilder<double>(
@@ -852,7 +846,7 @@ class _RizeCardProState extends State<_RizeCardPro>
   Widget _buildActionBar(RizePostModel post) {
     return Row(
       children: [
-        _ActionButtonPro(
+        _ActionButton(
           icon: post.isUpvoted ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
           label: Formatters.formatCount(post.upvotes),
           color: post.isUpvoted ? Colors.redAccent : Colors.white54,
@@ -867,7 +861,7 @@ class _RizeCardProState extends State<_RizeCardPro>
           animation: _likeScale,
         ),
         const SizedBox(width: 20),
-        _ActionButtonPro(
+        _ActionButton(
           icon: CupertinoIcons.chat_bubble,
           label: Formatters.formatCount(post.comments),
           color: Colors.white54,
@@ -877,7 +871,7 @@ class _RizeCardProState extends State<_RizeCardPro>
           },
         ),
         const SizedBox(width: 20),
-        _ActionButtonPro(
+        _ActionButton(
           icon: CupertinoIcons.arrow_2_squarepath,
           label: Formatters.formatCount(post.shares),
           color: Colors.white54,
@@ -887,7 +881,7 @@ class _RizeCardProState extends State<_RizeCardPro>
           },
         ),
         const Spacer(),
-        _ActionButtonPro(
+        _ActionButton(
           icon: post.isBookmarked ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
           label: '',
           color: post.isBookmarked ? const Color(0xFF007AFF) : Colors.white54,
@@ -989,7 +983,7 @@ class _RizeCardProState extends State<_RizeCardPro>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CreateRizeSheetPro(quotedPost: widget.post),
+      builder: (_) => _CreateRizeSheet(quotedPost: widget.post),
     );
   }
 
@@ -1004,7 +998,7 @@ class _RizeCardProState extends State<_RizeCardPro>
         maxChildSize: 0.95,
         minChildSize: 0.4,
         builder: (context, scrollController) {
-          return _CommentsSheetPro(
+          return _CommentsSheet(
             post: widget.post,
             scrollController: scrollController,
             onCommentAdded: () {
@@ -1017,17 +1011,14 @@ class _RizeCardProState extends State<_RizeCardPro>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 Action Button Pro 🔹
-// ═══════════════════════════════════════════════════════════════════════════════
-class _ActionButtonPro extends StatelessWidget {
+class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
   final Animation<double>? animation;
 
-  const _ActionButtonPro({
+  const _ActionButton({
     required this.icon,
     required this.label,
     required this.color,
@@ -1067,24 +1058,24 @@ class _ActionButtonPro extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 CommentsSheet Pro - تعليقات على شكل حرف L (Threads Style) 🔹
+// 🔹 CommentsSheet - تعليقات على شكل حرف L 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class _CommentsSheetPro extends StatefulWidget {
+class _CommentsSheet extends StatefulWidget {
   final RizePostModel post;
   final ScrollController scrollController;
   final VoidCallback onCommentAdded;
 
-  const _CommentsSheetPro({
+  const _CommentsSheet({
     required this.post,
     required this.scrollController,
     required this.onCommentAdded,
   });
 
   @override
-  State<_CommentsSheetPro> createState() => _CommentsSheetProState();
+  State<_CommentsSheet> createState() => _CommentsSheetState();
 }
 
-class _CommentsSheetProState extends State<_CommentsSheetPro> {
+class _CommentsSheetState extends State<_CommentsSheet> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<RizeCommentModel> _comments = [];
@@ -1107,7 +1098,6 @@ class _CommentsSheetProState extends State<_CommentsSheetPro> {
 
   void _sendComment() {
     if (_textController.text.trim().isEmpty) return;
-    
     HapticFeedback.mediumImpact();
     
     final newComment = RizeCommentModel(
@@ -1229,7 +1219,7 @@ class _CommentsSheetProState extends State<_CommentsSheetPro> {
               controller: widget.scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _comments.length,
-              itemBuilder: (context, index) => _CommentTilePro(
+              itemBuilder: (context, index) => _CommentTile(
                 comment: _comments[index],
                 onReply: (id, name) {
                   setState(() {
@@ -1335,16 +1325,16 @@ class _CommentsSheetProState extends State<_CommentsSheetPro> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔹 CommentTile Pro - خط L للردود المتداخلة 🔹
+// 🔹 CommentTile - خط L للردود المتداخلة 🔹
 // ═══════════════════════════════════════════════════════════════════════════════
-class _CommentTilePro extends StatelessWidget {
+class _CommentTile extends StatelessWidget {
   final RizeCommentModel comment;
   final Function(String id, String name) onReply;
   final Function(String) onDelete;
   final Function(String) onLike;
   final int depth;
 
-  const _CommentTilePro({
+  const _CommentTile({
     required this.comment,
     required this.onReply,
     required this.onDelete,
@@ -1363,18 +1353,13 @@ class _CommentTilePro extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // العمود الأيسر: الصورة + خط L
             Column(
               children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: const Color(0xFF2C2C2E),
-                  backgroundImage: comment.userId.startsWith('user')
-                      ? const NetworkImage('https://i.pravatar.cc/150?img=3')
-                      : null,
                   child: const Icon(CupertinoIcons.person_fill, color: Colors.white54, size: 14),
                 ),
-                // ✅ خط L العمودي - يظهر فقط إذا كان هناك ردود
                 if (hasReplies)
                   Container(
                     width: 2,
@@ -1482,7 +1467,7 @@ class _CommentTilePro extends StatelessWidget {
             ),
           ],
         ),
-        // ✅ الردود المتداخلة مع خط L أفقي + عمودي
+        // الردود المتداخلة مع خط L
         if (hasReplies)
           Padding(
             padding: const EdgeInsets.only(left: 16),
@@ -1516,8 +1501,39 @@ class _CommentTilePro extends StatelessWidget {
                       ),
                     Padding(
                       padding: const EdgeInsets.only(left: 22),
-                      child: _CommentTilePro(
+                      child: _CommentTile(
                         comment: reply,
                         onReply: onReply,
                         onDelete: onDelete,
-             
+                        onLike: onLike,
+                        depth: depth + 1,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔹 CreateRizeSheet 🔹
+// ═══════════════════════════════════════════════════════════════════════════════
+class _CreateRizeSheet extends StatefulWidget {
+  final RizePostModel? quotedPost;
+  const _CreateRizeSheet({this.quotedPost});
+
+  @override
+  State<_CreateRizeSheet> createState() => _CreateRizeSheetState();
+}
+
+class _CreateRizeSheetState extends State<_CreateRizeSheet> {
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  bool _isPosting = false;
+
+ 
