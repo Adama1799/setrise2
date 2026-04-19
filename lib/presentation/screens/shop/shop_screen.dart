@@ -5,14 +5,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/mock_data/shop_mock_data.dart';
 import '../../../data/models/product_model.dart';
-import '../../../data/models/category_model.dart'; // ✅ موجود
+import '../../../data/models/category_model.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
 import 'marketplace_screen.dart';
 import 'auction_screen.dart';
-import 'all_products_screen.dart';
-import 'category_products_screen.dart';
-import 'shop_search_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -230,7 +227,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                   )
                                 : null,
                             image: DecorationImage(
-                              image: NetworkImage(category.iconUrl),
+                              image: NetworkImage(category.iconUrl), // ✅ تم التغيير إلى iconUrl
                               fit: BoxFit.cover,
                             ),
                           ),
