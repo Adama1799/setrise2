@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 class CategoryModel {
   final String id;
   final String name;
-  final String icon;
+  final String iconUrl;   // ✅ تم تغييره من icon إلى iconUrl
   final Color color;
 
   CategoryModel({
     required this.id,
     required this.name,
-    required this.icon,
+    required this.iconUrl,
     required this.color,
   });
 }
