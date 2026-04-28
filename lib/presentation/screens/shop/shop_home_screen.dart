@@ -1,14 +1,14 @@
 // lib/presentation/screens/shop/shop_home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatters.dart';
 import '../../providers/shop_provider.dart';
 import '../../widgets/shop/product_card.dart';
 import '../../widgets/shop/category_slider.dart';
 import '../../widgets/common/search_input.dart';
+import 'widgets/shop_banner.dart';
 
 class ShopHomeScreen extends ConsumerStatefulWidget {
   const ShopHomeScreen({super.key});
@@ -50,11 +50,9 @@ class _ShopHomeScreenState extends ConsumerState<ShopHomeScreen> {
   Widget build(BuildContext context) {
     final shopState = ref.watch(shopProvider);
 
-    // ✅ محتوى نقي: CustomScrollView مباشرة (بدون Scaffold)
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        // App Bar (تم تحويله إلى SliverPersistentHeader أو SliverAppBar بسيط)
         SliverAppBar(
           expandedHeight: 120,
           pinned: true,
@@ -90,7 +88,6 @@ class _ShopHomeScreenState extends ConsumerState<ShopHomeScreen> {
             ),
           ),
         ),
-        // Category Slider
         SliverToBoxAdapter(
           child: CategorySlider(
             categories: shopState.categories,
@@ -99,76 +96,7 @@ class _ShopHomeScreenState extends ConsumerState<ShopHomeScreen> {
             },
           ),
         ),
-        // Banner
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              height: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -20,
-                    bottom: -20,
-                    child: Icon(
-                      Icons.shopping_bag,
-                      size: 150,
-                      color: AppColors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Special Offer',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Up to 50% off',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 14,
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.white,
-                          ),
-                          child: const Text(
-                            'Shop Now',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Products Grid
+        const SliverToBoxAdapter(child: ShopBanner()),
         SliverPadding(
           padding: const EdgeInsets.all(8),
           sliver: SliverGrid(
@@ -188,15 +116,9 @@ class _ShopHomeScreenState extends ConsumerState<ShopHomeScreen> {
                 final product = shopState.products[index];
                 return ProductCard(
                   product: product,
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/shop/product/${product.id}',
-                    );
-                  },
-                  onFavoriteToggle: () {
-                    ref.read(shopProvider.notifier).toggleFavorite(product.id);
-                  },
+                  onTap: () => Navigator.pushNamed(context, '/shop/product/${product.id}'),
+                  onFavoriteToggle: () =>
+                      ref.read(shopProvider.notifier).toggleFavorite(product.id),
                 );
               },
               childCount: shopState.products.length + 1,
