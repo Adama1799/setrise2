@@ -1,7 +1,10 @@
 // lib/presentation/screens/shop/shop_screen.dart
-import 'shop_main_tabs.dart';
+import 'package:flutter/cupertino.dart';
+import 'shop_home_screen.dart';
+
 class ShopScreen extends StatelessWidget {
   const ShopScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => const ShopMainTabs();
+  Widget build(BuildContext context) => const ShopHomeScreen();
 }
