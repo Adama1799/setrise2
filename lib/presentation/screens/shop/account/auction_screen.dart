@@ -32,15 +32,18 @@ class _AuctionScreenState extends State<AuctionScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _filters.length,
               itemBuilder: (_, i) {
-                final cat = _filters[i];
-                final sel = _filter == cat;
+                final f = _filters[i];
+                final sel = _filter == f;
                 return GestureDetector(
-                  onTap: () => setState(() => _filter = cat),
+                  onTap: () => setState(() => _filter = f),
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: sel ? AppColors.shop : AppColors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                    child: Text(cat, style: TextStyle(color: sel ? AppColors.black : AppColors.white, fontWeight: FontWeight.w600)),
+                    decoration: BoxDecoration(
+                      color: sel ? AppColors.shop : AppColors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(f, style: TextStyle(color: sel ? AppColors.black : AppColors.white)),
                   ),
                 );
               },
@@ -49,7 +52,9 @@ class _AuctionScreenState extends State<AuctionScreen> {
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.75, crossAxisSpacing: 12, mainAxisSpacing: 16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, childAspectRatio: 0.75, crossAxisSpacing: 12, mainAxisSpacing: 16,
+              ),
               itemCount: _auctions.length,
               itemBuilder: (_, i) => AuctionGridCard(auction: _auctions[i]),
             ),
