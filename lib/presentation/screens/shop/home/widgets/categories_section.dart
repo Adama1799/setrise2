@@ -1,4 +1,4 @@
-hereimport 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../../../core/theme/app_colors.dart';
 
 class CategoriesSection extends StatelessWidget {
