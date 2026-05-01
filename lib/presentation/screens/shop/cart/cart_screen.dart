@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../shop_screen.dart'; // يحتوي على CartService
 import 'widgets/cart_item.dart';
 import 'widgets/coupon_section_cart.dart';
+import '../cart_service.dart';
 import 'widgets/order_summary_cart.dart';
 
 class CartScreen extends StatefulWidget {
