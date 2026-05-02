@@ -7,7 +7,7 @@ class ShopMockData {
     (i) => ProductModel(
       id: 'feat$i',
       name: 'Featured Product $i',
-      brandName: 'Brand $i',       // استخدم brandName فقط
+      brandName: 'Brand $i',
       price: 19.99 + i,
       oldPrice: i % 2 == 0 ? 39.99 : null,
       description: 'Description of product $i',
@@ -15,8 +15,6 @@ class ShopMockData {
       rating: 4.5,
       reviewsCount: 100,
       isFavorite: false,
-      discountPercentage: i % 2 == 0 ? 50 : 0,
-      videoUrl: null,
     ),
   );
 
