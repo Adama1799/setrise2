@@ -8,6 +8,7 @@ class ShopMockData {
       id: 'feat$i',
       name: 'Featured Product $i',
       brandName: 'Brand $i',
+      categoryId: 'cat${i % 3}', // ← أضفنا هذه
       price: 19.99 + i,
       oldPrice: i % 2 == 0 ? 39.99 : null,
       description: 'Description of product $i',
