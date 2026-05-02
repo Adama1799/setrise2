@@ -36,7 +36,7 @@ class AddressSection extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  isSelected ? CupertinoIcons.radiomarked : CupertinoIcons.radiobutton,
+                  isSelected ? CupertinoIcons.check_mark_circled : CupertinoIcons.circle,
                   color: isSelected ? AppColors.shop : AppColors.grey2,
                 ),
                 const SizedBox(width: 12),
