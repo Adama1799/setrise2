@@ -16,7 +16,9 @@ class ShopMockData {
       rating: 4.5,
       reviewsCount: 100,
       isFavorite: false,
-      stock: 10 + i,            // 👈 أضفنا هذا السطر فقط
+      stock: 10 + i,
+      sizes: ['S', 'M', 'L'],      // 👈 أضفنا هذا
+      colors: ['Black', 'White'],  // 👈 أضفنا هذا للحماية
     ),
   );
 
