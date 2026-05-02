@@ -8,7 +8,7 @@ class ShopMockData {
       id: 'feat$i',
       name: 'Featured Product $i',
       brandName: 'Brand $i',
-      categoryId: 'cat${i % 3}', // ← أضفنا هذه
+      categoryId: 'cat${i % 3}',
       price: 19.99 + i,
       oldPrice: i % 2 == 0 ? 39.99 : null,
       description: 'Description of product $i',
@@ -16,6 +16,7 @@ class ShopMockData {
       rating: 4.5,
       reviewsCount: 100,
       isFavorite: false,
+      stock: 10 + i,            // 👈 أضفنا هذا السطر فقط
     ),
   );
 
