@@ -7,7 +7,7 @@ class ShopMockData {
     (i) => ProductModel(
       id: 'feat$i',
       name: 'Featured Product $i',
-      brand: 'Brand $i',               // يُرجى الانتباه: إذا كان ProductModel لا يملك brand، استخدم brandName فقط
+      brandName: 'Brand $i',       // استخدم brandName فقط
       price: 19.99 + i,
       oldPrice: i % 2 == 0 ? 39.99 : null,
       description: 'Description of product $i',
@@ -16,7 +16,6 @@ class ShopMockData {
       reviewsCount: 100,
       isFavorite: false,
       discountPercentage: i % 2 == 0 ? 50 : 0,
-      brandName: 'Brand $i',
       videoUrl: null,
     ),
   );
