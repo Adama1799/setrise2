@@ -5,6 +5,7 @@ import 'package:setrise/core/theme/app_colors.dart';
 class OrderSummaryCart extends StatelessWidget {
   final double subtotal, shipping, discount, total;
   final VoidCallback onCheckout;
+
   const OrderSummaryCart({
     super.key,
     required this.subtotal,
@@ -28,7 +29,11 @@ class OrderSummaryCart extends StatelessWidget {
           _row('Subtotal', subtotal),
           _row('Shipping', shipping),
           if (discount > 0) _row('Discount', -discount, color: AppColors.success),
-          Divider(color: AppColors.border),   // تمت إزالة const
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            color: AppColors.border,
+          ),
           _row('Total', total, bold: true),
           const SizedBox(height: 16),
           CupertinoButton(
