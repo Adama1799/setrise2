@@ -1,5 +1,5 @@
 // lib/data/mock_data/shop_mock_data.dart
-import '../models/product_model.dart';
+import 'package:setrise/data/models/product_model.dart';
 
 class ShopMockData {
   static List<ProductModel> getFeaturedProducts() => List.generate(
@@ -7,7 +7,7 @@ class ShopMockData {
     (i) => ProductModel(
       id: 'feat$i',
       name: 'Featured Product $i',
-      brand: 'Brand $i',
+      brand: 'Brand $i',               // يُرجى الانتباه: إذا كان ProductModel لا يملك brand، استخدم brandName فقط
       price: 19.99 + i,
       oldPrice: i % 2 == 0 ? 39.99 : null,
       description: 'Description of product $i',
