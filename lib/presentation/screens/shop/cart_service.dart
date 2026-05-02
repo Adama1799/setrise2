@@ -5,7 +5,15 @@ class CartItem {
   final String id, imageUrl, brand, name;
   final double price;
   int quantity;
-  CartItem({required this.id, required this.imageUrl, required this.brand, required this.name, required this.price, this.quantity = 1});
+
+  CartItem({
+    required this.id,
+    required this.imageUrl,
+    required this.brand,
+    required this.name,
+    required this.price,
+    this.quantity = 1,
+  });
 }
 
 class CartService {
@@ -14,12 +22,17 @@ class CartService {
   CartService._();
 
   final ValueNotifier<List<CartItem>> items = ValueNotifier([]);
-  double get subtotal => items.value.fold(0, (sum, item) => sum + item.price * item.quantity);
+
+  double get subtotal =>
+      items.value.fold(0, (sum, item) => sum + item.price * item.quantity);
 
   void addItem(CartItem item) {
     final idx = items.value.indexWhere((i) => i.id == item.id);
-    if (idx != -1) { items.value[idx].quantity += item.quantity; }
-    else { items.value.add(item); }
+    if (idx != -1) {
+      items.value[idx].quantity += item.quantity;
+    } else {
+      items.value.add(item);
+    }
     items.notifyListeners();
   }
 
@@ -29,8 +42,14 @@ class CartService {
   }
 
   void updateQuantity(String id, int qty) {
-    if (qty <= 0) { removeFromCart(id); return; }
+    if (qty <= 0) {
+      removeFromCart(id);
+      return;
+    }
     final idx = items.value.indexWhere((i) => i.id == id);
-    if (idx != -1) { items.value[idx].quantity = qty; items.notifyListeners(); }
+    if (idx != -1) {
+      items.value[idx].quantity = qty;
+      items.notifyListeners();
+    }
   }
 }
