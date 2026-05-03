@@ -38,26 +38,25 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
       backgroundColor: AppColors.background,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.surface,
-        leading: CupertinoNavigationBarBackButton(color: AppColors.black, onPressed: () => Navigator.pop(context)),
+        leading: CupertinoNavigationBarBackButton(color: AppColors.white, onPressed: () => Navigator.pop(context)),
         middle: CupertinoSearchTextField(
           controller: _searchCtrl,
           placeholder: 'Search products...',
-          style: const TextStyle(color: AppColors.black),
-          backgroundColor: AppColors.lightGray,
-          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.mediumGray),
-          suffixIcon: _searchCtrl.text.isNotEmpty
-              ? const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.mediumGray)
-              : null,
-          onSuffixTap: _searchCtrl.text.isNotEmpty
-              ? () { _searchCtrl.clear(); }
-              : null,
+          style: const TextStyle(color: AppColors.white),
+          backgroundColor: AppColors.grey,
+          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.grey2),
+          suffixIcon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.grey2),
+          onSuffixTap: () {
+            _searchCtrl.clear();
+            _search();
+          },
         ),
       ),
       child: SafeArea(
         child: _searchCtrl.text.isEmpty
             ? _buildRecents()
             : _results.isEmpty
-                ? const Center(child: Text('No results', style: TextStyle(color: AppColors.mediumGray)))
+                ? const Center(child: Text('No results', style: TextStyle(color: AppColors.grey2)))
                 : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.65, crossAxisSpacing: 12, mainAxisSpacing: 12),
@@ -71,13 +70,13 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
   Widget _buildRecents() {
     final recents = ['Headphones', 'Shoes', 'Watch', 'Laptop'];
     return ListView(padding: const EdgeInsets.all(16), children: [
-      const Text('Recent Searches', style: TextStyle(color: AppColors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+      const Text('Recent Searches', style: TextStyle(color: AppColors.white, fontSize: 18, fontWeight: FontWeight.bold)),
       const SizedBox(height: 12),
       ...recents.map((s) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: GestureDetector(
           onTap: () { _searchCtrl.text = s; _search(); },
-          child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 4)]), child: Row(children: [const Icon(CupertinoIcons.clock, color: AppColors.mediumGray, size: 16), const SizedBox(width: 12), Text(s, style: const TextStyle(color: AppColors.black, fontSize: 16))])),
+          child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(12)), child: Row(children: [const Icon(CupertinoIcons.clock, color: AppColors.grey2, size: 16), const SizedBox(width: 12), Text(s, style: const TextStyle(color: AppColors.white, fontSize: 16))])),
         ),
       )),
     ]);
