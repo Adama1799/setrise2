@@ -1,0 +1,35 @@
+import 'package:flutter/material.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/services/cart_service.dart';
+
+class CartScreen extends StatelessWidget {
+  const CartScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final cart = CartService();
+    return Scaffold(
+      appBar: AppBar(title: const Text("Cart")),
+      body: cart.items.isEmpty
+          ? const Center(child: Text("Your cart is empty"))
+          : ListView.builder(
+              itemCount: cart.items.length,
+              itemBuilder: (context, index) {
+                final item = cart.items[index];
+                return ListTile(
+                  leading: Image.asset(item.product.images[0]),
+                  title: Text(item.product.title),
+                  subtitle: Text('\$${item.product.price} x ${item.quantity}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(icon: const Icon(Icons.remove), onPressed: () => cart.decrement(index)),
+                      Text('${item.quantity}'),
+                      IconButton(icon: const Icon(Icons.add), onPressed: () => cart.increment(index)),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
