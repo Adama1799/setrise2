@@ -1,9 +1,9 @@
 // lib/presentation/screens/shop/search/shop_search_screen.dart
 import 'package:flutter/cupertino.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../data/mock_data/shop_mock_data.dart';
-import '../../../../data/models/product_model.dart';
-import '../widgets/product_grid_card.dart';
+import 'package:setrise/core/theme/app_colors.dart';
+import 'package:setrise/data/mock_data/shop_mock_data.dart';
+import 'package:setrise/data/models/product_model.dart';
+import 'package:setrise/presentation/screens/shop/widgets/product_grid_card.dart';
 
 class ShopSearchScreen extends StatefulWidget {
   const ShopSearchScreen({super.key});
@@ -12,89 +12,55 @@ class ShopSearchScreen extends StatefulWidget {
 }
 
 class _ShopSearchScreenState extends State<ShopSearchScreen> {
-  final _searchController = TextEditingController();
+  final _searchCtrl = TextEditingController();
   List<ProductModel> _results = [];
-  final _recents = ['Headphones', 'Shoes', 'Watch', 'Laptop'];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() => _search(_searchController.text));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(FocusNode());
-    });
+    _searchCtrl.addListener(_search);
+    WidgetsBinding.instance.addPostFrameCallback((_) => FocusScope.of(context).requestFocus(FocusNode()));
   }
 
-  void _search(String query) {
-    if (query.trim().isEmpty) {
-      setState(() => _results = []);
-      return;
-    }
+  void _search() {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    if (q.isEmpty) { setState(() => _results = []); return; }
     final all = ShopMockData.getFeaturedProducts() + ShopMockData.getPopularProducts();
-    setState(() {
-      _results = all.where((p) =>
-          p.name.toLowerCase().contains(query.toLowerCase()) ||
-          p.brandName.toLowerCase().contains(query.toLowerCase())
-      ).toList();
-    });
+    setState(() => _results = all.where((p) => p.name.toLowerCase().contains(q) || p.brandName.toLowerCase().contains(q)).toList());
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  void dispose() { _searchCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    final isSearching = _searchController.text.isNotEmpty && _results.isEmpty;
     return CupertinoPageScaffold(
       backgroundColor: AppColors.background,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.surface,
-        leading: CupertinoNavigationBarBackButton(
-          color: AppColors.white,
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: CupertinoNavigationBarBackButton(color: AppColors.black, onPressed: () => Navigator.pop(context)),
         middle: CupertinoSearchTextField(
-          controller: _searchController,
+          controller: _searchCtrl,
           placeholder: 'Search products...',
-          style: const TextStyle(color: AppColors.white),
-          backgroundColor: AppColors.grey.withOpacity(0.2),
-          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.grey2),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? GestureDetector(
-                  onTap: () {
-                    _searchController.clear();
-                    _search('');
-                  },
-                  child: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.grey2),
-                )
+          style: const TextStyle(color: AppColors.black),
+          backgroundColor: AppColors.lightGray,
+          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.mediumGray),
+          suffixIcon: _searchCtrl.text.isNotEmpty
+              ? const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.mediumGray)
+              : null,
+          onSuffixTap: _searchCtrl.text.isNotEmpty
+              ? () { _searchCtrl.clear(); }
               : null,
         ),
       ),
       child: SafeArea(
-        child: _searchController.text.isEmpty
+        child: _searchCtrl.text.isEmpty
             ? _buildRecents()
             : _results.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(CupertinoIcons.search, color: AppColors.grey2, size: 48),
-                        SizedBox(height: 12),
-                        Text('No results found', style: TextStyle(color: AppColors.grey2)),
-                      ],
-                    ),
-                  )
+                ? const Center(child: Text('No results', style: TextStyle(color: AppColors.mediumGray)))
                 : GridView.builder(
                     padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.65,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.65, crossAxisSpacing: 12, mainAxisSpacing: 12),
                     itemCount: _results.length,
                     itemBuilder: (_, i) => ProductGridCard(product: _results[i]),
                   ),
@@ -103,35 +69,17 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
   }
 
   Widget _buildRecents() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text('Recent Searches', style: TextStyle(color: AppColors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        ..._recents.map((search) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: GestureDetector(
-            onTap: () {
-              _searchController.text = search;
-              _search(search);
-            },
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(CupertinoIcons.clock, color: AppColors.grey2, size: 16),
-                  const SizedBox(width: 12),
-                  Text(search, style: const TextStyle(color: AppColors.white)),
-                ],
-              ),
-            ),
-          ),
-        )),
-      ],
-    );
+    final recents = ['Headphones', 'Shoes', 'Watch', 'Laptop'];
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      const Text('Recent Searches', style: TextStyle(color: AppColors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 12),
+      ...recents.map((s) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: GestureDetector(
+          onTap: () { _searchCtrl.text = s; _search(); },
+          child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 4)]), child: Row(children: [const Icon(CupertinoIcons.clock, color: AppColors.mediumGray, size: 16), const SizedBox(width: 12), Text(s, style: const TextStyle(color: AppColors.black, fontSize: 16))])),
+        ),
+      )),
+    ]);
   }
 }
