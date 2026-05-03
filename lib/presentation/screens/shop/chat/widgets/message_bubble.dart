@@ -1,6 +1,7 @@
+// lib/presentation/screens/shop/chat/widgets/message_bubble.dart
 import 'package:flutter/cupertino.dart';
 import 'package:setrise/core/theme/app_colors.dart';
-import '../../chat_message.dart';
+import 'package:setrise/presentation/screens/shop/chat/chat_message.dart';  // ← استيراد مطلق
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
