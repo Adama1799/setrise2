@@ -48,7 +48,7 @@ class ChatMessage {
       ),
       ChatMessage(
         id: '6',
-        text: 'Shipping to Algiers usually takes 2-3 business days. We also offer express delivery for an additional fee.',
+        text: 'Shipping to Algiers usually takes 2-3 business days. We also offer express delivery.',
         isMe: false,
         timestamp: now.subtract(const Duration(minutes: 18)),
       ),
