@@ -1,3 +1,4 @@
+// material_shop/screens/home/widgets/search_field.dart
 import 'package:flutter/material.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/search/search_screen.dart';
 
@@ -18,7 +19,7 @@ class SearchField extends StatelessWidget {
           children: const [
             Icon(Icons.search, color: Colors.grey),
             SizedBox(width: 8),
-            Text('Search products...', style: TextStyle(color: Colors.grey)),
+            Text('Search products...', style: TextStyle(color: Colors.grey, fontFamily: 'Inter')),
           ],
         ),
       ),
