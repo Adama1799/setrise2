@@ -1,9 +1,8 @@
-// lib/presentation/screens/shop/search/shop_search_screen.dart
 import 'package:flutter/cupertino.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../data/mock_data/shop_mock_data.dart';
-import '../../../../data/models/product_model.dart';
-import '../widgets/product_grid_card.dart';
+import 'package:setrise/core/theme/app_colors.dart';
+import 'package:setrise/data/mock_data/shop_mock_data.dart';
+import 'package:setrise/data/models/product_model.dart';
+import 'package:setrise/presentation/screens/shop/widgets/product_grid_card.dart';
 
 class ShopSearchScreen extends StatefulWidget {
   const ShopSearchScreen({super.key});
@@ -53,15 +52,15 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.surface,
         leading: CupertinoNavigationBarBackButton(
-          color: AppColors.white,
+          color: AppColors.black,
           onPressed: () => Navigator.pop(context),
         ),
         middle: CupertinoSearchTextField(
           controller: _searchController,
           placeholder: 'Search products...',
-          style: const TextStyle(color: AppColors.white),
-          backgroundColor: AppColors.grey.withOpacity(0.2),
-          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.grey2),
+          style: const TextStyle(color: AppColors.black),
+          backgroundColor: AppColors.lightGray,
+          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.mediumGray),
           suffixIcon: _searchController.text.isNotEmpty
               ? CupertinoButton(
                   padding: EdgeInsets.zero,
@@ -69,7 +68,7 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
                     _searchController.clear();
                     _search('');
                   },
-                  child: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.grey2),
+                  child: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.mediumGray),
                 )
               : null,
         ),
@@ -82,9 +81,9 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(CupertinoIcons.search, color: AppColors.grey2, size: 48),
+                        Icon(CupertinoIcons.search, color: AppColors.mediumGray, size: 48),
                         SizedBox(height: 12),
-                        Text('No results found', style: TextStyle(color: AppColors.grey2)),
+                        Text('No results found', style: TextStyle(color: AppColors.mediumGray)),
                       ],
                     ),
                   )
@@ -107,10 +106,8 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Recent Searches',
-          style: TextStyle(color: AppColors.white, fontSize: 17, fontWeight: FontWeight.bold),
-        ),
+        const Text('Recent Searches',
+            style: TextStyle(color: AppColors.black, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ..._recents.map((search) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -122,14 +119,15 @@ class _ShopSearchScreenState extends State<ShopSearchScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.grey.withOpacity(0.1),
+                    color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 4)],
                   ),
                   child: Row(
                     children: [
-                      const Icon(CupertinoIcons.clock, color: AppColors.grey2, size: 16),
+                      const Icon(CupertinoIcons.clock, color: AppColors.mediumGray, size: 16),
                       const SizedBox(width: 12),
-                      Text(search, style: const TextStyle(color: AppColors.white)),
+                      Text(search, style: const TextStyle(color: AppColors.black, fontSize: 16)),
                     ],
                   ),
                 ),
