@@ -1,4 +1,4 @@
-// lib/presentation/screens/shop/shop_screen.dart
+// shop_screen.dart
 import 'package:flutter/material.dart';
 import 'material_shop/screens/home/home_screen.dart';
 
