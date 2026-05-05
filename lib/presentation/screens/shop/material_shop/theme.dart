@@ -1,64 +1,55 @@
-// material_shop/theme.dart
 import 'package:flutter/material.dart';
-import 'package:setrise/core/theme/app_colors.dart';
-import 'constants.dart';
+import 'package:setrise/core/theme/app_colors.dart' as SetRiseColors;
 
-class ShopTheme {
-  static ThemeData lightTheme(BuildContext context) {
-    return ThemeData(
-      fontFamily: 'Inter',
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        color: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-        titleTextStyle: TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Inter',
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: kTextColor, fontFamily: 'Inter'),
-        bodyMedium: TextStyle(color: kTextColor, fontFamily: 'Inter'),
-        bodySmall: TextStyle(color: kTextColor, fontFamily: 'Inter'),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 42, vertical: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: kTextColor),
-          gapPadding: 10,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: kSecondaryColor),
-          gapPadding: 10,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: kPrimaryColor),
-          gapPadding: 10,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: kPrimaryColor,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 48),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-        ),
-      ),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: kPrimaryColor,
-        primary: AppColors.primary,
-        secondary: AppColors.accent,
-      ).copyWith(background: Colors.white),
-    );
-  }
+class AppColors {
+  AppColors._();
+
+  static const Color backgroundPrimary = SetRiseColors.AppColors.background;
+  static const Color backgroundSecondary = Color(0xFF2C2C2C);
+  static const Color backgroundTertiary = Color(0xFF3A3A3A);
+  static const Color backgroundInput = Color(0xFF2C2C2C);
+  static const Color backgroundSkeleton = Color(0xFF2C2C2C);
+  static const Color backgroundSkeletonShine = Color(0xFF3A3A3A);
+
+  static const Color textPrimary = SetRiseColors.AppColors.white;
+  static const Color textSecondary = Color(0xFFE0E0E0);
+  static const Color textTertiary = SetRiseColors.AppColors.grey2;
+  static const Color textQuaternary = Color(0xFF8E8E8E);
+  static const Color textOnDark = SetRiseColors.AppColors.black;
+  static const Color textLink = SetRiseColors.AppColors.primary;
+
+  static const Color borderSubtle = Color(0xFF3A3A3A);
+  static const Color borderMedium = Color(0xFF8E8E8E);
+  static const Color borderBlack = SetRiseColors.AppColors.white;
+
+  static const Color error = SetRiseColors.AppColors.error;
+  static const Color success = SetRiseColors.AppColors.success;
+  static const Color warning = SetRiseColors.AppColors.warning;
+
+  static const Color ratingFilled = SetRiseColors.AppColors.neonYellow;
+
+  static const Color statusActiveBg = Color(0x1A007AFF);
+  static const Color statusActiveFg = SetRiseColors.AppColors.primary;
+  static const Color statusShippedBg = Color(0x1AFFB300);
+  static const Color statusShippedFg = Color(0xFFFFB300);
+  static const Color statusDeliveredBg = Color(0x1A39FF14);
+  static const Color statusDeliveredFg = SetRiseColors.AppColors.success;
+  static const Color statusCancelledBg = Color(0x1AFF2200);
+  static const Color statusCancelledFg = SetRiseColors.AppColors.error;
+
+  static const Color badgeHotBg = SetRiseColors.AppColors.neonRed;
+  static const Color badgeHotFg = SetRiseColors.AppColors.white;
+  static const Color badgeNewBg = SetRiseColors.AppColors.primary;
+  static const Color badgeNewFg = SetRiseColors.AppColors.white;
+  static const Color badgeSaleBg = SetRiseColors.AppColors.shopAccent;
+  static const Color badgeSaleFg = SetRiseColors.AppColors.black;
+  static const Color badgeCartBg = SetRiseColors.AppColors.neonRed;
+  static const Color badgeCartFg = SetRiseColors.AppColors.white;
+
+  static const Color ctaPrimaryBg = SetRiseColors.AppColors.primary;
+  static const Color ctaPrimaryDisabledBg = Color(0xFF3A3A3A);
+  static const Color ctaPrimaryFg = SetRiseColors.AppColors.white;
+  static const Color ctaGhostBg = Colors.transparent;
+  static const Color ctaGhostBorder = Color(0xFF8E8E8E);
+  static const Color ctaGhostFg = SetRiseColors.AppColors.white;
 }
