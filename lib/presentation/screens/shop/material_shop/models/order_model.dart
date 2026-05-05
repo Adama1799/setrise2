@@ -1,20 +1,21 @@
-// models/order_model.dart
 import 'cart_model.dart';
 
-class Order {
+enum OrderStatus { pending, confirmed, shipped, delivered, cancelled }
+
+class OrderModel {
   final String id;
   final List<CartItem> items;
   final double total;
-  final DateTime date;
-  final String status; // pending, shipped, delivered
+  final OrderStatus status;
+  final DateTime? createdAt;
   final String? trackingNumber;
 
-  Order({
+  OrderModel({
     required this.id,
     required this.items,
     required this.total,
-    required this.date,
-    this.status = 'pending',
+    this.status = OrderStatus.pending,
+    this.createdAt,
     this.trackingNumber,
   });
 }
