@@ -34,9 +34,9 @@ flutter:
   fonts:
     - family: Inter
       fonts:
-        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
+        - asset: assets/fonts/Inter_18pt-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf
+        - asset: assets/fonts/Inter_18pt-Italic.ttf
           weight: 400
           style: italic
         - asset: assets/fonts/Inter_18pt-Bold.ttf
