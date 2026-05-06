@@ -1,12 +1,11 @@
-// material_shop/services/wishlist_service.dart
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 
 class WishlistService extends ChangeNotifier {
-  final List<Product> _items = [];
-  List<Product> get items => List.unmodifiable(_items);
+  final List<ProductModel> _items = [];
+  List<ProductModel> get items => List.unmodifiable(_items);
 
-  void toggle(Product product) {
+  void toggle(ProductModel product) {
     if (_items.any((p) => p.id == product.id)) {
       _items.removeWhere((p) => p.id == product.id);
     } else {
@@ -15,5 +14,5 @@ class WishlistService extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isFavorite(int productId) => _items.any((p) => p.id == productId);
+  bool isFavorite(String productId) => _items.any((p) => p.id == productId);
 }
