@@ -1,27 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/app_colors.dart' as setrise;
-import '../../../../core/theme/app_text_styles.dart' as text;
-import '../../providers/products_provider.dart';
-import '../../widgets/product_card.dart';
-import '../../widgets/section_header.dart';
-import '../../widgets/shimmer_loader.dart';
-import '../../widgets/empty_state.dart';
-import '../../widgets/error_state.dart';
-import '../../widgets/search_bar_widget.dart';
-import 'package:go_router/go_router.dart';
-import '../../utils/responsive.dart';
-import '../../theme/app_dimensions.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_colors.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_text_styles.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/providers/products_provider.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/product_card.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/shimmer_loader.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/empty_state.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/error_state.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/search_bar_widget.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/widgets/section_header.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/utils/responsive.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_dimensions.dart';
 
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsProvider);
 
     return Scaffold(
-      backgroundColor: setrise.AppColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => ref.read(productsProvider.future),
@@ -32,12 +31,12 @@ class HomeScreen extends ConsumerWidget {
                   padding: EdgeInsets.all(context.horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SearchBarWidget(),
-                      const SizedBox(height: AppDimensions.lg),
-                      _buildBanner(context),
-                      const SizedBox(height: AppDimensions.sectionGap),
-                      SectionHeader(title: 'Featured Products', onSeeAll: () {}),
+                    children: const [
+                      SearchBarWidget(),
+                      SizedBox(height: AppDimensions.lg),
+                      _BannerSection(),
+                      SizedBox(height: AppDimensions.sectionGap),
+                      SectionHeader(title: 'Featured Products'),
                     ],
                   ),
                 ),
@@ -46,7 +45,11 @@ class HomeScreen extends ConsumerWidget {
                 data: (products) {
                   if (products.isEmpty) {
                     return const SliverFillRemaining(
-                      child: EmptyState(icon: Icons.shopping_bag_outlined, title: 'No products yet', subtitle: 'Check back soon for new arrivals'),
+                      child: EmptyState(
+                        icon: Icons.shopping_bag_outlined,
+                        title: 'No products yet',
+                        subtitle: 'Check back soon for new arrivals',
+                      ),
                     );
                   }
                   return SliverPadding(
@@ -59,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
                         mainAxisSpacing: AppDimensions.gridGap,
                       ),
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => ProductCard(product: products[index], index: index),
+                        (context, index) => ProductCard(product: products[index]),
                         childCount: products.length,
                       ),
                     ),
@@ -81,7 +84,10 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 error: (error, _) => SliverFillRemaining(
-                  child: ErrorState(message: 'Failed to load products', onRetry: () => ref.read(productsProvider.future)),
+                  child: ErrorState(
+                    message: 'Failed to load products',
+                    onRetry: () => ref.read(productsProvider.future),
+                  ),
                 ),
               ),
               const SliverPadding(padding: EdgeInsets.only(bottom: AppDimensions.xxl)),
@@ -91,8 +97,13 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildBanner(BuildContext context) {
+class _BannerSection extends StatelessWidget {
+  const _BannerSection({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 160,
       decoration: BoxDecoration(
@@ -116,14 +127,14 @@ class HomeScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Summer Collection', style: text.AppTextStyles.headline2.copyWith(color: setrise.AppColors.white)),
+                Text('Summer Collection', style: AppTextStyles.headline2.copyWith(color: AppColors.textOnDark)),
                 const SizedBox(height: AppDimensions.xs),
-                Text('Up to 50% off on selected items', style: text.AppTextStyles.bodyMedium.copyWith(color: setrise.AppColors.white.withOpacity(0.8))),
+                Text('Up to 50% off on selected items', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnDark.withOpacity(0.8))),
                 const SizedBox(height: AppDimensions.md),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: AppDimensions.xs),
-                  decoration: BoxDecoration(color: setrise.AppColors.white, borderRadius: BorderRadius.circular(AppDimensions.radiusSm)),
-                  child: Text('Shop Now', style: text.AppTextStyles.buttonLabel.copyWith(color: setrise.AppColors.black)),
+                  decoration: BoxDecoration(color: AppColors.textOnDark, borderRadius: BorderRadius.circular(AppDimensions.radiusSm)),
+                  child: Text('Shop Now', style: AppTextStyles.buttonLabel.copyWith(color: AppColors.textPrimary)),
                 ),
               ],
             ),
