@@ -8,6 +8,7 @@ import '../theme/app_text_styles.dart';
 import '../utils/haptics.dart';
 import '../models/product_model.dart';
 import '../providers/wishlist_provider.dart';
+import '../providers/cart_provider.dart';
 import 'shimmer_loader.dart';
 
 class ProductCard extends ConsumerStatefulWidget {
@@ -21,6 +22,31 @@ class ProductCard extends ConsumerStatefulWidget {
 class _ProductCardState extends ConsumerState<ProductCard> {
   bool _pressed = false;
 
+  void _addToCart() {
+    Haptics.light();
+    ref.read(cartProvider.notifier).addItem(widget.product, {}, 1);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${widget.product.name} added to cart',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
+        ),
+        backgroundColor: AppColors.backgroundSecondary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(AppDimensions.md),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        ),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: AppColors.ctaPrimaryBg,
+          onPressed: () => context.push('/cart'),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -31,7 +57,8 @@ class _ProductCardState extends ConsumerState<ProductCard> {
       onTapUp: (_) {
         setState(() => _pressed = false);
         Haptics.light();
-        context.push('/product/${product.id}');
+        // ✅ تم التصحيح: تمرير الـ product كـ extra
+        context.push('/product/${product.id}', extra: product);
       },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
@@ -49,19 +76,66 @@ class _ProductCardState extends ConsumerState<ProductCard> {
             children: [
               _buildImageSection(product, isWishlisted),
               Padding(
-                padding: const EdgeInsets.all(AppDimensions.cardInner),
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.cardInner,
+                  AppDimensions.cardInner,
+                  AppDimensions.cardInner,
+                  AppDimensions.xs,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.brand.toUpperCase(), style: AppTextStyles.labelUpper.copyWith(color: AppColors.textTertiary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      product.brand.toUpperCase(),
+                      style: AppTextStyles.labelUpper.copyWith(color: AppColors.textTertiary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 2),
-                    Text(product.name, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(
+                      product.name,
+                      style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: AppDimensions.xs),
                     _buildPrice(product),
                     const SizedBox(height: AppDimensions.xxs),
                     _buildRating(product),
                     if (product.shippingFree) _buildShippingBadge(),
                   ],
+                ),
+              ),
+              // ✅ زر Add to Cart الجديد
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.cardInner,
+                  AppDimensions.xxs,
+                  AppDimensions.cardInner,
+                  AppDimensions.cardInner,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 34,
+                  child: ElevatedButton(
+                    onPressed: _addToCart,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.ctaPrimaryBg,
+                      foregroundColor: AppColors.ctaPrimaryFg,
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                      ),
+                    ),
+                    child: Text(
+                      'Add to Cart',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.ctaPrimaryFg,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -75,32 +149,50 @@ class _ProductCardState extends ConsumerState<ProductCard> {
     return AspectRatio(
       aspectRatio: 1,
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLg)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusLg),
+        ),
         child: Stack(
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
               imageUrl: product.images.isNotEmpty ? product.images.first : '',
               fit: BoxFit.cover,
-              placeholder: (context, url) => const ShimmerLoader(child: ColoredBox(color: AppColors.backgroundSkeleton)),
+              placeholder: (context, url) => const ShimmerLoader(
+                child: ColoredBox(color: AppColors.backgroundSkeleton),
+              ),
               errorWidget: (context, url, error) => const ColoredBox(
                 color: AppColors.backgroundTertiary,
                 child: Icon(Icons.image_not_supported, color: AppColors.textQuaternary),
               ),
             ),
+            // Badges
+            if (product.isHot || product.isNew || product.discount > 0)
+              Positioned(
+                top: AppDimensions.xs,
+                left: AppDimensions.xs,
+                child: _buildBadge(product),
+              ),
+            // Wishlist button
             Positioned(
-              top: AppDimensions.xs, right: AppDimensions.xs,
+              top: AppDimensions.xs,
+              right: AppDimensions.xs,
               child: GestureDetector(
                 onTap: () {
                   Haptics.light();
                   ref.read(wishlistProvider.notifier).toggle(product.id);
                 },
                 child: Container(
-                  width: 32, height: 32,
-                  decoration: const BoxDecoration(color: AppColors.backgroundPrimary, shape: BoxShape.circle),
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: AppColors.backgroundPrimary,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     isWishlisted ? Icons.favorite : Icons.favorite_border,
-                    size: 18, color: isWishlisted ? AppColors.error : AppColors.textTertiary,
+                    size: 18,
+                    color: isWishlisted ? AppColors.error : AppColors.textTertiary,
                   ),
                 ),
               ),
@@ -111,13 +203,55 @@ class _ProductCardState extends ConsumerState<ProductCard> {
     );
   }
 
+  Widget _buildBadge(ProductModel product) {
+    Color bg;
+    Color fg;
+    String label;
+
+    if (product.isHot) {
+      bg = AppColors.badgeHotBg;
+      fg = AppColors.badgeHotFg;
+      label = 'HOT';
+    } else if (product.isNew) {
+      bg = AppColors.badgeNewBg;
+      fg = AppColors.badgeNewFg;
+      label = 'NEW';
+    } else {
+      bg = AppColors.badgeSaleBg;
+      fg = AppColors.badgeSaleFg;
+      label = '-${product.discount}%';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusXs),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w700,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPrice(ProductModel product) {
     return Row(
       children: [
-        Text('\$${product.price.toStringAsFixed(2)}', style: AppTextStyles.priceSmall.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          '\$${product.price.toStringAsFixed(2)}',
+          style: AppTextStyles.priceSmall.copyWith(fontWeight: FontWeight.w700),
+        ),
         if (product.originalPrice > 0) ...[
           const SizedBox(width: AppDimensions.xs),
-          Text('\$${product.originalPrice.toStringAsFixed(2)}', style: AppTextStyles.priceStrike),
+          Text(
+            '\$${product.originalPrice.toStringAsFixed(2)}',
+            style: AppTextStyles.priceStrike,
+          ),
         ],
       ],
     );
@@ -128,8 +262,14 @@ class _ProductCardState extends ConsumerState<ProductCard> {
       children: [
         Icon(Icons.star, size: AppDimensions.ratingStarSm, color: AppColors.ratingFilled),
         const SizedBox(width: 2),
-        Text('${product.rating}', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
-        Text(' (${product.reviewCount})', style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary)),
+        Text(
+          '${product.rating}',
+          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+        ),
+        Text(
+          ' (${product.reviewCount})',
+          style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+        ),
       ],
     );
   }
@@ -141,7 +281,13 @@ class _ProductCardState extends ConsumerState<ProductCard> {
         children: [
           Icon(Icons.local_shipping_outlined, size: 12, color: AppColors.success),
           const SizedBox(width: 2),
-          Text('Free Shipping', style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.w500)),
+          Text(
+            'Free Shipping',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.success,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
