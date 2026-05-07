@@ -15,7 +15,7 @@ class AppColors {
   static const Color textSecondary = Color(0xFFE0E0E0);
   static const Color textTertiary = SetRiseColors.AppColors.grey2;
   static const Color textQuaternary = Color(0xFF8E8E8E);
-  static const Color textOnDark = SetRiseColors.AppColors.black;
+  static const Color textOnDark = SetRiseColors.AppColors.white; // ✅ كان black — تم التصحيح
   static const Color textLink = SetRiseColors.AppColors.primary;
 
   static const Color borderSubtle = Color(0xFF3A3A3A);
