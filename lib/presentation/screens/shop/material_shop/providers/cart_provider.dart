@@ -65,7 +65,7 @@ class CartNotifier extends StateNotifier<CartState> {
 
   void _updateState(List<CartItem> items) {
     final subtotal = items.fold<double>(0, (sum, item) => sum + (item.product.price * item.quantity));
-    final discount = 0.0;
+    const discount = 0.0;
     final shipping = subtotal > 100 ? 0.0 : 5.99;
     final tax = subtotal * 0.08;
     final total = subtotal - discount + shipping + tax;
