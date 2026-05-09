@@ -5,7 +5,6 @@ import 'package:setrise/presentation/screens/shop/material_shop/theme/app_text_s
 import 'package:setrise/presentation/screens/shop/material_shop/theme/app_dimensions.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/providers/products_provider.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/providers/cart_provider.dart';
-import 'package:setrise/presentation/screens/shop/material_shop/models/product_model.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/widgets/product_card.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/widgets/shimmer_loader.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/widgets/empty_state.dart';
@@ -13,9 +12,8 @@ import 'package:setrise/presentation/screens/shop/material_shop/widgets/section_
 import 'package:setrise/presentation/screens/shop/material_shop/utils/responsive.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/cart/cart_screen.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/account/auction_screen.dart';
-import 'search_screen.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/screens/Search/search_screen.dart';
 
-// ─── Helper للتنقل مع الحفاظ على Riverpod ───
 void _push(BuildContext context, Widget screen) {
   Navigator.push(
     context,
@@ -28,7 +26,6 @@ void _push(BuildContext context, Widget screen) {
   );
 }
 
-// ─── Categories Data ───
 const _categories = [
   {'icon': '🔥', 'label': 'Hot Deals'},
   {'icon': '📱', 'label': 'Electronics'},
@@ -79,30 +76,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 titleSpacing: AppDimensions.lg,
                 title: Row(
                   children: [
-                    Text('SetRize', style: AppTextStyles.headline3.copyWith(color: AppColors.ctaPrimaryBg)),
+                    Text('SetRize',
+                        style: AppTextStyles.headline3
+                            .copyWith(color: AppColors.ctaPrimaryBg)),
                     const SizedBox(width: 4),
                     Text('Shop', style: AppTextStyles.headline3),
                   ],
                 ),
                 actions: [
-                  // Search Icon
                   IconButton(
                     onPressed: () => _push(context, const SearchScreen()),
                     icon: const Icon(Icons.search, color: AppColors.textPrimary),
                   ),
-                  // Cart Icon with badge
                   Stack(
                     alignment: Alignment.center,
                     children: [
                       IconButton(
                         onPressed: () => _push(context, const CartScreen()),
-                        icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.textPrimary),
+                        icon: const Icon(Icons.shopping_bag_outlined,
+                            color: AppColors.textPrimary),
                       ),
                       if (cartCount > 0)
                         Positioned(
-                          top: 8, right: 8,
+                          top: 8,
+                          right: 8,
                           child: Container(
-                            width: 16, height: 16,
+                            width: 16,
+                            height: 16,
                             decoration: const BoxDecoration(
                               color: AppColors.badgeCartBg,
                               shape: BoxShape.circle,
@@ -111,7 +111,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: Text(
                                 '$cartCount',
                                 style: const TextStyle(
-                                  fontSize: 9, color: AppColors.badgeCartFg,
+                                  fontSize: 9,
+                                  color: AppColors.badgeCartFg,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -128,25 +129,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppDimensions.lg, AppDimensions.sm, AppDimensions.lg, AppDimensions.sm),
+                      AppDimensions.lg,
+                      AppDimensions.sm,
+                      AppDimensions.lg,
+                      AppDimensions.sm),
                   child: GestureDetector(
                     onTap: () => _push(context, const SearchScreen()),
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
                         color: AppColors.backgroundTertiary,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusMd),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sm),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.sm),
                       child: Row(
                         children: [
-                          const Icon(Icons.search, size: 20, color: AppColors.textTertiary),
+                          const Icon(Icons.search,
+                              size: 20, color: AppColors.textTertiary),
                           const SizedBox(width: AppDimensions.xs),
                           Text('Search products...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.textQuaternary)),
+                              style: AppTextStyles.bodyMedium
+                                  .copyWith(color: AppColors.textQuaternary)),
                           const Spacer(),
-                          const Icon(Icons.mic_none, size: 20, color: AppColors.textTertiary),
+                          const Icon(Icons.mic_none,
+                              size: 20, color: AppColors.textTertiary),
                         ],
                       ),
                     ),
@@ -160,35 +168,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   height: 88,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.lg),
                     itemCount: _categories.length,
                     itemBuilder: (context, i) {
                       final cat = _categories[i];
                       final isSelected = _selectedCategory == i;
                       return GestureDetector(
                         onTap: () => setState(() => _selectedCategory = i),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.only(right: AppDimensions.sm),
+                        child: Container(
+                          margin:
+                              const EdgeInsets.only(right: AppDimensions.sm),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                width: 52, height: 52,
+                                width: 52,
+                                height: 52,
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? AppColors.ctaPrimaryBg
                                       : AppColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusMd),
                                   border: isSelected
                                       ? null
-                                      : const Border.fromBorderSide(
-                                          BorderSide(color: AppColors.borderSubtle)),
+                                      : const Border.fromBorderSide(BorderSide(
+                                          color: AppColors.borderSubtle)),
                                 ),
                                 child: Center(
                                   child: Text(cat['icon']!,
-                                      style: const TextStyle(fontSize: 24)),
+                                      style:
+                                          const TextStyle(fontSize: 24)),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -216,33 +228,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
+                      horizontal: AppDimensions.lg,
+                      vertical: AppDimensions.sm),
                   child: Column(
                     children: [
                       SizedBox(
                         height: 160,
                         child: PageView(
                           controller: _bannerCtrl,
-                          onPageChanged: (i) => setState(() => _bannerPage = i),
+                          onPageChanged: (i) =>
+                              setState(() => _bannerPage = i),
                           children: [
                             _BannerCard(
                               title: 'Summer Collection',
                               subtitle: 'Up to 50% off selected items',
-                              gradient: const [Color(0xFF007AFF), Color(0xFF0040CC)],
+                              gradient: const [
+                                Color(0xFF007AFF),
+                                Color(0xFF0040CC)
+                              ],
                               emoji: '☀️',
                               onTap: () {},
                             ),
                             _BannerCard(
                               title: 'Live Auctions',
                               subtitle: 'Bid on exclusive items now',
-                              gradient: const [Color(0xFFFF2200), Color(0xFFCC1100)],
+                              gradient: const [
+                                Color(0xFFFF2200),
+                                Color(0xFFCC1100)
+                              ],
                               emoji: '🔨',
-                              onTap: () => _push(context, const AuctionScreen()),
+                              onTap: () =>
+                                  _push(context, const AuctionScreen()),
                             ),
                             _BannerCard(
                               title: 'Free Shipping',
                               subtitle: 'On orders over \$100',
-                              gradient: const [Color(0xFF39FF14), Color(0xFF22AA00)],
+                              gradient: const [
+                                Color(0xFF39FF14),
+                                Color(0xFF22AA00)
+                              ],
                               emoji: '🚚',
                               onTap: () {},
                             ),
@@ -250,21 +274,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppDimensions.sm),
-                      // Dots indicator
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(3, (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: _bannerPage == i ? 20 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: _bannerPage == i
-                                ? AppColors.ctaPrimaryBg
-                                : AppColors.backgroundTertiary,
-                            borderRadius: BorderRadius.circular(3),
+                        children: List.generate(
+                          3,
+                          (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 3),
+                            width: _bannerPage == i ? 20 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _bannerPage == i
+                                  ? AppColors.ctaPrimaryBg
+                                  : AppColors.backgroundTertiary,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
-                        )),
+                        ),
                       ),
                     ],
                   ),
@@ -275,28 +302,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
+                      horizontal: AppDimensions.lg,
+                      vertical: AppDimensions.sm),
                   child: GestureDetector(
                     onTap: () => _push(context, const AuctionScreen()),
                     child: Container(
                       padding: const EdgeInsets.all(AppDimensions.md),
                       decoration: BoxDecoration(
                         color: AppColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusMd),
                         border: const Border.fromBorderSide(
                             BorderSide(color: AppColors.badgeHotBg, width: 1)),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 40, height: 40,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.badgeHotBg.withOpacity(0.15),
-                              borderRadius:
-                                  BorderRadius.circular(AppDimensions.radiusSm),
+                              color:
+                                  AppColors.badgeHotBg.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusSm),
                             ),
                             child: const Center(
-                              child: Text('🔨', style: TextStyle(fontSize: 20)),
+                              child: Text('🔨',
+                                  style: TextStyle(fontSize: 20)),
                             ),
                           ),
                           const SizedBox(width: AppDimensions.md),
@@ -304,7 +336,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Live Auctions', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
+                                Text('Live Auctions',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                        fontWeight: FontWeight.w700)),
                                 Text('5 auctions ending soon',
                                     style: AppTextStyles.caption.copyWith(
                                         color: AppColors.textTertiary)),
@@ -312,10 +346,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppColors.badgeHotBg,
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusXs),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusXs),
                             ),
                             child: Text('LIVE',
                                 style: AppTextStyles.caption.copyWith(
@@ -335,8 +371,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ─── Featured Products Header ───
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      AppDimensions.lg, AppDimensions.md, AppDimensions.lg, 0),
+                  padding: const EdgeInsets.fromLTRB(AppDimensions.lg,
+                      AppDimensions.md, AppDimensions.lg, 0),
                   child: SectionHeader(title: 'Featured Products'),
                 ),
               ),
@@ -344,7 +380,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ─── Products Grid ───
               productsAsync.when(
                 data: (allProducts) {
-                  // Filter by category if not first
                   final products = _selectedCategory == 0
                       ? allProducts
                       : allProducts.where((p) {
@@ -364,16 +399,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   }
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
+                        horizontal: AppDimensions.lg,
+                        vertical: AppDimensions.sm),
                     sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: context.gridColumns,
                         childAspectRatio: 0.62,
                         crossAxisSpacing: AppDimensions.gridGap,
                         mainAxisSpacing: AppDimensions.gridGap,
                       ),
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => ProductCard(product: products[index]),
+                        (context, index) =>
+                            ProductCard(product: products[index]),
                         childCount: products.length,
                       ),
                     ),
@@ -381,7 +419,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
                 loading: () => SliverPadding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
+                      horizontal: AppDimensions.lg,
+                      vertical: AppDimensions.sm),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: context.gridColumns,
@@ -390,8 +429,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       mainAxisSpacing: AppDimensions.gridGap,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          const ShimmerLoader(child: Card(child: SizedBox.expand())),
+                      (context, index) => const ShimmerLoader(
+                          child: Card(child: SizedBox.expand())),
                       childCount: 6,
                     ),
                   ),
@@ -409,7 +448,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 color: AppColors.textTertiary)),
                         const SizedBox(height: AppDimensions.md),
                         ElevatedButton(
-                          onPressed: () => ref.refresh(productsProvider.future),
+                          onPressed: () =>
+                              ref.refresh(productsProvider.future),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -418,7 +458,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              const SliverPadding(padding: EdgeInsets.only(bottom: AppDimensions.xxl)),
+              const SliverPadding(
+                  padding: EdgeInsets.only(bottom: AppDimensions.xxl)),
             ],
           ),
         ),
@@ -427,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ─── Banner Card Widget ───
+// ─── Banner Card ───
 class _BannerCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -459,15 +500,21 @@ class _BannerCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Emoji decorativo
+            // Decorative large emoji (dimmed with Opacity widget)
             Positioned(
-              right: -10, bottom: -10,
-              child: Text(emoji,
-                  style: const TextStyle(fontSize: 100, opacity: 0.15)),
+              right: -10,
+              bottom: -10,
+              child: Opacity(
+                opacity: 0.15,
+                child: Text(emoji,
+                    style: const TextStyle(fontSize: 100)),
+              ),
             ),
             Positioned(
-              right: AppDimensions.lg, top: AppDimensions.lg,
-              child: Text(emoji, style: const TextStyle(fontSize: 48)),
+              right: AppDimensions.lg,
+              top: AppDimensions.lg,
+              child: Text(emoji,
+                  style: const TextStyle(fontSize: 48)),
             ),
             Padding(
               padding: const EdgeInsets.all(AppDimensions.lg),
@@ -477,7 +524,8 @@ class _BannerCard extends StatelessWidget {
                 children: [
                   Text(title,
                       style: AppTextStyles.headline2.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w800)),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800)),
                   const SizedBox(height: AppDimensions.xs),
                   Text(subtitle,
                       style: AppTextStyles.bodySmall.copyWith(
@@ -485,15 +533,17 @@ class _BannerCard extends StatelessWidget {
                   const SizedBox(height: AppDimensions.md),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.md, vertical: AppDimensions.xs),
+                        horizontal: AppDimensions.md,
+                        vertical: AppDimensions.xs),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusSm),
+                      borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusSm),
                     ),
                     child: Text('Shop Now',
                         style: AppTextStyles.caption.copyWith(
-                            color: gradient[0], fontWeight: FontWeight.w700)),
+                            color: gradient[0],
+                            fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
