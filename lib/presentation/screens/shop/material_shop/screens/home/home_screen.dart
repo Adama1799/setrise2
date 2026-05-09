@@ -12,7 +12,7 @@ import 'package:setrise/presentation/screens/shop/material_shop/widgets/section_
 import 'package:setrise/presentation/screens/shop/material_shop/utils/responsive.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/cart/cart_screen.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/account/auction_screen.dart';
-import 'package:setrise/presentation/screens/shop/material_shop/screens/Search/search_screen.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/screens/search/search_screen.dart';
 
 void _push(BuildContext context, Widget screen) {
   Navigator.push(
