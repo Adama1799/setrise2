@@ -1,39 +1,49 @@
 import 'package:flutter/material.dart';
-import '../models/cart_model.dart';
-import '../models/product_model.dart';
+import '../models/chat_model.dart';
 
-class CartService extends ChangeNotifier {
-  final List<CartItem> _items = [];
-  List<CartItem> get items => List.unmodifiable(_items);
-  int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
-  double get totalPrice => _items.fold(0, (sum, item) => sum + item.product.price * item.quantity);
+/// ChatService — خدمة المحادثات
+/// ملاحظة: استخدم chat_provider.dart (Riverpod) في الشاشات الجديدة
+class ChatService extends ChangeNotifier {
+  final Map<String, List<ChatMessage>> _conversations = {};
 
-  void addItem(ProductModel product, {int quantity = 1}) {
-    final index = _items.indexWhere((i) => i.product.id == product.id);
-    if (index >= 0) {
-      _items[index].quantity += quantity;
-    } else {
-      _items.add(CartItem(product: product, quantity: quantity));
-    }
+  List<ChatMessage> getMessages(String storeId) =>
+      List.unmodifiable(_conversations[storeId] ?? []);
+
+  List<String> get activeStoreIds => _conversations.keys.toList();
+
+  void sendMessage(String storeId, String senderId, String text) {
+    final msg = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      storeId: storeId,
+      senderId: senderId,
+      text: text,
+      timestamp: DateTime.now(),
+      isMe: true,
+    );
+    _conversations.putIfAbsent(storeId, () => []);
+    _conversations[storeId]!.add(msg);
     notifyListeners();
   }
 
-  void removeItem(String productId) {
-    _items.removeWhere((i) => i.product.id == productId);
+  void receiveMessage(String storeId, String senderId, String text) {
+    final msg = ChatMessage(
+      id: '${DateTime.now().millisecondsSinceEpoch}r',
+      storeId: storeId,
+      senderId: senderId,
+      text: text,
+      timestamp: DateTime.now(),
+      isMe: false,
+    );
+    _conversations.putIfAbsent(storeId, () => []);
+    _conversations[storeId]!.add(msg);
     notifyListeners();
   }
 
-  void increment(int index) {
-    _items[index].quantity++;
+  void clearConversation(String storeId) {
+    _conversations.remove(storeId);
     notifyListeners();
   }
 
-  void decrement(int index) {
-    if (_items[index].quantity > 1) {
-      _items[index].quantity--;
-    } else {
-      _items.removeAt(index);
-    }
-    notifyListeners();
-  }
+  int unreadCount(String storeId) =>
+      (_conversations[storeId] ?? []).where((m) => !m.isMe).length;
 }
