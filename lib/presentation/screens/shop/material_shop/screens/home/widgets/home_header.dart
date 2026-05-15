@@ -5,7 +5,7 @@ import 'package:setrise/presentation/screens/shop/material_shop/theme/app_text_s
 import 'package:setrise/presentation/screens/shop/material_shop/theme/app_dimensions.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/providers/cart_provider.dart';
 import 'package:setrise/presentation/screens/shop/material_shop/screens/cart/cart_screen.dart';
-import 'package:setrise/presentation/screens/shop/material_shop/screens/Search/Search_Screen.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/screens/search/search_Screen.dart';
 
 void _push(BuildContext ctx, Widget w) => Navigator.push(ctx,
     MaterialPageRoute(builder: (_) => ProviderScope(parent: ProviderScope.containerOf(ctx), child: w)));
