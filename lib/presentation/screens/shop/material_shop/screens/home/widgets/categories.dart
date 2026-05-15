@@ -1,56 +1,81 @@
-// material_shop/screens/home/widgets/categories.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_colors.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_text_styles.dart';
+import 'package:setrise/presentation/screens/shop/material_shop/theme/app_dimensions.dart';
 
-class Categories extends StatelessWidget {
-  const Categories({Key? key}) : super(key: key);
+const _kCategories = [
+  {'icon': '🔥', 'label': 'Hot'},
+  {'icon': '📱', 'label': 'Tech'},
+  {'icon': '👗', 'label': 'Fashion'},
+  {'icon': '🎮', 'label': 'Gaming'},
+  {'icon': '🏠', 'label': 'Home'},
+  {'icon': '💄', 'label': 'Beauty'},
+  {'icon': '📚', 'label': 'Books'},
+  {'icon': '🏋️', 'label': 'Sports'},
+];
+
+class Categories extends StatefulWidget {
+  final ValueChanged<int>? onSelected;
+  const Categories({Key? key, this.onSelected}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> categories = [
-      {"icon": "assets/icons/Flash Icon.svg", "text": "Flash Deal"},
-      {"icon": "assets/icons/Bill Icon.svg", "text": "Bill"},
-      {"icon": "assets/icons/Game Icon.svg", "text": "Game"},
-      {"icon": "assets/icons/Gift Icon.svg", "text": "Daily Gift"},
-      {"icon": "assets/icons/Discover.svg", "text": "More"},
-    ];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: categories.map((c) => _CategoryCard(
-          icon: c['icon']!,
-          text: c['text']!,
-          press: () {},
-        )).toList(),
-      ),
-    );
-  }
+  State<Categories> createState() => _CategoriesState();
 }
 
-class _CategoryCard extends StatelessWidget {
-  final String icon, text;
-  final VoidCallback press;
-  const _CategoryCard({required this.icon, required this.text, required this.press, Key? key}) : super(key: key);
+class _CategoriesState extends State<Categories> {
+  int _selected = 0;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: press,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            height: 56, width: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFECDF),
-              borderRadius: BorderRadius.circular(10),
+    return SizedBox(
+      height: 88,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+        itemCount: _kCategories.length,
+        itemBuilder: (context, i) {
+          final cat = _kCategories[i];
+          final isSelected = _selected == i;
+          return GestureDetector(
+            onTap: () {
+              setState(() => _selected = i);
+              widget.onSelected?.call(i);
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: AppDimensions.sm),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 52, height: 52,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.ctaPrimaryBg : AppColors.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                      border: isSelected
+                          ? null
+                          : const Border.fromBorderSide(BorderSide(color: AppColors.borderSubtle)),
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: AppColors.ctaPrimaryBg.withOpacity(0.3), blurRadius: 8, spreadRadius: 1)]
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(cat['icon']!, style: const TextStyle(fontSize: 24)),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    cat['label']!,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isSelected ? AppColors.ctaPrimaryBg : AppColors.textTertiary,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: SvgPicture.asset(icon),
-          ),
-          const SizedBox(height: 4),
-          Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontFamily: 'Inter')),
-        ],
+          );
+        },
       ),
     );
   }
