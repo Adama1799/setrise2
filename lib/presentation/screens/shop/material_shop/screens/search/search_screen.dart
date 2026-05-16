@@ -17,38 +17,52 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  final _ctrl = TextEditingController();
+  final TextEditingController _ctrl = TextEditingController();
   String _query = '';
   String _selectedFilter = 'All';
   String _sortBy = 'Default';
 
-  final _filters = ['All', 'HOT', 'NEW', 'Free Ship', 'On Sale'];
-  final _sorts = ['Default', 'Price ↑', 'Price ↓', 'Rating', 'Reviews'];
+  final List<String> _filters = ['All', 'HOT', 'NEW', 'Free Ship', 'On Sale'];
+  final List<String> _sorts = ['Default', 'Price ↑', 'Price ↓', 'Rating', 'Reviews'];
 
   List<ProductModel> _applyFilter(List<ProductModel> products) {
-    var result = products;
+    var result = List<ProductModel>.from(products);
 
-    // Search
     if (_query.isNotEmpty) {
-      result = result.where((p) =>
-          p.name.toLowerCase().contains(_query.toLowerCase()) ||
-          p.brand.toLowerCase().contains(_query.toLowerCase())).toList();
+      result = result.where((p) {
+        final q = _query.toLowerCase();
+        return p.name.toLowerCase().contains(q) || p.brand.toLowerCase().contains(q);
+      }).toList();
     }
 
-    // Filter
     switch (_selectedFilter) {
-      case 'HOT':     result = result.where((p) => p.isHot).toList(); break;
-      case 'NEW':     result = result.where((p) => p.isNew).toList(); break;
-      case 'Free Ship': result = result.where((p) => p.shippingFree).toList(); break;
-      case 'On Sale': result = result.where((p) => p.discount > 0).toList(); break;
+      case 'HOT':
+        result = result.where((p) => p.isHot).toList();
+        break;
+      case 'NEW':
+        result = result.where((p) => p.isNew).toList();
+        break;
+      case 'Free Ship':
+        result = result.where((p) => p.shippingFree).toList();
+        break;
+      case 'On Sale':
+        result = result.where((p) => p.discount > 0).toList();
+        break;
     }
 
-    // Sort
     switch (_sortBy) {
-      case 'Price ↑': result.sort((a, b) => a.price.compareTo(b.price)); break;
-      case 'Price ↓': result.sort((a, b) => b.price.compareTo(a.price)); break;
-      case 'Rating':  result.sort((a, b) => b.rating.compareTo(a.rating)); break;
-      case 'Reviews': result.sort((a, b) => b.reviewCount.compareTo(a.reviewCount)); break;
+      case 'Price ↑':
+        result.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'Price ↓':
+        result.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case 'Rating':
+        result.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'Reviews':
+        result.sort((a, b) => b.reviewCount.compareTo(a.reviewCount));
+        break;
     }
 
     return result;
@@ -68,11 +82,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: AppColors.backgroundPrimary,
+        elevation: 0,
         titleSpacing: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new,
-              size: 18, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: AppColors.textPrimary,
+          ),
         ),
         title: TextField(
           controller: _ctrl,
@@ -81,7 +99,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           decoration: InputDecoration(
             hintText: 'Search products...',
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textQuaternary),
+              color: AppColors.textQuaternary,
+            ),
             border: InputBorder.none,
           ),
           onChanged: (v) => setState(() => _query = v),
@@ -93,24 +112,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 _ctrl.clear();
                 setState(() => _query = '');
               },
-              icon: const Icon(Icons.close, size: 18, color: AppColors.textTertiary),
+              icon: const Icon(
+                Icons.close,
+                size: 18,
+                color: AppColors.textTertiary,
+              ),
             ),
-          // Sort button
           IconButton(
             onPressed: _showSortSheet,
-            icon: const Icon(Icons.sort, size: 22, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.sort,
+              size: 22,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
-          // ─── Filter Chips ───
           SizedBox(
             height: 44,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.lg, vertical: 6),
+                horizontal: AppDimensions.lg,
+                vertical: 6,
+              ),
               itemCount: _filters.length,
               itemBuilder: (context, i) {
                 final isSelected = _selectedFilter == _filters[i];
@@ -120,18 +147,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     duration: const Duration(milliseconds: 150),
                     margin: const EdgeInsets.only(right: AppDimensions.xs),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.md, vertical: 4),
+                      horizontal: AppDimensions.md,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.ctaPrimaryBg
                           : AppColors.backgroundSecondary,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusSm),
-                      border: Border.fromBorderSide(BorderSide(
-                        color: isSelected
-                            ? AppColors.ctaPrimaryBg
-                            : AppColors.borderSubtle,
-                      )),
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                      border: Border.fromBorderSide(
+                        BorderSide(
+                          color: isSelected
+                              ? AppColors.ctaPrimaryBg
+                              : AppColors.borderSubtle,
+                        ),
+                      ),
                     ),
                     child: Text(
                       _filters[i],
@@ -139,9 +169,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         color: isSelected
                             ? AppColors.ctaPrimaryFg
                             : AppColors.textTertiary,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w400,
                       ),
                     ),
                   ),
@@ -149,8 +178,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               },
             ),
           ),
-
-          // ─── Results ───
           Expanded(
             child: productsAsync.when(
               data: (products) {
@@ -158,35 +185,45 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
                 return Column(
                   children: [
-                    // Results count + sort label
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                          AppDimensions.lg, AppDimensions.xs,
-                          AppDimensions.lg, AppDimensions.xs),
+                        AppDimensions.lg,
+                        AppDimensions.xs,
+                        AppDimensions.lg,
+                        AppDimensions.xs,
+                      ),
                       child: Row(
                         children: [
-                          Text('${results.length} results',
-                              style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.textTertiary)),
+                          Text(
+                            '${results.length} results',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
                           const Spacer(),
                           if (_sortBy != 'Default')
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.statusActiveBg,
                                 borderRadius: BorderRadius.circular(
-                                    AppDimensions.radiusXs),
+                                  AppDimensions.radiusXs,
+                                ),
                               ),
-                              child: Text(_sortBy,
-                                  style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.ctaPrimaryBg,
-                                      fontWeight: FontWeight.w600)),
+                              child: Text(
+                                _sortBy,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.ctaPrimaryBg,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                         ],
                       ),
                     ),
-
                     if (results.isEmpty)
                       Expanded(
                         child: EmptyState(
@@ -201,8 +238,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       Expanded(
                         child: GridView.builder(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.lg,
-                              vertical: AppDimensions.sm),
+                            horizontal: AppDimensions.lg,
+                            vertical: AppDimensions.sm,
+                          ),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: context.gridColumns,
@@ -211,15 +249,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             mainAxisSpacing: AppDimensions.gridGap,
                           ),
                           itemCount: results.length,
-                          itemBuilder: (context, index) =>
-                              ProductCard(product: results[index]),
+                          itemBuilder: (context, index) => ProductCard(
+                            product: results[index],
+                          ),
                         ),
                       ),
                   ],
                 );
               },
               loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.ctaPrimaryBg),
+                child: CircularProgressIndicator(
+                  color: AppColors.ctaPrimaryBg,
+                ),
               ),
               error: (_, __) => const Center(
                 child: Text('Failed to load products'),
@@ -237,7 +278,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       backgroundColor: AppColors.backgroundSecondary,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppDimensions.radiusLg)),
+          top: Radius.circular(AppDimensions.radiusLg),
+        ),
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(AppDimensions.lg),
@@ -247,18 +289,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           children: [
             Text('Sort By', style: AppTextStyles.headline3),
             const SizedBox(height: AppDimensions.md),
-            ..._sorts.map((s) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(s, style: AppTextStyles.bodyMedium),
-              trailing: _sortBy == s
-                  ? const Icon(Icons.check_circle,
-                      color: AppColors.ctaPrimaryBg, size: 20)
-                  : null,
-              onTap: () {
-                setState(() => _sortBy = s);
-                Navigator.pop(context);
-              },
-            )),
+            ..._sorts.map(
+              (s) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s, style: AppTextStyles.bodyMedium),
+                trailing: _sortBy == s
+                    ? const Icon(
+                        Icons.check_circle,
+                        color: AppColors.ctaPrimaryBg,
+                        size: 20,
+                      )
+                    : null,
+                onTap: () {
+                  setState(() => _sortBy = s);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
             const SizedBox(height: AppDimensions.sm),
           ],
         ),
