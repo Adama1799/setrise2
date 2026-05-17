@@ -1,4 +1,4 @@
-here// lib/presentation/screens/shop/material_shop/screens/chat/chat_screen.dart
+// lib/presentation/screens/shop/material_shop/screens/chat/chat_screen.dart
 //
 // FIX: chatService.sendMessage(msg) → chatService.sendMessage(storeId, senderId, text)
 // ──────────────────────────────────────────────────────────────
