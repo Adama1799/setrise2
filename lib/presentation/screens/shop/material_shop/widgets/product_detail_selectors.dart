@@ -1,4 +1,4 @@
-Enter// lib/presentation/screens/shop/material_shop/widgets/product_detail_selectors.dart
+// lib/presentation/screens/shop/material_shop/widgets/product_detail_selectors.dart
 //
 // اختيارات صفحة التفاصيل: اللون، المقاس، البائع، الكمية
 // ──────────────────────────────────────────────────────────────
