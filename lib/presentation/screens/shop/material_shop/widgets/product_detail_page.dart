@@ -1,8 +1,4 @@
 // lib/presentation/screens/shop/material_shop/widgets/product_detail_page.dart
-//
-// ProductDetailPage — صفحة تفاصيل المنتج الكاملة
-// مقسّم إلى: AppBar + body + bottom bar
-// ──────────────────────────────────────────────────────────────
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +50,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
   ];
   late final Map<String, String> _seller;
 
+  // ✅ صور المنتج الحقيقية — تستخرج اللون منها
   List<String> get _images {
+    if (widget.product.images.isNotEmpty) {
+      return widget.product.images;
+    }
+    // fallback لو ما في صور حقيقية
     final base = widget.product.id.hashCode.abs() % 100;
     return List.generate(
       4,
@@ -80,6 +81,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
   @override
   Widget build(BuildContext context) {
     final p = widget.product;
+    // ✅ يستخرج اللون من أول صورة حقيقية للمنتج
     final paletteAsync = ref.watch(productPaletteProvider(_images.first));
 
     return paletteAsync.when(
@@ -131,15 +133,15 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
             }, _qty);
             ScaffoldMessenger.of(ctx).showSnackBar(
               SnackBar(
-                content: Text('Added $_qty item(s) to cart',
-                    style:
-                        AppTextStyles.bodySmall.copyWith(color: Colors.white)),
+                content: Text(
+                  'Added $_qty item(s) to cart',
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
+                ),
                 backgroundColor: AppColors.success,
                 behavior: SnackBarBehavior.floating,
                 margin: const EdgeInsets.all(AppDimensions.lg),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusMd),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                 ),
                 duration: const Duration(seconds: 2),
               ),
@@ -269,9 +271,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                     child: Text(
                       '$cartCount',
                       style: const TextStyle(
-                          fontSize: 8,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800),
+                        fontSize: 8,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -324,7 +327,7 @@ class _AppBarBtn extends StatelessWidget {
           color: elegant.withOpacity(0.85),
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: elegant.withOpacity(0.4), blurRadius: 12)
+            BoxShadow(color: elegant.withOpacity(0.4), blurRadius: 12),
           ],
         ),
         child: Icon(icon, size: 18, color: iconColor ?? onEl),
@@ -334,7 +337,7 @@ class _AppBarBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Image Gallery (PageView + indicators)
+// Image Gallery
 // ─────────────────────────────────────────────────────────────
 class _ImageGallery extends StatelessWidget {
   final List<String> images;
@@ -368,12 +371,14 @@ class _ImageGallery extends StatelessWidget {
             ),
             errorWidget: (_, __, ___) => const ColoredBox(
               color: AppColors.backgroundTertiary,
-              child: Icon(Icons.image_outlined,
-                  size: 64, color: AppColors.textQuaternary),
+              child: Icon(
+                Icons.image_outlined,
+                size: 64,
+                color: AppColors.textQuaternary,
+              ),
             ),
           ),
         ),
-        // Gradient overlay
         Positioned(
           bottom: 0, left: 0, right: 0,
           child: Container(
@@ -387,7 +392,6 @@ class _ImageGallery extends StatelessWidget {
             ),
           ),
         ),
-        // Page indicators
         Positioned(
           bottom: 16, left: 0, right: 0,
           child: Row(
@@ -405,30 +409,27 @@ class _ImageGallery extends StatelessWidget {
                       : Colors.white.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(3),
                   boxShadow: imgPage == i
-                      ? [
-                          BoxShadow(
-                              color: elegant.withOpacity(0.5), blurRadius: 8)
-                        ]
+                      ? [BoxShadow(color: elegant.withOpacity(0.5), blurRadius: 8)]
                       : null,
                 ),
               ),
             ),
           ),
         ),
-        // Counter
         Positioned(
           bottom: 36, right: 12,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: elegant.withOpacity(0.7),
-              borderRadius:
-                  BorderRadius.circular(AppDimensions.radiusSm),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
             ),
             child: Text(
               '${imgPage + 1}/${images.length}',
-              style: AppTextStyles.caption
-                  .copyWith(color: onEl, fontWeight: FontWeight.w700),
+              style: AppTextStyles.caption.copyWith(
+                color: onEl,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -438,7 +439,7 @@ class _ImageGallery extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Bottom Bar — Add to Cart + Buy Now
+// Bottom Bar
 // ─────────────────────────────────────────────────────────────
 class _BottomBar extends StatelessWidget {
   final ProductModel p;
@@ -460,8 +461,7 @@ class _BottomBar extends StatelessWidget {
         AppDimensions.lg,
         AppDimensions.md,
         AppDimensions.lg,
-        AppDimensions.md +
-            MediaQuery.of(context).padding.bottom,
+        AppDimensions.md + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -470,7 +470,7 @@ class _BottomBar extends StatelessWidget {
             color: Colors.black.withOpacity(0.07),
             blurRadius: 16,
             offset: const Offset(0, -4),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -483,8 +483,7 @@ class _BottomBar extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: accent),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                   ),
                 ),
                 child: Text(
@@ -508,8 +507,7 @@ class _BottomBar extends StatelessWidget {
                   foregroundColor: onColor(accent),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                   ),
                 ),
                 child: Text(
